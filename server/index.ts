@@ -88,6 +88,27 @@ app.put('/api/characters/:id', (req, res) => {
   res.json({ id, ...characterData });
 });
 
+// Delete character by ID endpoint
+app.delete('/api/characters/:id', (req, res) => {
+  const { id } = req.params;
+
+  const db = getDatabase();
+
+  // Check if character exists
+  const checkStmt = db.prepare('SELECT id FROM characters WHERE id = ?');
+  const exists = checkStmt.get(id) as { id: string } | undefined;
+
+  if (!exists) {
+    res.status(404).json({ error: 'Character not found' });
+    return;
+  }
+
+  const deleteStmt = db.prepare('DELETE FROM characters WHERE id = ?');
+  deleteStmt.run(id);
+
+  res.json({ success: true });
+});
+
 // Initialize database
 initializeDatabase();
 
