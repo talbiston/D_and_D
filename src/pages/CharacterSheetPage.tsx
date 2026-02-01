@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import type { Character } from '../types'
 import { getCharacterById, saveCharacter, exportCharacterAsJson } from '../utils/storage'
-import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus } from '../utils/calculations'
+import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus } from '../utils/calculations'
+import { getWeaponByName } from '../data/weapons'
 import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel } from '../data/classes'
 import { getSpeciesByName } from '../data/species'
 import { getSpellSaveDC, getSpellAttackBonus, XP_THRESHOLDS } from '../utils/calculations'
@@ -261,30 +262,56 @@ export default function CharacterSheetPage() {
     })
   }
 
+  // Check if character is proficient with a weapon
+  const isWeaponProficient = (weapon: Weapon): boolean => {
+    if (!character) return false
+    const classData = getClassByName(character.class)
+    if (!classData) return false
+
+    // Check weapon proficiencies - classes list "Simple" or "Martial"
+    const weaponData = getWeaponByName(weapon.name)
+    if (weaponData) {
+      const category = weaponData.category
+      if (category === 'simple' && classData.weaponProficiencies.some(p => p.toLowerCase() === 'simple')) {
+        return true
+      }
+      if (category === 'martial' && classData.weaponProficiencies.some(p => p.toLowerCase() === 'martial')) {
+        return true
+      }
+    }
+
+    // Check for specific weapon proficiencies
+    if (classData.weaponProficiencies.some(p => p.toLowerCase() === weapon.name.toLowerCase())) {
+      return true
+    }
+
+    return false
+  }
+
   const getWeaponAttackBonus = (weapon: Weapon) => {
     if (!character) return 0
     const profBonus = getProficiencyBonus(character.level)
     const strMod = getAbilityModifier(character.abilityScores.strength)
     const dexMod = getAbilityModifier(character.abilityScores.dexterity)
+    const isProficient = isWeaponProficient(weapon)
 
-    // Use DEX for finesse, ranged, or ammunition weapons, otherwise STR
-    const usesDex = weapon.properties.some(p =>
-      p === 'finesse' || p === 'ammunition' || p === 'range'
-    )
-    const abilityMod = usesDex ? Math.max(strMod, dexMod) : strMod
-
-    return profBonus + abilityMod + (weapon.attackBonus || 0)
+    return calculateAttackBonus(weapon, strMod, dexMod, profBonus, isProficient)
   }
 
-  const getWeaponDamageBonus = (weapon: Weapon) => {
-    if (!character) return 0
-    const strMod = getAbilityModifier(character.abilityScores.strength)
-    const dexMod = getAbilityModifier(character.abilityScores.dexterity)
+  // Toggle weapon equipped status
+  const toggleWeaponEquipped = (index: number) => {
+    if (!character) return
+    const newWeapons = [...character.weapons]
+    newWeapons[index] = { ...newWeapons[index], isEquipped: !newWeapons[index].isEquipped }
+    updateCharacter({ weapons: newWeapons })
+  }
 
-    const usesDex = weapon.properties.some(p =>
-      p === 'finesse' || p === 'ammunition' || p === 'range'
-    )
-    return usesDex ? Math.max(strMod, dexMod) : strMod
+  // Toggle versatile weapon two-handing
+  const toggleWeaponTwoHanding = (index: number) => {
+    if (!character) return
+    const newWeapons = [...character.weapons]
+    newWeapons[index] = { ...newWeapons[index], isTwoHanding: !newWeapons[index].isTwoHanding }
+    updateCharacter({ weapons: newWeapons })
   }
 
   const addWeapon = () => {
@@ -1257,49 +1284,135 @@ export default function CharacterSheetPage() {
           {character.weapons.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-sm">No weapons yet.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                    <th className="pb-2">Name</th>
-                    <th className="pb-2">Attack</th>
-                    <th className="pb-2">Damage</th>
-                    <th className="pb-2 hidden sm:table-cell">Properties</th>
-                    <th className="pb-2 w-8"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {character.weapons.map((weapon, index) => {
-                    const attackBonus = getWeaponAttackBonus(weapon)
-                    const damageBonus = getWeaponDamageBonus(weapon)
-                    return (
-                      <tr key={index} className="text-gray-900 dark:text-white">
-                        <td className="py-2 font-medium">{weapon.name}</td>
-                        <td className="py-2 text-indigo-600 dark:text-indigo-400">
-                          {formatModifier(attackBonus)}
-                        </td>
-                        <td className="py-2">
-                          {weapon.damage}{damageBonus !== 0 && formatModifier(damageBonus)} {weapon.damageType}
-                        </td>
-                        <td className="py-2 text-gray-500 dark:text-gray-400 hidden sm:table-cell">
-                          {weapon.properties.length > 0 ? weapon.properties.join(', ') : '—'}
-                        </td>
-                        <td className="py-2">
-                          <button
-                            onClick={() => removeWeapon(index)}
-                            className="text-gray-400 hover:text-red-500 transition-colors"
-                            title="Remove weapon"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <div className="space-y-3">
+              {character.weapons.map((weapon, index) => {
+                const attackBonus = getWeaponAttackBonus(weapon)
+                const isProficient = isWeaponProficient(weapon)
+                const isVersatile = weapon.properties.includes('versatile')
+                const weaponData = getWeaponByName(weapon.name)
+                const strMod = getAbilityModifier(character.abilityScores.strength)
+                const dexMod = getAbilityModifier(character.abilityScores.dexterity)
+                const damageBonus = calculateDamageBonus(weapon, strMod, dexMod, false)
+
+                // Get current damage based on two-handing state
+                const currentDamage = isVersatile && weapon.isTwoHanding && weaponData?.versatileDamage
+                  ? weaponData.versatileDamage
+                  : weapon.damage
+
+                return (
+                  <div
+                    key={index}
+                    className={`border rounded-lg p-4 ${
+                      weapon.isEquipped
+                        ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50'
+                    }`}
+                  >
+                    {/* Weapon Header Row */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {/* Equip Toggle */}
+                        <button
+                          onClick={() => toggleWeaponEquipped(index)}
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                            weapon.isEquipped
+                              ? 'bg-indigo-600 border-indigo-600 text-white'
+                              : 'border-gray-400 dark:border-gray-500 hover:border-indigo-500'
+                          }`}
+                          title={weapon.isEquipped ? 'Unequip weapon' : 'Equip weapon'}
+                        >
+                          {weapon.isEquipped && (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                          )}
+                        </button>
+
+                        {/* Weapon Name */}
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {weapon.name}
+                        </span>
+
+                        {/* Proficiency Indicator */}
+                        {isProficient ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300" title="Proficient">
+                            <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Prof
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300" title="Not Proficient">
+                            <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            No Prof
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Remove Button */}
+                      <button
+                        onClick={() => removeWeapon(index)}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                        title="Remove weapon"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Attack and Damage Row */}
+                    <div className="flex flex-wrap items-center gap-4 mb-2">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Attack:</span>
+                        <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                          {formatModifier(attackBonus)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Damage:</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {currentDamage}{damageBonus !== 0 && formatModifier(damageBonus)} {weapon.damageType}
+                        </span>
+                      </div>
+
+                      {/* Versatile Toggle */}
+                      {isVersatile && weaponData?.versatileDamage && (
+                        <button
+                          onClick={() => toggleWeaponTwoHanding(index)}
+                          className={`px-2 py-1 text-xs rounded transition-colors ${
+                            weapon.isTwoHanding
+                              ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-medium'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={weapon.isTwoHanding ? 'Using two hands' : 'Using one hand'}
+                        >
+                          {weapon.isTwoHanding ? '2H' : '1H'}
+                          <span className="ml-1 text-gray-400 dark:text-gray-500">
+                            ({weapon.isTwoHanding ? weapon.damage : weaponData.versatileDamage})
+                          </span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Properties Row */}
+                    {weapon.properties.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {weapon.properties.map((prop) => (
+                          <span
+                            key={prop}
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                          >
+                            {prop}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
