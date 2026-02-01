@@ -116,6 +116,10 @@ export default function CharacterSheetPage() {
   const [toolRollResult, setToolRollResult] = useState<{ toolName: string; roll: number; bonus: number; total: number } | null>(null)
   // Armor picker state
   const [showArmorPicker, setShowArmorPicker] = useState(false)
+  // Currency management state
+  const [showQuickAddCurrency, setShowQuickAddCurrency] = useState(false)
+  const [quickAddAmount, setQuickAddAmount] = useState('')
+  const [quickAddType, setQuickAddType] = useState<'cp' | 'sp' | 'ep' | 'gp' | 'pp'>('gp')
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
   useEffect(() => {
@@ -286,6 +290,55 @@ export default function CharacterSheetPage() {
     if (!character) return
     updateCharacter({
       currency: { ...character.currency, [type]: value }
+    })
+  }
+
+  // Calculate total currency value in gold pieces
+  const getTotalValueInGold = useCallback(() => {
+    if (!character) return 0
+    const { cp, sp, ep, gp, pp } = character.currency
+    // Conversion rates: 1 pp = 10 gp, 1 gp = 1 gp, 1 ep = 0.5 gp, 1 sp = 0.1 gp, 1 cp = 0.01 gp
+    return (pp * 10) + gp + (ep * 0.5) + (sp * 0.1) + (cp * 0.01)
+  }, [character])
+
+  // Calculate total coin weight (50 coins = 1 lb)
+  const getTotalCoinWeight = useCallback(() => {
+    if (!character) return 0
+    const { cp, sp, ep, gp, pp } = character.currency
+    const totalCoins = cp + sp + ep + gp + pp
+    return totalCoins / 50
+  }, [character])
+
+  // Quick add currency
+  const quickAddCurrency = () => {
+    if (!character) return
+    const amount = parseInt(quickAddAmount) || 0
+    if (amount <= 0) return
+    updateCharacter({
+      currency: { ...character.currency, [quickAddType]: character.currency[quickAddType] + amount }
+    })
+    setQuickAddAmount('')
+    setShowQuickAddCurrency(false)
+  }
+
+  // Convert currency to highest denominations
+  const consolidateCurrency = () => {
+    if (!character) return
+    // Convert everything to copper first
+    const { cp, sp, ep, gp, pp } = character.currency
+    let totalCopper = cp + (sp * 10) + (ep * 50) + (gp * 100) + (pp * 1000)
+
+    // Convert back to highest denominations
+    const newPp = Math.floor(totalCopper / 1000)
+    totalCopper %= 1000
+    const newGp = Math.floor(totalCopper / 100)
+    totalCopper %= 100
+    const newSp = Math.floor(totalCopper / 10)
+    totalCopper %= 10
+    const newCp = totalCopper
+
+    updateCharacter({
+      currency: { cp: newCp, sp: newSp, ep: 0, gp: newGp, pp: newPp }
     })
   }
 
@@ -1987,25 +2040,133 @@ export default function CharacterSheetPage() {
 
         {/* Currency Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Currency
-          </h2>
-          <div className="grid grid-cols-5 gap-4">
-            {(['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((type) => (
-              <div key={type} className="text-center">
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">
-                  {type}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={character.currency[type]}
-                  onChange={(e) => updateCurrency(type, parseInt(e.target.value) || 0)}
-                  className="w-full px-2 py-2 text-center border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-semibold"
-                />
-              </div>
-            ))}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Currency
+            </h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowQuickAddCurrency(true)}
+                className="text-sm px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+              >
+                Quick Add
+              </button>
+              <button
+                onClick={consolidateCurrency}
+                className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+              >
+                Convert
+              </button>
+            </div>
           </div>
+
+          {/* Currency Inputs */}
+          <div className="grid grid-cols-5 gap-4 mb-4">
+            {(['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((type) => {
+              const labels: Record<'cp' | 'sp' | 'ep' | 'gp' | 'pp', string> = {
+                cp: 'Copper',
+                sp: 'Silver',
+                ep: 'Electrum',
+                gp: 'Gold',
+                pp: 'Platinum'
+              }
+              return (
+                <div key={type} className="text-center">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">
+                    {labels[type]}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={character.currency[type]}
+                    onChange={(e) => updateCurrency(type, parseInt(e.target.value) || 0)}
+                    className="w-full px-2 py-2 text-center border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-semibold"
+                  />
+                  <span className="text-xs text-gray-400 dark:text-gray-500 uppercase">{type}</span>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Total Value and Weight */}
+          <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Total Value: </span>
+              <span className="font-semibold text-amber-600 dark:text-amber-400">
+                {getTotalValueInGold().toFixed(2)} gp
+              </span>
+            </div>
+            <div className="text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Coin Weight: </span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                {getTotalCoinWeight().toFixed(2)} lbs
+              </span>
+              <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
+                ({character.currency.cp + character.currency.sp + character.currency.ep + character.currency.gp + character.currency.pp} coins)
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Add Currency Modal */}
+          {showQuickAddCurrency && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Quick Add Currency
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Amount
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={quickAddAmount}
+                      onChange={(e) => setQuickAddAmount(e.target.value)}
+                      placeholder="Enter amount..."
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Currency Type
+                    </label>
+                    <select
+                      value={quickAddType}
+                      onChange={(e) => setQuickAddType(e.target.value as 'cp' | 'sp' | 'ep' | 'gp' | 'pp')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="cp">Copper (cp)</option>
+                      <option value="sp">Silver (sp)</option>
+                      <option value="ep">Electrum (ep)</option>
+                      <option value="gp">Gold (gp)</option>
+                      <option value="pp">Platinum (pp)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    onClick={() => {
+                      setShowQuickAddCurrency(false)
+                      setQuickAddAmount('')
+                    }}
+                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={quickAddCurrency}
+                    disabled={!quickAddAmount || parseInt(quickAddAmount) <= 0}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Inventory Section */}
