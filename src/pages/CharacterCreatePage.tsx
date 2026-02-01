@@ -83,6 +83,7 @@ export default function CharacterCreatePage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [species, setSpecies] = useState('')
+  const [speciesAncestry, setSpeciesAncestry] = useState('')
   const [characterClass, setCharacterClass] = useState('')
   const [subclass, setSubclass] = useState('')
   const [background, setBackground] = useState('')
@@ -125,6 +126,19 @@ export default function CharacterCreatePage() {
     setSecondaryAbility('')
     setBalancedAbilities([])
   }
+
+  // Reset ancestry selection when species changes
+  const handleSpeciesChange = (newSpecies: string) => {
+    setSpecies(newSpecies)
+    setSpeciesAncestry('')
+  }
+
+  // Get the current species data and ancestry options
+  const speciesData = species ? getSpeciesByName(species) : undefined
+  const ancestryOptions = speciesData?.ancestry?.options ?? []
+  const selectedAncestryOption = speciesAncestry
+    ? ancestryOptions.find((opt) => opt.name === speciesAncestry)
+    : undefined
 
   // Toggle balanced ability selection
   const toggleBalancedAbility = (ability: AbilityName) => {
@@ -170,7 +184,10 @@ export default function CharacterCreatePage() {
     perceptionSkill?.expertise ?? false
   )
 
-  const isValid = name.trim() !== '' && species !== '' && characterClass !== ''
+  // Check if ancestry is required (species has ancestry options) and if it's selected
+  const ancestryRequired = speciesData?.ancestry !== undefined
+  const ancestryValid = !ancestryRequired || speciesAncestry !== ''
+  const isValid = name.trim() !== '' && species !== '' && characterClass !== '' && ancestryValid
 
   const updateAbilityScore = (ability: AbilityName, value: number) => {
     const clampedValue = Math.max(1, Math.min(30, value))
@@ -654,6 +671,9 @@ export default function CharacterCreatePage() {
       classFeatures: getClassFeaturesForLevel(characterClass, level),
       feats,
       speciesTraits: speciesData?.traits ?? [],
+      speciesAncestry: speciesData?.ancestry && speciesAncestry
+        ? { choiceName: speciesData.ancestry.choiceName, selectedOption: speciesAncestry }
+        : undefined,
       currency: startingCurrency,
       deathSaves: { ...DEFAULT_DEATH_SAVES },
       hitDice: { total: level, spent: 0 },
@@ -744,7 +764,7 @@ export default function CharacterCreatePage() {
               <select
                 id="species"
                 value={species}
-                onChange={(e) => setSpecies(e.target.value)}
+                onChange={(e) => handleSpeciesChange(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
                 <option value="">Select a species</option>
@@ -755,6 +775,36 @@ export default function CharacterCreatePage() {
                 ))}
               </select>
             </div>
+
+            {/* Species Ancestry Selection */}
+            {speciesData?.ancestry && (
+              <div>
+                <label
+                  htmlFor="speciesAncestry"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  {speciesData.ancestry.choiceName} *
+                </label>
+                <select
+                  id="speciesAncestry"
+                  value={speciesAncestry}
+                  onChange={(e) => setSpeciesAncestry(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="">Select {speciesData.ancestry.choiceName.toLowerCase()}</option>
+                  {ancestryOptions.map((option) => (
+                    <option key={option.name} value={option.name}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedAncestryOption && (
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    {selectedAncestryOption.description}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Class */}
             <div>
