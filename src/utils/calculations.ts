@@ -438,6 +438,41 @@ export function getLayOnHandsPool(paladinLevel: number): number {
   return 5 * clampedLevel
 }
 
+/**
+ * Classes that get Extra Attack at level 5
+ */
+export const EXTRA_ATTACK_CLASSES = ['Barbarian', 'Fighter', 'Monk', 'Paladin', 'Ranger'] as const
+
+/**
+ * Get the number of attacks per Attack action for a character
+ * Returns 1 for non-martial classes, 2 at level 5 for most martial classes
+ * Fighter gets 3 attacks at level 11 and 4 attacks at level 20
+ *
+ * @param className - The class name
+ * @param level - The character level (1-20)
+ * @returns The number of attacks per Attack action (1, 2, 3, or 4)
+ */
+export function getExtraAttackCount(className: string, level: number): 1 | 2 | 3 | 4 {
+  const clampedLevel = Math.max(1, Math.min(20, level))
+
+  // Fighter has unique progression: 2 at level 5, 3 at level 11, 4 at level 20
+  if (className === 'Fighter') {
+    if (clampedLevel >= 20) return 4
+    if (clampedLevel >= 11) return 3
+    if (clampedLevel >= 5) return 2
+    return 1
+  }
+
+  // Other martial classes get 2 attacks at level 5
+  if (EXTRA_ATTACK_CLASSES.includes(className as typeof EXTRA_ATTACK_CLASSES[number])) {
+    if (clampedLevel >= 5) return 2
+    return 1
+  }
+
+  // Non-martial classes get 1 attack
+  return 1
+}
+
 // =============================================================================
 // ASI (ABILITY SCORE IMPROVEMENT) TRACKING
 // =============================================================================
@@ -702,6 +737,10 @@ const SCALING_FEATURE_NAMES = {
   'Channel Divinity': 'channelDivinity',
   // Paladin
   'Lay on Hands': 'layOnHands',
+  // Martial classes - Extra Attack
+  'Extra Attack': 'extraAttack',
+  'Two Extra Attacks': 'extraAttack',
+  'Three Extra Attacks': 'extraAttack',
 } as const
 
 /**
@@ -773,6 +812,14 @@ export function getFeatureDisplayName(featureName: string, className: string, le
       if (className === 'Paladin') {
         const pool = getLayOnHandsPool(level)
         return `Lay on Hands (${pool} HP)`
+      }
+      break
+    case 'extraAttack':
+      // Handle Extra Attack for martial classes
+      if (EXTRA_ATTACK_CLASSES.includes(className as typeof EXTRA_ATTACK_CLASSES[number])) {
+        const attackCount = getExtraAttackCount(className, level)
+        // Return feature name with attack count
+        return `${featureName} (${attackCount} attacks)`
       }
       break
   }
