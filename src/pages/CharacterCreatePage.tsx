@@ -5,7 +5,7 @@ import { getClassNames } from '../data/classes'
 import type { AbilityScores, AbilityName, Skill, SkillName, Weapon, InventoryItem, Currency } from '../types'
 import { DEFAULT_ABILITY_SCORES, SKILL_ABILITIES, createDefaultSkills } from '../types'
 import { getAbilityModifier, formatModifier, getProficiencyBonus, getSkillBonus, getPassivePerception, getPactMagicSlots } from '../utils/calculations'
-import { saveCharacter } from '../utils/storage'
+import { createCharacter } from '../utils/api'
 import { getClassByName, getClassFeaturesForLevel, getSubclassNames } from '../data/classes'
 import type { StartingEquipmentChoice } from '../data/classes'
 import { getBackgroundNames, getBackgroundByName } from '../data/backgrounds'
@@ -91,6 +91,10 @@ export default function CharacterCreatePage() {
   const [abilityScores, setAbilityScores] = useState<AbilityScores>({ ...DEFAULT_ABILITY_SCORES })
   const [skills, setSkills] = useState<Skill[]>(createDefaultSkills())
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
+
+  // Save state
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   // Background ability score increase state
   const [abilityIncreaseMode, setAbilityIncreaseMode] = useState<AbilityIncreaseMode>('standard')
@@ -559,8 +563,11 @@ export default function CharacterCreatePage() {
     return weapons
   }
 
-  const handleCreateCharacter = () => {
-    if (!isValid) return
+  const handleCreateCharacter = async () => {
+    if (!isValid || isSaving) return
+
+    setIsSaving(true)
+    setSaveError(null)
 
     const classData = getClassByName(characterClass)
     const speciesData = getSpeciesByName(species)
@@ -619,9 +626,8 @@ export default function CharacterCreatePage() {
       characterClass
     )
 
-    // Build character object
-    const character: Character = {
-      id: crypto.randomUUID(),
+    // Build character data object (without id - server generates it)
+    const characterData = {
       name: name.trim(),
       species,
       class: characterClass,
@@ -664,9 +670,15 @@ export default function CharacterCreatePage() {
       toolProficiencies: [],
     }
 
-    // Save and navigate
-    saveCharacter(character)
-    navigate(`/character/${character.id}`)
+    try {
+      // Save to API and get the server-generated ID
+      const savedCharacter = await createCharacter(characterData)
+      navigate(`/character/${savedCharacter.id}`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save character'
+      setSaveError(message)
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -1606,18 +1618,39 @@ export default function CharacterCreatePage() {
             </div>
           </div>
 
+          {/* Error message */}
+          {saveError && (
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-500 dark:text-red-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-red-700 dark:text-red-300 font-medium">Failed to save character</p>
+                  <p className="text-red-600 dark:text-red-400 text-sm mt-1">{saveError}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
-              disabled={!isValid}
+              disabled={!isValid || isSaving}
               onClick={handleCreateCharacter}
-              className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-                isValid
+              className={`px-6 py-2 rounded-lg font-semibold transition-colors flex items-center gap-2 ${
+                isValid && !isSaving
                   ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
                   : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
               }`}
             >
-              Create Character
+              {isSaving && (
+                <svg className="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              )}
+              {isSaving ? 'Saving...' : saveError ? 'Retry' : 'Create Character'}
             </button>
           </div>
         </div>
