@@ -38,6 +38,23 @@ app.post('/api/characters', (req, res) => {
   res.status(201).json({ id, ...characterData });
 });
 
+// Get character by ID endpoint
+app.get('/api/characters/:id', (req, res) => {
+  const { id } = req.params;
+
+  const db = getDatabase();
+  const stmt = db.prepare('SELECT id, data FROM characters WHERE id = ?');
+  const row = stmt.get(id) as { id: string; data: string } | undefined;
+
+  if (!row) {
+    res.status(404).json({ error: 'Character not found' });
+    return;
+  }
+
+  const characterData = JSON.parse(row.data);
+  res.json({ id: row.id, ...characterData });
+});
+
 // Initialize database
 initializeDatabase();
 
