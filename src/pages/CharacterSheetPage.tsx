@@ -2,10 +2,11 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import type { Character } from '../types'
 import { getCharacterById, saveCharacter, exportCharacterAsJson } from '../utils/storage'
-import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties } from '../utils/calculations'
+import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties, calculateToolCheckBonus } from '../utils/calculations'
 import { getWeaponByName } from '../data/weapons'
 import { getArmorByName } from '../data/armor'
 import { GEAR, type GearData, type GearCategory } from '../data/gear'
+import { TOOLS, getToolByName, type ToolCategory } from '../data/tools'
 import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel } from '../data/classes'
 import { getSpeciesByName } from '../data/species'
 import { getSpellSaveDC, getSpellAttackBonus, XP_THRESHOLDS } from '../utils/calculations'
@@ -105,6 +106,11 @@ export default function CharacterSheetPage() {
   const [newItemCategory, setNewItemCategory] = useState('adventuring gear')
   const [newItemNotes, setNewItemNotes] = useState('')
   const [itemToDelete, setItemToDelete] = useState<number | null>(null)
+  // Tool proficiency state
+  const [showToolPicker, setShowToolPicker] = useState(false)
+  const [toolSearchQuery, setToolSearchQuery] = useState('')
+  const [toolCategoryFilter, setToolCategoryFilter] = useState<ToolCategory | 'all'>('all')
+  const [toolRollResult, setToolRollResult] = useState<{ toolName: string; roll: number; bonus: number; total: number } | null>(null)
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
   useEffect(() => {
@@ -345,6 +351,46 @@ export default function CharacterSheetPage() {
     newInventory.splice(index, 1)
     updateCharacter({ inventory: newInventory })
     setItemToDelete(null)
+  }
+
+  // Tool proficiency functions
+  const addToolProficiency = (toolName: string) => {
+    if (!character) return
+    // Don't add duplicate tools
+    if (character.toolProficiencies.includes(toolName)) return
+    updateCharacter({
+      toolProficiencies: [...character.toolProficiencies, toolName]
+    })
+    setShowToolPicker(false)
+    setToolSearchQuery('')
+    setToolCategoryFilter('all')
+  }
+
+  const removeToolProficiency = (toolName: string) => {
+    if (!character) return
+    updateCharacter({
+      toolProficiencies: character.toolProficiencies.filter(t => t !== toolName)
+    })
+  }
+
+  const rollToolCheck = (toolName: string) => {
+    if (!character) return
+    const toolData = getToolByName(toolName)
+    if (!toolData) return
+
+    const profBonus = getProficiencyBonus(character.level)
+    const abilityMod = getAbilityModifier(character.abilityScores[toolData.abilityUsed])
+    const hasProficiency = true // They have proficiency if it's in their list
+    const hasExpertise = false // TODO: Could add expertise tracking later
+    const bonus = calculateToolCheckBonus(toolName, abilityMod, profBonus, hasProficiency, hasExpertise)
+
+    // Roll d20
+    const roll = Math.floor(Math.random() * 20) + 1
+    const total = roll + bonus
+
+    setToolRollResult({ toolName, roll, bonus, total })
+    // Auto-clear the result after 5 seconds
+    setTimeout(() => setToolRollResult(null), 5000)
   }
 
   // Group inventory items by category
@@ -1977,6 +2023,98 @@ export default function CharacterSheetPage() {
             )
           })()}
         </div>
+
+        {/* Tool Proficiencies Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Tool Proficiencies
+            </h2>
+            <button
+              onClick={() => setShowToolPicker(true)}
+              className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+            >
+              Add Tool
+            </button>
+          </div>
+
+          {/* Tool Roll Result Display */}
+          {toolRollResult && (
+            <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                  {toolRollResult.toolName} Check
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {toolRollResult.roll} {toolRollResult.bonus >= 0 ? '+' : ''}{toolRollResult.bonus}
+                  </span>
+                  <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                    = {toolRollResult.total}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {character.toolProficiencies.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No tool proficiencies yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {character.toolProficiencies.map((toolName) => {
+                const toolData = getToolByName(toolName)
+                const abilityUsed = toolData?.abilityUsed || 'intelligence'
+                const abilityMod = getAbilityModifier(character.abilityScores[abilityUsed])
+                const profBonus = getProficiencyBonus(character.level)
+                const totalBonus = abilityMod + profBonus // Proficient with the tool
+
+                return (
+                  <div
+                    key={toolName}
+                    className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg px-4 py-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-900 dark:text-white font-medium">{toolName}</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 uppercase">
+                          {ABILITY_LABELS[abilityUsed]}
+                        </span>
+                      </div>
+                      {toolData && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {toolData.category}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {/* Bonus display */}
+                      <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                        {formatModifier(totalBonus)}
+                      </span>
+                      {/* Roll button */}
+                      <button
+                        onClick={() => rollToolCheck(toolName)}
+                        className="px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors text-sm font-medium"
+                      >
+                        Roll
+                      </button>
+                      {/* Remove button */}
+                      <button
+                        onClick={() => removeToolProficiency(toolName)}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        title="Remove tool proficiency"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
           </>
         )}
 
@@ -2694,6 +2832,102 @@ export default function CharacterSheetPage() {
               >
                 Remove
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tool Picker Modal */}
+      {showToolPicker && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Add Tool Proficiency
+              </h3>
+              <button
+                onClick={() => {
+                  setShowToolPicker(false)
+                  setToolSearchQuery('')
+                  setToolCategoryFilter('all')
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={toolSearchQuery}
+                onChange={(e) => setToolSearchQuery(e.target.value)}
+                placeholder="Search tools..."
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                autoFocus
+              />
+              <select
+                value={toolCategoryFilter}
+                onChange={(e) => setToolCategoryFilter(e.target.value as ToolCategory | 'all')}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                <option value="all">All Categories</option>
+                <option value="artisan's tools">Artisan's Tools</option>
+                <option value="gaming set">Gaming Sets</option>
+                <option value="musical instrument">Musical Instruments</option>
+                <option value="other">Other Tools</option>
+              </select>
+            </div>
+
+            {/* Tool List */}
+            <div className="flex-1 overflow-y-auto space-y-1">
+              {(() => {
+                const filteredTools = TOOLS.filter(tool => {
+                  // Filter out tools already in proficiencies
+                  if (character.toolProficiencies.includes(tool.name)) return false
+                  // Apply search filter
+                  if (toolSearchQuery && !tool.name.toLowerCase().includes(toolSearchQuery.toLowerCase())) return false
+                  // Apply category filter
+                  if (toolCategoryFilter !== 'all' && tool.category !== toolCategoryFilter) return false
+                  return true
+                })
+
+                if (filteredTools.length === 0) {
+                  return (
+                    <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                      {toolSearchQuery || toolCategoryFilter !== 'all'
+                        ? 'No matching tools found'
+                        : 'All tools already added'}
+                    </p>
+                  )
+                }
+
+                return filteredTools.map(tool => (
+                  <button
+                    key={tool.name}
+                    onClick={() => addToolProficiency(tool.name)}
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg text-left transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded capitalize">
+                          {tool.category}
+                        </span>
+                        <span className="font-medium text-gray-900 dark:text-white truncate">{tool.name}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {tool.weight} lb • {tool.cost} • Uses {ABILITY_LABELS[tool.abilityUsed]}
+                      </p>
+                    </div>
+                    <svg className="w-5 h-5 text-indigo-500 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                ))
+              })()}
             </div>
           </div>
         </div>
