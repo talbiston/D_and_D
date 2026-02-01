@@ -86,6 +86,7 @@ export default function CharacterCreatePage() {
   const [speciesAncestry, setSpeciesAncestry] = useState('')
   const [characterClass, setCharacterClass] = useState('')
   const [subclass, setSubclass] = useState('')
+  const [classOrder, setClassOrder] = useState('')
   const [background, setBackground] = useState('')
   const [level] = useState(1)
   const [abilityScores, setAbilityScores] = useState<AbilityScores>({ ...DEFAULT_ABILITY_SCORES })
@@ -187,7 +188,18 @@ export default function CharacterCreatePage() {
   // Check if ancestry is required (species has ancestry options) and if it's selected
   const ancestryRequired = speciesData?.ancestry !== undefined
   const ancestryValid = !ancestryRequired || speciesAncestry !== ''
-  const isValid = name.trim() !== '' && species !== '' && characterClass !== '' && ancestryValid
+
+  // Get class data and class order options
+  const classData = characterClass ? getClassByName(characterClass) : undefined
+  const classOrderOptions = classData?.classOrders ?? []
+  const selectedClassOrder = classOrder
+    ? classOrderOptions.find((opt) => opt.name === classOrder)
+    : undefined
+
+  // Check if class order is required and if it's selected
+  const classOrderRequired = classOrderOptions.length > 0
+  const classOrderValid = !classOrderRequired || classOrder !== ''
+  const isValid = name.trim() !== '' && species !== '' && characterClass !== '' && ancestryValid && classOrderValid
 
   const updateAbilityScore = (ability: AbilityName, value: number) => {
     const clampedValue = Math.max(1, Math.min(30, value))
@@ -426,10 +438,11 @@ export default function CharacterCreatePage() {
     setWeaponSelections(prev => ({ ...prev, [choiceIndex]: weaponName }))
   }
 
-  // Reset weapon and armor selections when class changes
+  // Reset weapon, armor, and class order selections when class changes
   const handleClassChange = (newClass: string) => {
     setCharacterClass(newClass)
     setSubclass('')
+    setClassOrder('')
     setWeaponSelections({})
     setArmorSelections({})
     setSelectedPack('')
@@ -696,6 +709,9 @@ export default function CharacterCreatePage() {
         : undefined,
       damageResistances: damageResistances.length > 0 ? damageResistances : undefined,
       breathWeapon,
+      classOrder: selectedClassOrder
+        ? { name: selectedClassOrder.name, description: selectedClassOrder.description }
+        : undefined,
       currency: startingCurrency,
       deathSaves: { ...DEFAULT_DEATH_SAVES },
       hitDice: { total: level, spent: 0 },
@@ -873,6 +889,36 @@ export default function CharacterCreatePage() {
                     </option>
                   ))}
                 </select>
+              </div>
+            )}
+
+            {/* Class Order (Divine Order, Primal Order, etc.) */}
+            {classOrderOptions.length > 0 && (
+              <div>
+                <label
+                  htmlFor="classOrder"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  {classData?.classOrderName || 'Class Order'} *
+                </label>
+                <select
+                  id="classOrder"
+                  value={classOrder}
+                  onChange={(e) => setClassOrder(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="">Select {(classData?.classOrderName || 'class order').toLowerCase()}</option>
+                  {classOrderOptions.map((order) => (
+                    <option key={order.name} value={order.name}>
+                      {order.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedClassOrder && (
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    {selectedClassOrder.description}
+                  </p>
+                )}
               </div>
             )}
 

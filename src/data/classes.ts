@@ -17,6 +17,12 @@ export interface StartingEquipmentChoice {
   items?: { item: string; quantity?: number }[] // Fixed items (receive all)
 }
 
+// Class Order (e.g., Divine Order for Cleric, Primal Order for Druid)
+export interface ClassOrder {
+  name: string
+  description: string
+}
+
 export interface ClassData {
   name: string
   hitDie: number
@@ -31,6 +37,8 @@ export interface ClassData {
   subclasses?: Subclass[]
   startingEquipment?: StartingEquipmentChoice[] // Equipment choices for character creation
   startingGold?: string // Dice formula for starting gold (e.g., "5d4 x 10")
+  classOrders?: ClassOrder[] // Level 1 class order choices (e.g., Divine Order, Primal Order)
+  classOrderName?: string // Display name for the order choice (e.g., "Divine Order", "Primal Order")
 }
 
 export const CLASSES: ClassData[] = [
@@ -284,6 +292,17 @@ export const CLASSES: ClassData[] = [
       { items: [{ item: 'Holy Symbol', quantity: 1 }] },
     ],
     startingGold: '5d4 x 10',
+    classOrderName: 'Divine Order',
+    classOrders: [
+      {
+        name: 'Protector',
+        description: 'Grants proficiency with Martial weapons and training with Heavy armor.',
+      },
+      {
+        name: 'Thaumaturge',
+        description: 'Grants one extra cantrip from the Cleric spell list and proficiency in the Religion skill.',
+      },
+    ],
   },
   {
     name: 'Druid',
@@ -370,6 +389,17 @@ export const CLASSES: ClassData[] = [
       { items: [{ item: 'Druidic Focus', quantity: 1 }] },
     ],
     startingGold: '2d4 x 10',
+    classOrderName: 'Primal Order',
+    classOrders: [
+      {
+        name: 'Magician',
+        description: 'Grants one extra cantrip from the Druid spell list and proficiency in the Arcana skill.',
+      },
+      {
+        name: 'Warden',
+        description: 'Grants proficiency with Martial weapons and training with Medium armor.',
+      },
+    ],
   },
   {
     name: 'Fighter',

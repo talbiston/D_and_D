@@ -142,6 +142,8 @@ export interface Character {
     damageType: string
     shape: string
   }
+  // Class order choice (e.g., Divine Order for Cleric, Primal Order for Druid)
+  classOrder?: { name: string; description: string }
 }
 
 // Damage types
