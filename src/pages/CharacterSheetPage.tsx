@@ -15,6 +15,8 @@ import { SKILL_ABILITIES } from '../types'
 import { useDarkModeContext } from '../context/DarkModeContext'
 import DiceRoller from '../components/DiceRoller'
 import LevelUpHPModal from '../components/LevelUpHPModal'
+import ASIModal, { type ASIChoice } from '../components/ASIModal'
+import { isASILevel } from '../utils/calculations'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -91,6 +93,8 @@ export default function CharacterSheetPage() {
   const [showFeatPicker, setShowFeatPicker] = useState(false)
   const [featSearchQuery, setFeatSearchQuery] = useState('')
   const [showLevelUpHPModal, setShowLevelUpHPModal] = useState(false)
+  const [showASIModal, setShowASIModal] = useState(false)
+  const [pendingLevelUp, setPendingLevelUp] = useState<{ newLevel: number; hpGain: number } | null>(null)
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
   useEffect(() => {
@@ -418,15 +422,67 @@ export default function CharacterSheetPage() {
   const handleLevelUpHPConfirm = (hpGain: number) => {
     if (!character) return
     const newLevel = character.level + 1
+    setShowLevelUpHPModal(false)
+
+    // Check if this level grants an ASI
+    if (isASILevel(character.class, newLevel)) {
+      // Store pending level up data and show ASI modal
+      setPendingLevelUp({ newLevel, hpGain })
+      setShowASIModal(true)
+    } else {
+      // No ASI at this level, complete level-up directly
+      const newMaxHp = character.maxHp + hpGain
+      updateCharacter({
+        level: newLevel,
+        maxHp: newMaxHp,
+        currentHp: Math.min(character.currentHp + hpGain, newMaxHp),
+        hitDice: { ...character.hitDice, total: newLevel }
+      })
+    }
+  }
+
+  const handleASIConfirm = (choice: ASIChoice) => {
+    if (!character || !pendingLevelUp) return
+    const { newLevel, hpGain } = pendingLevelUp
     const newMaxHp = character.maxHp + hpGain
 
-    updateCharacter({
-      level: newLevel,
-      maxHp: newMaxHp,
-      currentHp: Math.min(character.currentHp + hpGain, newMaxHp),
-      hitDice: { ...character.hitDice, total: newLevel }
-    })
-    setShowLevelUpHPModal(false)
+    if (choice.type === 'asi') {
+      // Apply ability score increases
+      const newAbilityScores = { ...character.abilityScores }
+      for (const increase of choice.increases) {
+        newAbilityScores[increase.ability] = Math.min(20, newAbilityScores[increase.ability] + increase.amount)
+      }
+      updateCharacter({
+        level: newLevel,
+        maxHp: newMaxHp,
+        currentHp: Math.min(character.currentHp + hpGain, newMaxHp),
+        hitDice: { ...character.hitDice, total: newLevel },
+        abilityScores: newAbilityScores
+      })
+    } else {
+      // Apply feat
+      const newFeats = [...character.feats, {
+        name: choice.feat.name,
+        description: choice.feat.description,
+        prerequisite: choice.feat.prerequisite
+      }]
+      updateCharacter({
+        level: newLevel,
+        maxHp: newMaxHp,
+        currentHp: Math.min(character.currentHp + hpGain, newMaxHp),
+        hitDice: { ...character.hitDice, total: newLevel },
+        feats: newFeats
+      })
+    }
+
+    setShowASIModal(false)
+    setPendingLevelUp(null)
+  }
+
+  const handleASICancel = () => {
+    // Cancel ASI modal - also cancels the level up
+    setShowASIModal(false)
+    setPendingLevelUp(null)
   }
 
   if (loading) {
@@ -2007,6 +2063,17 @@ export default function CharacterSheetPage() {
           newLevel={character.level + 1}
           onConfirm={handleLevelUpHPConfirm}
           onCancel={() => setShowLevelUpHPModal(false)}
+        />
+      )}
+
+      {/* ASI/Feat Modal */}
+      {showASIModal && character && pendingLevelUp && (
+        <ASIModal
+          currentAbilityScores={character.abilityScores}
+          currentFeats={character.feats}
+          newLevel={pendingLevelUp.newLevel}
+          onConfirm={handleASIConfirm}
+          onCancel={handleASICancel}
         />
       )}
     </div>
