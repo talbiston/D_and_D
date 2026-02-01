@@ -137,6 +137,11 @@ export interface Character {
   speciesAncestry?: { choiceName: string; selectedOption: string }
   // Damage resistances from ancestry or other sources
   damageResistances?: string[]
+  // Dragonborn breath weapon data
+  breathWeapon?: {
+    damageType: string
+    shape: string
+  }
 }
 
 // Damage types

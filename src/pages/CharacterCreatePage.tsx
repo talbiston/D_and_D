@@ -642,6 +642,26 @@ export default function CharacterCreatePage() {
       characterClass
     )
 
+    // Apply ancestry mechanics - extract resistances and breath weapon data
+    const selectedAncestryData = speciesData?.ancestry && speciesAncestry
+      ? speciesData.ancestry.options.find(opt => opt.name === speciesAncestry)
+      : undefined
+
+    // Build damage resistances array from ancestry
+    const damageResistances: string[] = []
+    if (selectedAncestryData?.damageResistance) {
+      damageResistances.push(selectedAncestryData.damageResistance)
+      // Special case: Goliath Storm ancestry grants both lightning AND thunder resistance
+      if (species === 'Goliath' && speciesAncestry === 'Storm') {
+        damageResistances.push('thunder')
+      }
+    }
+
+    // Build breath weapon data for Dragonborn
+    const breathWeapon = selectedAncestryData?.damageType && selectedAncestryData?.breathWeaponShape
+      ? { damageType: selectedAncestryData.damageType, shape: selectedAncestryData.breathWeaponShape }
+      : undefined
+
     // Build character data object (without id - server generates it)
     const characterData = {
       name: name.trim(),
@@ -674,6 +694,8 @@ export default function CharacterCreatePage() {
       speciesAncestry: speciesData?.ancestry && speciesAncestry
         ? { choiceName: speciesData.ancestry.choiceName, selectedOption: speciesAncestry }
         : undefined,
+      damageResistances: damageResistances.length > 0 ? damageResistances : undefined,
+      breathWeapon,
       currency: startingCurrency,
       deathSaves: { ...DEFAULT_DEATH_SAVES },
       hitDice: { total: level, spent: 0 },

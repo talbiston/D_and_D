@@ -86,3 +86,20 @@ Started: Sun Feb  1 04:01:39 PM CST 2026
   - The `isValid` pattern allows easy composition with additional requirements
   - Species data also provides `speed` and `size` for character creation
 ---
+
+## 2026-02-01 - US-005
+- What was implemented: Apply Ancestry Mechanics to Character
+  - Added `breathWeapon?: { damageType: string, shape: string }` to Character interface
+  - In handleCreateCharacter, look up the selected ancestry option from speciesData
+  - Build damageResistances array from ancestry's damageResistance field
+  - Special case: Goliath Storm ancestry adds both 'lightning' and 'thunder' resistances
+  - Build breathWeapon object for Dragonborn with damageType and shape from ancestry
+  - Added damageResistances and breathWeapon to character data object when saving
+- Files changed:
+  - src/types/index.ts
+  - src/pages/CharacterCreatePage.tsx
+- **Learnings for future iterations:**
+  - The ancestry mechanics are applied in handleCreateCharacter before building characterData
+  - Goliath Storm is a special case requiring manual handling of dual resistances (SpeciesAncestryOption only has single damageResistance field)
+  - breathWeapon data structure stores both damageType and shape for Dragonborn breath weapon display
+---
