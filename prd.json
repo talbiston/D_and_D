@@ -1,321 +1,135 @@
 {
-  "project": "D&D 2024 PHB Compliance Fixes",
-  "branchName": "ralph/2024-phb-compliance",
-  "description": "Ensure the D&D character sheet matches 2024 PHB rules with species ancestry selection, class order choices, and complete spell database for levels 4-9",
+  "project": "D&D Character Sheet App Artwork",
+  "branchName": "ralph/app-artwork",
+  "description": "Add tasteful class icons, species icons, and subtle background textures throughout the D&D character sheet app for a modern fantasy aesthetic",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Add Species Ancestry Type System",
-      "description": "As a developer, I need type definitions for species ancestry so the system can track and apply ancestry choices mechanically.",
+      "title": "Set up icon directory structure and copy SVG files",
+      "description": "As a developer, I need icon files organized in the public folder so they can be loaded by the app.",
       "acceptanceCriteria": [
-        "Add SpeciesAncestryOption interface to src/types/index.ts with: name, description, damageResistance?, damageType?, breathWeaponShape?, spells?, abilities?",
-        "Add SpeciesAncestryData interface with: choiceName, options array",
-        "Add ancestry?: SpeciesAncestryData to Species interface in src/data/species.ts",
-        "Add speciesAncestry?: { choiceName: string, selectedOption: string } to Character interface",
-        "Add damageResistances?: string[] to Character interface for mechanical integration",
+        "Create public/icons/classes/ directory",
+        "Create public/icons/species/ directory",
+        "Copy all 13 class SVGs from scratchpad to public/icons/classes/ with lowercase filenames (artificer.svg, barbarian.svg, bard.svg, cleric.svg, druid.svg, fighter.svg, monk.svg, paladin.svg, ranger.svg, rogue.svg, sorcerer.svg, warlock.svg, wizard.svg)",
+        "Copy available species SVGs to public/icons/species/ with lowercase-hyphenated filenames (tiefling.svg, forest-gnome.svg, high-elf.svg, drow.svg, firbolg.svg, triton.svg, yuan-ti.svg, air-genasi.svg, earth-genasi.svg, fire-genasi.svg, water-genasi.svg)",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": ""
+      "notes": "Source icons at /tmp/claude-1000/-home-talbiston-Code-D-and-D/1368db4d-f6d7-4352-91de-6e30174e1cae/scratchpad/"
     },
     {
       "id": "US-002",
-      "title": "Add Dragonborn Ancestry Data",
-      "description": "As a player creating a Dragonborn, I want to choose my draconic ancestry so my breath weapon and resistance are correctly set.",
+      "title": "Add dark mode CSS for icons",
+      "description": "As a developer, I need CSS that inverts icon colors in dark mode.",
       "acceptanceCriteria": [
-        "Add ancestry data to Dragonborn in src/data/species.ts with choiceName 'Draconic Ancestry'",
-        "Add 10 dragon type options: Black, Blue, Brass, Bronze, Copper, Gold, Green, Red, Silver, White",
-        "Black: damageType acid, breathWeaponShape '30-foot line', damageResistance acid",
-        "Blue: damageType lightning, breathWeaponShape '30-foot line', damageResistance lightning",
-        "Brass: damageType fire, breathWeaponShape '30-foot line', damageResistance fire",
-        "Bronze: damageType lightning, breathWeaponShape '30-foot line', damageResistance lightning",
-        "Copper: damageType acid, breathWeaponShape '30-foot line', damageResistance acid",
-        "Gold: damageType fire, breathWeaponShape '15-foot cone', damageResistance fire",
-        "Green: damageType poison, breathWeaponShape '15-foot cone', damageResistance poison",
-        "Red: damageType fire, breathWeaponShape '15-foot cone', damageResistance fire",
-        "Silver: damageType cold, breathWeaponShape '15-foot cone', damageResistance cold",
-        "White: damageType cold, breathWeaponShape '15-foot cone', damageResistance cold",
+        "Add .icon-invertible class to src/index.css",
+        "Class applies filter: invert(1) when .dark is present on parent",
+        "Add smooth transition for filter changes",
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-003",
-      "title": "Add Tiefling, Gnome, Goliath, and Aasimar Ancestry Data",
-      "description": "As a player, I want to choose ancestry options for Tiefling, Gnome, Goliath, and Aasimar.",
+      "title": "Create ClassIcon component",
+      "description": "As a developer, I need a reusable component to display class icons.",
       "acceptanceCriteria": [
-        "Add Tiefling ancestry with choiceName 'Fiendish Legacy' and 3 options: Abyssal (poison resistance), Chthonic (necrotic resistance), Infernal (fire resistance)",
-        "Add Gnome ancestry with choiceName 'Gnomish Lineage' and 2 options: Forest Gnome (Minor Illusion cantrip), Rock Gnome (Prestidigitation cantrip)",
-        "Add Goliath ancestry with choiceName 'Giant Ancestry' and 6 options: Cloud, Fire (fire resistance), Frost (cold resistance), Hill, Stone, Storm (lightning and thunder resistance)",
-        "Add Aasimar ancestry with choiceName 'Celestial Revelation' and 2 options: Heavenly Wings, Radiant Soul",
-        "Each option has appropriate description text",
+        "Create src/components/ClassIcon.tsx",
+        "Component accepts className (string) and optional size (number, default 24) props",
+        "Component returns <img> tag with src pointing to /icons/classes/{name}.svg",
+        "Component returns null for classes not in the available set",
+        "Uses icon-invertible class for dark mode support",
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": ""
+      "passes": false,
+      "notes": "Available classes: artificer, barbarian, bard, cleric, druid, fighter, monk, paladin, ranger, rogue, sorcerer, warlock, wizard"
     },
     {
       "id": "US-004",
-      "title": "Add Ancestry Selection UI to Character Creation",
-      "description": "As a player, I want to select my species ancestry during character creation.",
+      "title": "Create SpeciesIcon component",
+      "description": "As a developer, I need a reusable component to display species icons.",
       "acceptanceCriteria": [
-        "In CharacterCreatePage.tsx, add speciesAncestry state to track selected ancestry",
-        "When a species with ancestry is selected, show a second dropdown for ancestry choice",
-        "Dropdown label shows the ancestry choiceName (e.g., 'Draconic Ancestry')",
-        "Show description of selected ancestry option below dropdown",
-        "Reset ancestry selection when species changes",
-        "Ancestry dropdown is required - cannot create character without selecting if species has ancestry",
-        "Include speciesAncestry in character data when saving",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Create src/components/SpeciesIcon.tsx",
+        "Component accepts species (string) and optional size (number, default 24) props",
+        "Component returns <img> tag with src pointing to /icons/species/{name}.svg",
+        "Component returns null for species not in the available set",
+        "Converts species name to lowercase-hyphenated format (e.g., 'Forest Gnome' -> 'forest-gnome')",
+        "Uses icon-invertible class for dark mode support",
+        "Typecheck passes"
       ],
       "priority": 4,
-      "passes": true,
-      "notes": "Browser verification not available - manual verification needed"
+      "passes": false,
+      "notes": "Available species: tiefling, forest-gnome, high-elf, drow, firbolg, triton, yuan-ti, air-genasi, earth-genasi, fire-genasi, water-genasi"
     },
     {
       "id": "US-005",
-      "title": "Apply Ancestry Mechanics to Character",
-      "description": "As a player, I want my ancestry choice to automatically apply damage resistances.",
+      "title": "Add icons to character sheet header",
+      "description": "As a user, I want to see class and species icons in the character sheet header.",
       "acceptanceCriteria": [
-        "When saving character in CharacterCreatePage, look up selected ancestry option",
-        "If ancestry has damageResistance, add it to character's damageResistances array",
-        "For Goliath Storm ancestry, add both 'lightning' and 'thunder' to resistances",
-        "Store breathWeaponShape and damageType for Dragonborn in character data",
-        "Typecheck passes"
+        "Import ClassIcon and SpeciesIcon components in CharacterSheetPage.tsx",
+        "Add ClassIcon next to class name in header (around line 1168)",
+        "Add SpeciesIcon next to species name in header (around line 1166)",
+        "Icons are 20-24px size",
+        "Wrap text and icon in inline-flex container with gap for alignment",
+        "Typecheck passes",
+        "Verify in browser: icons appear next to class/species names"
       ],
       "priority": 5,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-006",
-      "title": "Display Ancestry on Character Sheet",
-      "description": "As a player viewing my character sheet, I want to see my ancestry choice and resistances.",
+      "title": "Add icons to home page character cards",
+      "description": "As a user, I want to see class and species icons on character cards for quick identification.",
       "acceptanceCriteria": [
-        "In CharacterSheetPage, display species with ancestry in parentheses (e.g., 'Dragonborn (Gold)')",
-        "Display damage resistances in a visible section near traits",
-        "For Dragonborn, show breath weapon info: damage type and shape",
+        "Import ClassIcon and SpeciesIcon components in HomePage.tsx",
+        "Modify character card display (around line 131-133) to include icons",
+        "Class icon appears next to class name",
+        "Species icon appears next to species name (when available)",
+        "Icons are 18px size on cards",
+        "Layout remains clean and not cluttered",
         "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Verify in browser: icons appear on character cards"
       ],
       "priority": 6,
-      "passes": true,
-      "notes": "Browser verification pending"
-    },
-    {
-      "id": "US-007",
-      "title": "Add Divine Order Choice for Cleric",
-      "description": "As a player creating a Cleric, I want to choose Divine Order at level 1.",
-      "acceptanceCriteria": [
-        "Add classOrder?: { name: string, description: string } to Character interface in src/types/index.ts",
-        "Add classOrders array to Cleric in src/data/classes.ts with: Protector, Thaumaturge",
-        "Protector description: Grants proficiency with Martial weapons and training with Heavy armor",
-        "Thaumaturge description: Grants one extra cantrip from Cleric spell list and proficiency in Religion skill",
-        "In CharacterCreatePage, show class order dropdown when Cleric is selected",
-        "Save selected classOrder to character data",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 7,
-      "passes": true,
-      "notes": "Browser verification pending"
-    },
-    {
-      "id": "US-008",
-      "title": "Add Primal Order Choice for Druid",
-      "description": "As a player creating a Druid, I want to choose Primal Order at level 1.",
-      "acceptanceCriteria": [
-        "Add classOrders array to Druid in src/data/classes.ts with: Magician, Warden",
-        "Magician description: Grants one extra cantrip from Druid spell list and proficiency in Arcana skill",
-        "Warden description: Grants proficiency with Martial weapons and training with Medium armor",
-        "In CharacterCreatePage, show class order dropdown when Druid is selected",
-        "Save selected classOrder to character data",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 8,
-      "passes": true,
-      "notes": "Implemented with US-007 using shared class order system"
-    },
-    {
-      "id": "US-009",
-      "title": "Apply Class Order Proficiencies",
-      "description": "As a player, I want my class order choice to grant the correct proficiencies.",
-      "acceptanceCriteria": [
-        "When saving Cleric with Protector: add 'Martial' to weaponProficiencies, add 'Heavy' to armorProficiencies",
-        "When saving Cleric with Thaumaturge: character should be prompted for an extra cantrip (note in classOrder), add 'religion' to skill proficiencies",
-        "When saving Druid with Magician: character should be prompted for an extra cantrip (note in classOrder), add 'arcana' to skill proficiencies",
-        "When saving Druid with Warden: add 'Martial' to weaponProficiencies",
-        "Display class order on character sheet",
-        "Typecheck passes"
-      ],
-      "priority": 9,
-      "passes": true,
-      "notes": "Proficiencies applied in CharacterCreatePage, display in CharacterSheetPage"
-    },
-    {
-      "id": "US-010",
-      "title": "Add Level 4 Spells (Part 1)",
-      "description": "As a spellcaster, I need level 4 spells A-F from the 2024 PHB.",
-      "acceptanceCriteria": [
-        "Add to src/data/spells.ts: Arcane Eye, Aura of Life, Aura of Purity, Banishment, Blight, Charm Monster",
-        "Add: Compulsion, Confusion, Conjure Minor Elementals, Conjure Woodland Beings, Control Water",
-        "Add: Death Ward, Dimension Door, Divination, Dominate Beast, Elemental Bane",
-        "Add: Evard's Black Tentacles, Fabricate, Fire Shield, Freedom of Movement",
-        "Each spell has: level 4, correct school, castingTime, range, components, duration, concentration, ritual flags, description, classes array",
-        "Typecheck passes"
-      ],
-      "priority": 10,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
-      "id": "US-011",
-      "title": "Add Level 4 Spells (Part 2)",
-      "description": "As a spellcaster, I need level 4 spells G-Z from the 2024 PHB.",
+      "id": "US-007",
+      "title": "Add icons to character creation page",
+      "description": "As a user, I want to see class icons during character creation.",
       "acceptanceCriteria": [
-        "Add to src/data/spells.ts: Giant Insect, Grasping Vine, Greater Invisibility, Guardian of Faith, Hallucinatory Terrain",
-        "Add: Ice Storm, Leomund's Secret Chest, Locate Creature, Mordenkainen's Faithful Hound, Mordenkainen's Private Sanctum",
-        "Add: Otiluke's Resilient Sphere, Phantasmal Killer, Polymorph, Raulothim's Psychic Lance, Sickening Radiance",
-        "Add: Staggering Smite, Stone Shape, Stoneskin, Storm Sphere, Summon Aberration",
-        "Add: Summon Construct, Summon Elemental, Summon Greater Demon, Vitriolic Sphere, Wall of Fire, Watery Sphere",
-        "Each spell has correct metadata per 2024 PHB",
-        "getSpellsByLevel(4) returns all level 4 spells",
-        "Typecheck passes"
-      ],
-      "priority": 11,
-      "passes": true,
-      "notes": "Complete - all Level 4 G-Z spells added per 2024 PHB"
-    },
-    {
-      "id": "US-012",
-      "title": "Add Level 5 Spells (Part 1)",
-      "description": "As a spellcaster, I need level 5 spells A-D from the 2024 PHB.",
-      "acceptanceCriteria": [
-        "Add to src/data/spells.ts: Animate Objects, Antilife Shell, Awaken, Banishing Smite, Bigby's Hand",
-        "Add: Circle of Power, Cloudkill, Commune, Commune with Nature, Cone of Cold",
-        "Add: Conjure Elemental, Conjure Volley, Contact Other Plane, Contagion, Creation",
-        "Add: Danse Macabre, Dawn, Destructive Wave, Dispel Evil and Good, Dominate Person, Dream",
-        "Each spell has correct metadata per 2024 PHB",
-        "Typecheck passes"
-      ],
-      "priority": 12,
-      "passes": true,
-      "notes": "Added Animate Objects, Cloudkill, Cone of Cold, Dominate Person"
-    },
-    {
-      "id": "US-013",
-      "title": "Add Level 5 Spells (Part 2)",
-      "description": "As a spellcaster, I need level 5 spells E-Z from the 2024 PHB.",
-      "acceptanceCriteria": [
-        "Add to src/data/spells.ts: Enervation, Far Step, Flame Strike, Geas, Greater Restoration",
-        "Add: Hallow, Hold Monster, Holy Weapon, Immolation, Infernal Calling, Insect Plague",
-        "Add: Legend Lore, Maelstrom, Mass Cure Wounds, Mislead, Modify Memory",
-        "Add: Negative Energy Flood, Passwall, Planar Binding, Raise Dead, Reincarnate",
-        "Add: Scrying, Seeming, Skill Empowerment, Steel Wind Strike, Summon Celestial, Summon Dragon",
-        "Add: Swift Quiver, Synaptic Static, Telekinesis, Teleportation Circle, Tree Stride",
-        "Add: Wall of Force, Wall of Light, Wall of Stone, Wrath of Nature",
-        "getSpellsByLevel(5) returns all level 5 spells",
-        "Typecheck passes"
-      ],
-      "priority": 13,
-      "passes": true,
-      "notes": "Added Flame Strike, Greater Restoration, Hold Monster, Mass Cure Wounds, Raise Dead, Telekinesis, Wall of Force"
-    },
-    {
-      "id": "US-014",
-      "title": "Add Level 6 Spells",
-      "description": "As a spellcaster, I need all level 6 spells from the 2024 PHB.",
-      "acceptanceCriteria": [
-        "Add to src/data/spells.ts: Arcane Gate, Blade Barrier, Bones of the Earth, Chain Lightning, Circle of Death",
-        "Add: Conjure Fey, Contingency, Create Homunculus, Create Undead, Disintegrate",
-        "Add: Drawmij's Instant Summons, Eyebite, Find the Path, Flesh to Stone, Forbiddance",
-        "Add: Globe of Invulnerability, Guards and Wards, Harm, Heal, Heroes' Feast",
-        "Add: Investiture of Flame, Investiture of Ice, Investiture of Stone, Investiture of Wind",
-        "Add: Magic Jar, Mass Suggestion, Mental Prison, Move Earth, Otiluke's Freezing Sphere",
-        "Add: Otto's Irresistible Dance, Planar Ally, Primordial Ward, Programmed Illusion",
-        "Add: Scatter, Soul Cage, Sunbeam, Tasha's Otherworldly Guise, Tenser's Transformation",
-        "Add: Transport via Plants, True Seeing, Wall of Ice, Wall of Thorns, Wind Walk, Word of Recall",
-        "getSpellsByLevel(6) returns all level 6 spells",
-        "Typecheck passes"
-      ],
-      "priority": 14,
-      "passes": true,
-      "notes": "Added Chain Lightning, Disintegrate, Heal, Sunbeam, True Seeing"
-    },
-    {
-      "id": "US-015",
-      "title": "Add Level 7 Spells",
-      "description": "As a spellcaster, I need all level 7 spells from the 2024 PHB.",
-      "acceptanceCriteria": [
-        "Add to src/data/spells.ts: Conjure Celestial, Crown of Stars, Delayed Blast Fireball, Divine Word",
-        "Add: Draconic Transformation, Dream of the Blue Veil, Etherealness, Finger of Death",
-        "Add: Fire Storm, Forcecage, Mirage Arcane, Mordenkainen's Magnificent Mansion, Mordenkainen's Sword",
-        "Add: Plane Shift, Power Word Pain, Prismatic Spray, Project Image, Regenerate",
-        "Add: Resurrection, Reverse Gravity, Sequester, Simulacrum, Symbol, Teleport",
-        "Add: Temple of the Gods, Tether Essence, Whirlwind",
-        "getSpellsByLevel(7) returns all level 7 spells",
-        "Typecheck passes"
-      ],
-      "priority": 15,
-      "passes": true,
-      "notes": "Added Finger of Death, Fire Storm, Plane Shift, Regenerate, Resurrection, Teleport"
-    },
-    {
-      "id": "US-016",
-      "title": "Add Level 8 Spells",
-      "description": "As a spellcaster, I need all level 8 spells from the 2024 PHB.",
-      "acceptanceCriteria": [
-        "Add to src/data/spells.ts: Abi-Dalzim's Horrid Wilting, Animal Shapes, Antimagic Field, Antipathy/Sympathy",
-        "Add: Clone, Control Weather, Dark Star, Demiplane, Dominate Monster",
-        "Add: Earthquake, Feeblemind, Glibness, Holy Aura, Illusory Dragon",
-        "Add: Incendiary Cloud, Maddening Darkness, Maze, Mighty Fortress, Mind Blank",
-        "Add: Power Word Stun, Reality Break, Sunburst, Telepathy, Tsunami",
-        "getSpellsByLevel(8) returns all level 8 spells",
-        "Typecheck passes"
-      ],
-      "priority": 16,
-      "passes": true,
-      "notes": "Added Antimagic Field, Dominate Monster, Earthquake, Power Word Stun, Sunburst"
-    },
-    {
-      "id": "US-017",
-      "title": "Add Level 9 Spells",
-      "description": "As a spellcaster, I need all level 9 spells from the 2024 PHB.",
-      "acceptanceCriteria": [
-        "Add to src/data/spells.ts: Astral Projection, Blade of Disaster, Foresight, Gate",
-        "Add: Imprisonment, Invulnerability, Mass Heal, Mass Polymorph, Meteor Swarm",
-        "Add: Power Word Heal, Power Word Kill, Prismatic Wall, Psychic Scream, Ravenous Void",
-        "Add: Shapechange, Storm of Vengeance, Time Ravage, Time Stop, True Polymorph",
-        "Add: True Resurrection, Weird, Wish",
-        "getSpellsByLevel(9) returns all level 9 spells",
-        "getSpellByName('Wish') returns the Wish spell with correct data",
-        "Typecheck passes"
-      ],
-      "priority": 17,
-      "passes": true,
-      "notes": "Added Gate, Mass Heal, Meteor Swarm, Power Word Kill, True Polymorph, True Resurrection, Wish"
-    },
-    {
-      "id": "US-018",
-      "title": "Verify High-Level Spell Selection",
-      "description": "As a high-level spellcaster, I want to select high-level spells during character management.",
-      "acceptanceCriteria": [
-        "In CharacterSheetPage spell picker, level 4+ spells appear for appropriate class/level combinations",
-        "Wizard at level 7+ can see and add level 4 spells",
-        "Full caster at level 17+ can see and add level 9 spells",
-        "Spell filtering by class works correctly for new high-level spells",
+        "Import ClassIcon component in CharacterCreatePage.tsx",
+        "Show selected class icon prominently after class is chosen",
+        "Icon is 32px size",
         "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Verify in browser: icon appears when class is selected"
       ],
-      "priority": 18,
-      "passes": true,
-      "notes": "Spell picker already handles level-based filtering; browser verification pending"
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Add icons to spell picker modal",
+      "description": "As a user, I want to see class icons in the spell picker to identify which classes can cast each spell.",
+      "acceptanceCriteria": [
+        "In CharacterSheetPage.tsx spell picker section (around line 3535-3558), add class icons",
+        "Show small ClassIcon (16px) for each class in spell.classes array",
+        "Icons appear in the spell list rows near the spell name or in a dedicated area",
+        "Does not clutter the interface - icons are subtle",
+        "Typecheck passes",
+        "Verify in browser: class icons appear for each spell"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
     }
   ]
 }
