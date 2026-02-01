@@ -10,7 +10,7 @@ export const FEATS: FeatData[] = [
   {
     name: 'Alert',
     description: 'You gain a +5 bonus to initiative. You cannot be surprised while conscious. Other creatures do not gain advantage on attack rolls against you as a result of being unseen by you.',
-    category: 'general',
+    category: 'origin',
   },
   {
     name: 'Athlete',
@@ -95,7 +95,7 @@ export const FEATS: FeatData[] = [
   {
     name: 'Healer',
     description: 'When you use a healer\'s kit to stabilize a dying creature, they also regain 1 HP. As an action, you can spend one use of a healer\'s kit to restore 1d6 + 4 + target\'s HD in HP. Each creature can only benefit from this once per rest.',
-    category: 'general',
+    category: 'origin',
   },
   {
     name: 'Heavily Armored',
@@ -122,7 +122,7 @@ export const FEATS: FeatData[] = [
   {
     name: 'Lucky',
     description: 'You have 3 luck points. Whenever you make an attack roll, ability check, or saving throw, you can spend a luck point to roll an additional d20 and choose which to use. You can also spend a luck point when an attack is made against you. You regain luck points on a long rest.',
-    category: 'general',
+    category: 'origin',
   },
   {
     name: 'Mage Slayer',
@@ -266,7 +266,7 @@ export const FEATS: FeatData[] = [
   {
     name: 'Tavern Brawler',
     description: 'Your Strength or Constitution score increases by 1 (max 20). You are proficient with improvised weapons. Your unarmed strikes deal 1d4 + Strength modifier bludgeoning damage. When you hit with an unarmed strike or improvised weapon on your turn, you can use a bonus action to grapple.',
-    category: 'general',
+    category: 'origin',
   },
   {
     name: 'Telekinetic',
