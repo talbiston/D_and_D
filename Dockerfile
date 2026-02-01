@@ -48,7 +48,9 @@ RUN npm ci --only=production
 
 # Copy built backend
 COPY --from=backend-builder /app/server/dist ./dist
-COPY --from=backend-builder /app/server/db ./db
+
+# Copy schema.sql to dist/db so it can be found by __dirname in compiled code
+COPY --from=backend-builder /app/server/db/schema.sql ./dist/db/
 
 # Copy built frontend to be served by backend
 COPY --from=frontend-builder /app/dist ../dist
