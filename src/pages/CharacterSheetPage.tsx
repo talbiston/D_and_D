@@ -1,8 +1,8 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import type { Character } from '../types'
-import { saveCharacter, exportCharacterAsJson } from '../utils/storage'
-import { getCharacter, ApiError } from '../utils/api'
+import { exportCharacterAsJson } from '../utils/storage'
+import { getCharacter, updateCharacter as updateCharacterApi, ApiError } from '../utils/api'
 import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties, calculateToolCheckBonus } from '../utils/calculations'
 import { getWeaponByName } from '../data/weapons'
 import { getArmorByName } from '../data/armor'
@@ -159,6 +159,12 @@ export default function CharacterSheetPage() {
   const [quickAddAmount, setQuickAddAmount] = useState('')
   const [quickAddType, setQuickAddType] = useState<'cp' | 'sp' | 'ep' | 'gp' | 'pp'>('gp')
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
+  // Auto-save state
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingCharacterRef = useRef<Character | null>(null)
 
   useEffect(() => {
     async function loadCharacter() {
@@ -188,12 +194,67 @@ export default function CharacterSheetPage() {
     loadCharacter()
   }, [id])
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+      if (savedTimeoutRef.current) {
+        clearTimeout(savedTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Perform the actual save to API
+  const saveToApi = useCallback(async (characterToSave: Character) => {
+    if (!characterToSave.id) return
+
+    setSaveStatus('saving')
+    setSaveError(null)
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id, ...dataWithoutId } = characterToSave
+      await updateCharacterApi(characterToSave.id, dataWithoutId)
+
+      setSaveStatus('saved')
+      // Clear "Saved" indicator after 2 seconds
+      if (savedTimeoutRef.current) {
+        clearTimeout(savedTimeoutRef.current)
+      }
+      savedTimeoutRef.current = setTimeout(() => {
+        setSaveStatus('idle')
+      }, 2000)
+    } catch (error) {
+      setSaveStatus('error')
+      setSaveError(error instanceof Error ? error.message : 'Failed to save')
+    }
+  }, [])
+
+  // Manual retry function
+  const retrySave = useCallback(() => {
+    if (pendingCharacterRef.current) {
+      saveToApi(pendingCharacterRef.current)
+    }
+  }, [saveToApi])
+
   const updateCharacter = useCallback((updates: Partial<Character>) => {
     if (!character) return
     const updated = { ...character, ...updates }
     setCharacter(updated)
-    saveCharacter(updated)
-  }, [character])
+    pendingCharacterRef.current = updated
+
+    // Clear any existing debounce timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    // Debounce: wait 500ms after last change before saving
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToApi(updated)
+    }, 500)
+  }, [character, saveToApi])
 
   const handleDamage = () => {
     if (!character) return
@@ -1089,6 +1150,40 @@ export default function CharacterSheetPage() {
                   {character.background} Background
                 </p>
               )}
+              {/* Save status indicator */}
+              <div className="mt-1 h-5 no-print">
+                {saveStatus === 'saving' && (
+                  <span className="text-sm text-gray-500 dark:text-gray-400 inline-flex items-center gap-1">
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Saving...
+                  </span>
+                )}
+                {saveStatus === 'saved' && (
+                  <span className="text-sm text-green-600 dark:text-green-400 inline-flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Saved
+                  </span>
+                )}
+                {saveStatus === 'error' && (
+                  <span className="text-sm text-red-600 dark:text-red-400 inline-flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {saveError || 'Save failed'}
+                    <button
+                      onClick={retrySave}
+                      className="ml-1 underline hover:no-underline"
+                    >
+                      Retry
+                    </button>
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex gap-2 no-print">
               <button
