@@ -532,6 +532,56 @@ export const CLASSES: ClassData[] = [
       { name: 'Ability Score Improvement', level: 19, description: 'Increase one ability score by 2, or two ability scores by 1 each. Alternatively, choose a feat.' },
       { name: 'Subclass Feature', level: 20, description: 'You gain a feature from your Sacred Oath.' },
     ],
+    subclasses: [
+      {
+        name: 'Oath of Devotion',
+        description: 'The Oath of Devotion binds a paladin to the loftiest ideals of justice, virtue, and order. These paladins, sometimes called cavaliers, white knights, or holy warriors, meet the ideal of the knight in shining armor.',
+        features: [
+          { name: 'Oath Spells', level: 3, description: 'You gain oath spells at the paladin levels listed: 3rd - Protection from Evil and Good, Shield of Faith; 5th - Aid, Zone of Truth; 9th - Beacon of Hope, Dispel Magic; 13th - Freedom of Movement, Guardian of Faith; 17th - Commune, Flame Strike.' },
+          { name: 'Sacred Weapon', level: 3, description: 'As a Magic action, you can expend one use of your Channel Divinity to imbue one weapon you are holding with positive energy. For 10 minutes, you add your Charisma modifier to attack rolls made with that weapon (minimum bonus of +1). The weapon also emits Bright Light in a 20-foot radius and Dim Light 20 feet beyond that. If the weapon is not already magical, it becomes magical for the duration. You can end this effect on your turn (no action required). This effect also ends if you no longer hold or carry the weapon, or if you have the Incapacitated condition.' },
+          { name: 'Turn the Unholy', level: 3, description: 'As a Magic action, you can expend one use of your Channel Divinity to speak a prayer censuring fiends and undead. Each Fiend or Undead that can see or hear you within 30 feet must make a Wisdom saving throw. If the creature fails its saving throw, it has the Turned condition for 1 minute or until it takes any damage.' },
+          { name: 'Aura of Devotion', level: 7, description: 'You and your allies are immune to the Charmed condition while within 10 feet of you. If a Charmed ally enters the aura, that ally\'s Charmed condition is suspended while in the aura. At 18th level, the aura extends to 30 feet.' },
+          { name: 'Smite of Protection', level: 15, description: 'When you or an ally within 30 feet takes damage, you can use your Reaction to expend a spell slot to reduce that damage by 2d8 plus 1d8 for each spell level above 1st.' },
+          { name: 'Holy Nimbus', level: 20, description: 'As a Bonus Action, you can emanate an aura of sunlight. For 1 minute, Bright Light shines from you in a 30-foot radius, and Dim Light shines 30 feet beyond that. Whenever an enemy creature starts its turn in the Bright Light, the creature takes 10 Radiant damage. In addition, for the duration, you have Advantage on saving throws against spells cast by Fiends or Undead. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
+        ],
+      },
+      {
+        name: 'Oath of Glory',
+        description: 'Paladins who take the Oath of Glory believe they and their companions are destined to achieve glory through deeds of heroism. They train diligently and encourage their companions to become worthy of legend.',
+        features: [
+          { name: 'Oath Spells', level: 3, description: 'You gain oath spells at the paladin levels listed: 3rd - Guiding Bolt, Heroism; 5th - Enhance Ability, Magic Weapon; 9th - Haste, Protection from Energy; 13th - Compulsion, Freedom of Movement; 17th - Legend Lore, Yolande\'s Regal Presence.' },
+          { name: 'Peerless Athlete', level: 3, description: 'As a Bonus Action, you can expend one use of your Channel Divinity to augment your athleticism. For 10 minutes, you have Advantage on Strength (Athletics) and Dexterity (Acrobatics) checks; you can carry, push, drag, and lift twice as much weight as normal; and the distance of your Long and High Jumps increases by 10 feet.' },
+          { name: 'Inspiring Smite', level: 3, description: 'Immediately after you deal damage to a creature with Divine Smite, you can expend one use of your Channel Divinity to distribute Temporary Hit Points to creatures of your choice within 30 feet of you. The total number of Temporary Hit Points equals 2d8 plus your Paladin level. Each creature can receive a number of Temporary Hit Points equal to or less than your Paladin level.' },
+          { name: 'Aura of Alacrity', level: 7, description: 'Your walking speed increases by 10 feet. In addition, whenever an ally starts their turn within 10 feet of you, that ally\'s walking speed increases by 10 feet until the end of that turn. At 18th level, the aura extends to 30 feet.' },
+          { name: 'Glorious Defense', level: 15, description: 'You can turn defense into a sudden strike. When you or an ally within 10 feet of you is hit by an attack roll, you can use your Reaction to add your Charisma modifier to the target\'s AC against that attack, potentially causing it to miss. If the attack misses, you can make one weapon attack against the attacker as part of this Reaction if the attacker is within your weapon\'s range. You can use this feature a number of times equal to your Charisma modifier (minimum 1), and you regain all expended uses when you finish a Long Rest.' },
+          { name: 'Living Legend', level: 20, description: 'As a Bonus Action, you can empower yourself with legends. For 1 minute, you have Advantage on Charisma checks, and when you miss with a weapon attack, you can choose to hit instead. Once on each of your turns when you make a weapon attack and hit, you can choose to deal an extra 20 Force damage. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
+        ],
+      },
+      {
+        name: 'Oath of the Ancients',
+        description: 'The Oath of the Ancients is as old as the race of elves and the rituals of the druids. These paladins, called fey knights, green knights, or horned knights, chose to ally with the light because they love the beautiful and life-giving things of the world.',
+        features: [
+          { name: 'Oath Spells', level: 3, description: 'You gain oath spells at the paladin levels listed: 3rd - Ensnaring Strike, Speak with Animals; 5th - Misty Step, Moonbeam; 9th - Plant Growth, Protection from Energy; 13th - Ice Storm, Stoneskin; 17th - Commune with Nature, Tree Stride.' },
+          { name: 'Nature\'s Wrath', level: 3, description: 'As a Magic action, you can expend one use of your Channel Divinity to conjure grasping spectral vines around a creature you can see within 10 feet of you. The creature must succeed on a Strength saving throw or have the Restrained condition. While Restrained by the vines, the creature repeats the saving throw at the end of each of its turns. On a success, the creature is freed.' },
+          { name: 'Turn the Faithless', level: 3, description: 'As a Magic action, you can expend one use of your Channel Divinity to speak an ancient word. Each Fey or Fiend that can see or hear you within 30 feet must make a Wisdom saving throw. If the creature fails its saving throw, it has the Turned condition for 1 minute or until it takes any damage.' },
+          { name: 'Aura of Warding', level: 7, description: 'You and friendly creatures within 10 feet of you have Resistance to damage from spells. At 18th level, the aura extends to 30 feet.' },
+          { name: 'Undying Sentinel', level: 15, description: 'When you are reduced to 0 Hit Points and are not killed outright, you can choose to drop to 1 Hit Point instead. Once you use this feature, you can\'t use it again until you finish a Long Rest. Additionally, you suffer none of the drawbacks of old age, and you can\'t be aged magically.' },
+          { name: 'Elder Champion', level: 20, description: 'As a Bonus Action, you can assume the form of an ancient force of nature. For 1 minute, you gain the following benefits: At the start of each of your turns, you regain 10 Hit Points. Whenever you cast a Paladin spell that has a casting time of 1 action, you can cast it as a Bonus Action instead. Enemy creatures within 10 feet of you have Disadvantage on saving throws against your Paladin spells and Channel Divinity options. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
+        ],
+      },
+      {
+        name: 'Oath of Vengeance',
+        description: 'The Oath of Vengeance is a solemn commitment to punish those who have committed grievous sins. These paladins are willing to sacrifice even their own righteousness to deliver justice upon those who do evil.',
+        features: [
+          { name: 'Oath Spells', level: 3, description: 'You gain oath spells at the paladin levels listed: 3rd - Bane, Hunter\'s Mark; 5th - Hold Person, Misty Step; 9th - Haste, Protection from Energy; 13th - Banishment, Dimension Door; 17th - Hold Monster, Scrying.' },
+          { name: 'Abjure Enemy', level: 3, description: 'As a Magic action, you can expend one use of your Channel Divinity to present your holy symbol and speak a prayer of denunciation. Choose one creature within 60 feet of you that you can see. That creature must make a Wisdom saving throw, unless it is immune to the Frightened condition. Fiends and Undead have Disadvantage on this saving throw. On a failed save, the creature has the Frightened condition for 1 minute or until it takes any damage. While Frightened, the creature\'s Speed is 0.' },
+          { name: 'Vow of Enmity', level: 3, description: 'As a Bonus Action, you can expend one use of your Channel Divinity to utter a vow of enmity against a creature you can see within 10 feet of you. You gain Advantage on attack rolls against the creature for 1 minute or until it drops to 0 Hit Points or falls Unconscious.' },
+          { name: 'Relentless Avenger', level: 7, description: 'Your supernatural focus helps you close off a foe\'s retreat. When you hit a creature with an Opportunity Attack, you can move up to half your Speed immediately after the attack as part of the same Reaction. This movement doesn\'t provoke Opportunity Attacks.' },
+          { name: 'Soul of Vengeance', level: 15, description: 'The authority with which you speak your Vow of Enmity gives you greater power over your foe. When a creature under the effect of your Vow of Enmity makes an attack, you can use your Reaction to make a melee weapon attack against that creature if it is within range.' },
+          { name: 'Avenging Angel', level: 20, description: 'As a Bonus Action, you can transform, gaining the following benefits for 1 minute: Wings sprout from your back and grant you a Fly Speed of 60 feet. You emanate an aura of menace in a 30-foot radius. The first time any enemy creature enters the aura or starts its turn there during a battle, the creature must succeed on a Wisdom saving throw or have the Frightened condition for 1 minute or until it takes any damage. Attack rolls against the Frightened creature have Advantage. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
+        ],
+      },
+    ],
   },
   {
     name: 'Ranger',
