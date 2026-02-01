@@ -32,6 +32,8 @@ import LevelUpSpellPickerModal from '../components/LevelUpSpellPickerModal'
 import { getSorceryPoints, isKnownCaster } from '../utils/calculations'
 import WeaponPickerModal from '../components/WeaponPickerModal'
 import ArmorPickerModal from '../components/ArmorPickerModal'
+import ClassIcon from '../components/ClassIcon'
+import SpeciesIcon from '../components/SpeciesIcon'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -1163,9 +1165,9 @@ export default function CharacterSheetPage() {
                     </span>
                   </button>
                 )}
-                {' '}{character.species}
+                {' '}<span className="inline-flex items-center gap-1"><SpeciesIcon species={character.species} size={20} />{character.species}</span>
                 {character.speciesAncestry && ` (${character.speciesAncestry.selectedOption})`}
-                {' '}{character.class}
+                {' '}<span className="inline-flex items-center gap-1"><ClassIcon className={character.class} size={20} />{character.class}</span>
                 {character.subclass && ` (${character.subclass})`}
               </p>
               {character.classOrder && (
