@@ -165,6 +165,9 @@ export default function CharacterSheetPage() {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const savedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingCharacterRef = useRef<Character | null>(null)
+  // Share link state
+  const [showLinkCopied, setShowLinkCopied] = useState(false)
+  const linkCopiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     async function loadCharacter() {
@@ -203,6 +206,9 @@ export default function CharacterSheetPage() {
       if (savedTimeoutRef.current) {
         clearTimeout(savedTimeoutRef.current)
       }
+      if (linkCopiedTimeoutRef.current) {
+        clearTimeout(linkCopiedTimeoutRef.current)
+      }
     }
   }, [])
 
@@ -238,6 +244,21 @@ export default function CharacterSheetPage() {
       saveToApi(pendingCharacterRef.current)
     }
   }, [saveToApi])
+
+  const copyShareLink = useCallback(() => {
+    const url = `${window.location.origin}/character/${id}`
+    navigator.clipboard.writeText(url).then(() => {
+      // Clear any existing timeout
+      if (linkCopiedTimeoutRef.current) {
+        clearTimeout(linkCopiedTimeoutRef.current)
+      }
+      setShowLinkCopied(true)
+      // Hide after 2 seconds
+      linkCopiedTimeoutRef.current = setTimeout(() => {
+        setShowLinkCopied(false)
+      }, 2000)
+    })
+  }, [id])
 
   const updateCharacter = useCallback((updates: Partial<Character>) => {
     if (!character) return
@@ -1217,6 +1238,20 @@ export default function CharacterSheetPage() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                   </svg>
+                )}
+              </button>
+              <button
+                onClick={copyShareLink}
+                className="p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors relative"
+                title="Copy shareable link"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                {showLinkCopied && (
+                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 px-2 py-1 text-xs bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded whitespace-nowrap">
+                    Link copied!
+                  </span>
                 )}
               </button>
               <button
