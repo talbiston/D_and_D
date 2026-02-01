@@ -4,7 +4,7 @@ import { getSpeciesNames } from '../data/species'
 import { getClassNames } from '../data/classes'
 import type { AbilityScores, AbilityName, Skill, SkillName } from '../types'
 import { DEFAULT_ABILITY_SCORES, SKILL_ABILITIES, createDefaultSkills } from '../types'
-import { getAbilityModifier, formatModifier, getProficiencyBonus, getSkillBonus, getPassivePerception } from '../utils/calculations'
+import { getAbilityModifier, formatModifier, getProficiencyBonus, getSkillBonus, getPassivePerception, getPactMagicSlots } from '../utils/calculations'
 import { saveCharacter } from '../utils/storage'
 import { getClassByName, getClassFeaturesForLevel, getSubclassNames } from '../data/classes'
 import { getBackgroundNames, getBackgroundByName } from '../data/backgrounds'
@@ -224,6 +224,8 @@ export default function CharacterCreatePage() {
       equipment,
       spells: [],
       spellSlots: { ...DEFAULT_SPELL_SLOTS },
+      pactMagic: characterClass === 'Warlock' ? { ...getPactMagicSlots(level), expended: 0 } : undefined,
+      eldritchInvocations: characterClass === 'Warlock' ? [] : undefined,
       spellcastingAbility: classData?.spellcastingAbility,
       classFeatures: getClassFeaturesForLevel(characterClass, level),
       feats,

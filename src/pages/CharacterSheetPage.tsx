@@ -17,7 +17,9 @@ import DiceRoller from '../components/DiceRoller'
 import LevelUpHPModal from '../components/LevelUpHPModal'
 import ASIModal, { type ASIChoice } from '../components/ASIModal'
 import LevelUpSummaryModal from '../components/LevelUpSummaryModal'
-import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel } from '../utils/calculations'
+import InvocationPickerModal from '../components/InvocationPickerModal'
+import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel, getPactMagicSlots } from '../utils/calculations'
+import { INVOCATIONS, getInvocationsKnown } from '../data/invocations'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -67,6 +69,12 @@ const SKILLS_BY_ABILITY: Record<AbilityName, SkillName[]> = {
   charisma: ['deception', 'intimidation', 'performance', 'persuasion'],
 }
 
+// Helper to get ordinal suffix for spell slot levels
+function getOrdinalLevel(level: number): string {
+  const ordinals = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th']
+  return ordinals[level] || `${level}th`
+}
+
 export default function CharacterSheetPage() {
   const { id } = useParams<{ id: string }>()
   const [character, setCharacter] = useState<Character | null>(null)
@@ -95,6 +103,7 @@ export default function CharacterSheetPage() {
   const [featSearchQuery, setFeatSearchQuery] = useState('')
   const [showLevelUpHPModal, setShowLevelUpHPModal] = useState(false)
   const [showASIModal, setShowASIModal] = useState(false)
+  const [showInvocationPicker, setShowInvocationPicker] = useState(false)
   const [pendingLevelUp, setPendingLevelUp] = useState<{ levelUpResult: LevelUpResult; hpGain: number } | null>(null)
   const [levelUpSummary, setLevelUpSummary] = useState<{
     newLevel: number
@@ -210,17 +219,41 @@ export default function CharacterSheetPage() {
     })
   }
 
+  const togglePactMagicSlot = () => {
+    if (!character || !character.pactMagic) return
+    const { slotCount, slotLevel, expended } = character.pactMagic
+    const newExpended = expended >= slotCount ? 0 : expended + 1
+    updateCharacter({
+      pactMagic: { slotCount, slotLevel, expended: newExpended }
+    })
+  }
+
+  const shortRest = () => {
+    if (!character) return
+    // Short rest resets Pact Magic slots for Warlocks
+    if (character.pactMagic) {
+      updateCharacter({
+        pactMagic: { ...character.pactMagic, expended: 0 }
+      })
+    }
+  }
+
   const longRest = () => {
     if (!character) return
     const resetSlots = { ...character.spellSlots }
     for (const level of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
       resetSlots[level] = { ...resetSlots[level], expended: 0 }
     }
-    updateCharacter({
+    const updates: Partial<Character> = {
       spellSlots: resetSlots,
       currentHp: character.maxHp,
       hitDice: { ...character.hitDice, spent: 0 }
-    })
+    }
+    // Also reset Pact Magic slots for Warlocks
+    if (character.pactMagic) {
+      updates.pactMagic = { ...character.pactMagic, expended: 0 }
+    }
+    updateCharacter(updates)
   }
 
   const addSpell = (spell: Spell) => {
@@ -453,6 +486,15 @@ export default function CharacterSheetPage() {
         7: { total: newSpellSlots[7].total, expended: Math.min(character.spellSlots[7].expended, newSpellSlots[7].total) },
         8: { total: newSpellSlots[8].total, expended: Math.min(character.spellSlots[8].expended, newSpellSlots[8].total) },
         9: { total: newSpellSlots[9].total, expended: Math.min(character.spellSlots[9].expended, newSpellSlots[9].total) },
+      }
+
+      // Update Pact Magic for Warlocks
+      if (character.class === 'Warlock' && character.pactMagic) {
+        const newPactMagic = getPactMagicSlots(newLevel)
+        updates.pactMagic = {
+          ...newPactMagic,
+          expended: Math.min(character.pactMagic.expended, newPactMagic.slotCount)
+        }
       }
       // Note: Equipment, currency, feats, and spells are preserved (not modified)
     }
@@ -1056,6 +1098,74 @@ export default function CharacterSheetPage() {
           })()}
         </div>
 
+        {/* Eldritch Invocations (Warlock only) */}
+        {character.class === 'Warlock' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Eldritch Invocations
+                <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                  ({(character.eldritchInvocations?.length ?? 0)}/{getInvocationsKnown(character.level)})
+                </span>
+              </h2>
+              <button
+                onClick={() => setShowInvocationPicker(true)}
+                className="text-sm px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
+              >
+                Manage Invocations
+              </button>
+            </div>
+            {character.eldritchInvocations && character.eldritchInvocations.length > 0 ? (
+              <div className="space-y-2">
+                {character.eldritchInvocations.map((invocationName) => {
+                  const invocation = INVOCATIONS.find(inv => inv.name === invocationName)
+                  if (!invocation) return null
+                  const isExpanded = expandedFeatures.has(invocationName)
+                  return (
+                    <div
+                      key={invocationName}
+                      className="bg-purple-50 dark:bg-purple-900/30 rounded-lg overflow-hidden"
+                    >
+                      <button
+                        onClick={() => toggleFeatureExpanded(invocationName)}
+                        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-purple-900 dark:text-purple-200">
+                            {invocation.name}
+                          </span>
+                          {invocation.pactRequirement && (
+                            <span className="text-xs px-2 py-0.5 rounded bg-purple-200 dark:bg-purple-800 text-purple-700 dark:text-purple-300">
+                              Pact Boon
+                            </span>
+                          )}
+                        </div>
+                        <svg
+                          className={`w-5 h-5 text-purple-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {isExpanded && (
+                        <div className="px-4 pb-3 text-sm text-purple-700 dark:text-purple-300">
+                          {invocation.description}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">
+                No invocations selected. Click "Manage Invocations" to choose your Eldritch Invocations.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Species Traits */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -1245,38 +1355,81 @@ export default function CharacterSheetPage() {
               )
             })()}
 
-            {/* Spell Slots */}
+            {/* Spell Slots / Pact Magic */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Spell Slots</h3>
-              <div className="flex flex-wrap gap-4">
-                {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((level) => {
-                  const slot = character.spellSlots[level]
-                  if (slot.total === 0) return null
-                  return (
-                    <div key={level} className="text-center">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Level {level}</p>
-                      <button
-                        onClick={() => toggleSpellSlot(level)}
-                        className="flex gap-1"
-                      >
-                        {Array.from({ length: slot.total }).map((_, i) => (
-                          <div
-                            key={i}
-                            className={`w-4 h-4 rounded-full border-2 transition-colors ${
-                              i < slot.total - slot.expended
-                                ? 'bg-indigo-500 border-indigo-500'
-                                : 'border-gray-400 dark:border-gray-500'
-                            }`}
-                          />
-                        ))}
-                      </button>
-                    </div>
-                  )
-                })}
-                {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).every((level) => character.spellSlots[level].total === 0) && (
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">No spell slots at this level</p>
-                )}
-              </div>
+              {character.pactMagic ? (
+                // Warlock Pact Magic display
+                <>
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Pact Magic
+                      <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+                        ({character.pactMagic.slotCount} {character.pactMagic.slotCount === 1 ? 'slot' : 'slots'} at {getOrdinalLevel(character.pactMagic.slotLevel)} level)
+                      </span>
+                    </h3>
+                    <button
+                      onClick={shortRest}
+                      className="text-xs px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                    >
+                      Short Rest
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={togglePactMagicSlot}
+                      className="flex gap-1"
+                    >
+                      {Array.from({ length: character.pactMagic.slotCount }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-5 h-5 rounded-full border-2 transition-colors ${
+                            i < character.pactMagic!.slotCount - character.pactMagic!.expended
+                              ? 'bg-purple-500 border-purple-500'
+                              : 'border-gray-400 dark:border-gray-500'
+                          }`}
+                        />
+                      ))}
+                    </button>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {character.pactMagic.slotCount - character.pactMagic.expended}/{character.pactMagic.slotCount} available
+                    </span>
+                  </div>
+                </>
+              ) : (
+                // Regular spell slots display
+                <>
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Spell Slots</h3>
+                  <div className="flex flex-wrap gap-4">
+                    {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((level) => {
+                      const slot = character.spellSlots[level]
+                      if (slot.total === 0) return null
+                      return (
+                        <div key={level} className="text-center">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Level {level}</p>
+                          <button
+                            onClick={() => toggleSpellSlot(level)}
+                            className="flex gap-1"
+                          >
+                            {Array.from({ length: slot.total }).map((_, i) => (
+                              <div
+                                key={i}
+                                className={`w-4 h-4 rounded-full border-2 transition-colors ${
+                                  i < slot.total - slot.expended
+                                    ? 'bg-indigo-500 border-indigo-500'
+                                    : 'border-gray-400 dark:border-gray-500'
+                                }`}
+                              />
+                            ))}
+                          </button>
+                        </div>
+                      )
+                    })}
+                    {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).every((level) => character.spellSlots[level].total === 0) && (
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">No spell slots at this level</p>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Known Spells */}
@@ -2161,6 +2314,20 @@ export default function CharacterSheetPage() {
           newLevel={pendingLevelUp.levelUpResult.character.level}
           onConfirm={handleASIConfirm}
           onCancel={handleASICancel}
+        />
+      )}
+
+      {/* Invocation Picker Modal */}
+      {showInvocationPicker && character && character.class === 'Warlock' && (
+        <InvocationPickerModal
+          warlockLevel={character.level}
+          currentInvocations={character.eldritchInvocations ?? []}
+          hasEldritchBlast={character.spells.some(s => s.name === 'Eldritch Blast')}
+          onConfirm={(invocations) => {
+            updateCharacter({ eldritchInvocations: invocations })
+            setShowInvocationPicker(false)
+          }}
+          onCancel={() => setShowInvocationPicker(false)}
         />
       )}
 

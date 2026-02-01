@@ -93,6 +93,8 @@ export interface Character {
   // Spells
   spells: Spell[]
   spellSlots: SpellSlots
+  pactMagic?: PactMagic // Warlock Pact Magic slots (optional, only for Warlocks)
+  eldritchInvocations?: string[] // Names of Eldritch Invocations known (Warlocks only)
   spellcastingAbility?: AbilityName
   // Features & traits
   classFeatures: ClassFeature[]
@@ -216,6 +218,13 @@ export interface SpellSlotLevel {
   expended: number
 }
 
+// Warlock Pact Magic tracking
+export interface PactMagic {
+  slotCount: number // Number of pact magic slots
+  slotLevel: number // The spell level of pact magic slots (1-5)
+  expended: number // Number of slots expended
+}
+
 export type SpellSlots = {
   1: SpellSlotLevel
   2: SpellSlotLevel
@@ -312,6 +321,13 @@ export const DEFAULT_SPELL_SLOTS: SpellSlots = {
   7: { total: 0, expended: 0 },
   8: { total: 0, expended: 0 },
   9: { total: 0, expended: 0 },
+}
+
+// Default Pact Magic for Warlock level 1
+export const DEFAULT_PACT_MAGIC: PactMagic = {
+  slotCount: 1,
+  slotLevel: 1,
+  expended: 0,
 }
 
 // Default currency (all zeros)
