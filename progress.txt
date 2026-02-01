@@ -182,3 +182,16 @@ Started: Sun Feb  1 03:09:55 AM CST 2026
   - Useful context: Delete confirmation modal disables buttons and shows "Deleting..." during API call
   - Note: Manual browser verification needed - no dev-browser skill available
 ---
+
+## 2026-02-01 - US-015
+- What was implemented: Shareable link UI with copy-to-clipboard functionality and toast notification
+- Files changed:
+  - src/pages/CharacterSheetPage.tsx (modified) - added Share button with link icon, copyShareLink function, showLinkCopied toast state
+- **Learnings for future iterations:**
+  - Patterns discovered: Use useRef for timeout IDs to enable proper cleanup in useEffect return
+  - Patterns discovered: Toast notifications use absolute positioning with transform for centering below the button
+  - Gotchas encountered: Must clear existing timeout before setting a new one to prevent multiple toasts
+  - Useful context: navigator.clipboard.writeText() is async and returns a Promise
+  - Useful context: URL format is `${window.location.origin}/character/${id}` for portable shareable links
+  - Note: Manual browser verification needed - no dev-browser skill available
+---
