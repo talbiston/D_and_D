@@ -6,6 +6,9 @@ Started: Sun Feb  1 03:09:55 AM CST 2026
 - Server uses ts-node for development, tsc for production builds
 - Server runs on PORT env var (default 3001)
 - Run `npm run typecheck` in server/ to verify types
+- Database module in `server/db/index.ts` exports `initializeDatabase()` and `getDatabase()`
+- SQLite database stored at `server/data/characters.db` (gitignored)
+- Use nanoid v3 for generating unique IDs (CommonJS compatible)
 
 ---
 
@@ -19,4 +22,29 @@ Started: Sun Feb  1 03:09:55 AM CST 2026
   - Patterns discovered: Server uses cors middleware for cross-origin requests
   - Gotchas encountered: None
   - Useful context: Health check at GET /api/health returns { status: 'ok' }
+---
+
+## 2026-02-01 - US-002
+- What was implemented: SQLite database setup with better-sqlite3, characters table schema
+- Files changed:
+  - server/db/schema.sql (new) - characters table schema
+  - server/db/index.ts (new) - database initialization module
+  - server/index.ts (modified) - added initializeDatabase() call
+  - server/package.json (modified) - added better-sqlite3 dependency
+  - .gitignore (modified) - added server/data/ to ignore database files
+- **Learnings for future iterations:**
+  - Patterns discovered: Use `getDatabase()` from server/db/index.ts to access the db instance
+  - Gotchas encountered: Run initializeDatabase() before any routes that need DB access
+  - Useful context: Schema uses CREATE TABLE IF NOT EXISTS for idempotent initialization
+---
+
+## 2026-02-01 - US-003
+- What was implemented: POST /api/characters endpoint for creating characters
+- Files changed:
+  - server/index.ts (modified) - added POST /api/characters route with nanoid ID generation
+  - server/package.json (modified) - added nanoid dependency
+- **Learnings for future iterations:**
+  - Patterns discovered: Use nanoid v3 (CommonJS compatible) for ID generation
+  - Gotchas encountered: Validate request body exists and is a non-empty object before processing
+  - Useful context: POST returns 201 with { id, ...characterData }, 400 if body invalid
 ---
