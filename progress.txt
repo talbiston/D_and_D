@@ -249,3 +249,23 @@ Started: Sun Feb  1 12:07:52 AM CST 2026
   - State variables: showACBreakdown, showACOverride, acOverrideValue for managing the expanded UI elements
   - Breakdown tooltip positioned absolute with z-index to overlay other content
 ---
+
+## 2026-02-01 - US-018
+- What was implemented: Created comprehensive inventory management UI on character sheet
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - added:
+    - Inventory section with items grouped by category
+    - Add Item button with modal for searching/filtering gear from GEAR data
+    - Custom item form with name, weight, quantity, category, and notes fields
+    - Inline quantity editing with +/- buttons and direct number input
+    - Delete button with confirmation modal
+    - Total inventory weight display
+- **Learnings for future iterations:**
+  - Character uses `inventory` array (InventoryItem[]) for weight-tracked items, separate from legacy `equipment` array
+  - InventoryItem has: name, quantity, weight, category, optional notes
+  - GEAR data from gear.ts is searchable/filterable for adding standard D&D items
+  - Use `reduce` to group inventory by category for display
+  - When adding item that already exists, increase quantity instead of duplicating
+  - Delete confirmation uses state variable (itemToDelete) to track which item to remove
+  - Modal uses toggle tabs pattern to switch between "From Gear List" and "Custom Item" modes
+---
