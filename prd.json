@@ -1,0 +1,429 @@
+{
+  "project": "D&D 2024 Equipment System",
+  "branchName": "ralph/equipment-system",
+  "description": "Comprehensive equipment management system with weapons, armor, gear, and tools databases, auto-calculated attack bonuses and AC, inventory with encumbrance, and starting equipment selection",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create weapons data file with all PHB weapons",
+      "description": "As a developer, I need a complete weapons database so players can select from official D&D weapons.",
+      "acceptanceCriteria": [
+        "Create src/data/weapons.ts with all simple weapons (club, dagger, greatclub, handaxe, javelin, light hammer, mace, quarterstaff, sickle, spear, light crossbow, dart, shortbow, sling)",
+        "Include all martial weapons (battleaxe, flail, glaive, greataxe, greatsword, halberd, lance, longsword, maul, morningstar, pike, rapier, scimitar, shortsword, trident, war pick, warhammer, whip, blowgun, hand crossbow, heavy crossbow, longbow, net)",
+        "Each weapon has: name, category (simple/martial), type (melee/ranged), damage, damageType, weight, cost, properties array, range (if ranged/thrown)",
+        "Export WeaponData interface and WEAPONS array",
+        "Export helper functions: getWeaponByName(), getWeaponsByCategory(), getWeaponsByProperty()",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Create armor data file with all PHB armor",
+      "description": "As a developer, I need a complete armor database so players can select from official D&D armor.",
+      "acceptanceCriteria": [
+        "Create src/data/armor.ts with all light armor (padded, leather, studded leather)",
+        "Include all medium armor (hide, chain shirt, scale mail, breastplate, half plate)",
+        "Include all heavy armor (ring mail, chain mail, splint, plate)",
+        "Include shields",
+        "Each armor has: name, category (light/medium/heavy/shield), baseAC, dexBonus (true/false/'max2'), minStrength, stealthDisadvantage, weight, cost",
+        "Export ArmorData interface and ARMOR array",
+        "Export helper functions: getArmorByName(), getArmorByCategory()",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Create adventuring gear data file",
+      "description": "As a developer, I need an adventuring gear database for common equipment items.",
+      "acceptanceCriteria": [
+        "Create src/data/gear.ts with common adventuring gear (backpack, bedroll, rope, torch, rations, waterskin, tinderbox, lantern, oil, etc.)",
+        "Include containers with capacity info in description (backpack, pouch, sack, chest)",
+        "Include ammunition (arrows, bolts, bullets, darts)",
+        "Include focuses (arcane focus, holy symbol, druidic focus)",
+        "Each item has: name, category, weight, cost, description",
+        "Export GearData interface and GEAR array",
+        "Export helper functions: getGearByName(), getGearByCategory()",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Create tools data file with all PHB tools",
+      "description": "As a developer, I need a complete tools database for proficiency tracking.",
+      "acceptanceCriteria": [
+        "Create src/data/tools.ts with all artisan's tools (17 types: alchemist's supplies through woodcarver's tools)",
+        "Include gaming sets (dice set, dragonchess set, playing card set, three-dragon ante set)",
+        "Include musical instruments (10 types: bagpipes through viol)",
+        "Include other tools (disguise kit, forgery kit, herbalism kit, navigator's tools, poisoner's kit, thieves' tools)",
+        "Each tool has: name, category, weight, cost, abilityUsed (default ability for checks)",
+        "Export ToolData interface and TOOLS array",
+        "Export helper functions: getToolByName(), getToolsByCategory()",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Create equipment packs data for starting equipment",
+      "description": "As a developer, I need equipment pack definitions for character creation.",
+      "acceptanceCriteria": [
+        "Create src/data/equipmentPacks.ts with all PHB equipment packs",
+        "Include: Burglar's Pack, Diplomat's Pack, Dungeoneer's Pack, Entertainer's Pack, Explorer's Pack, Priest's Pack, Scholar's Pack",
+        "Each pack has: name, cost, contents array of {item: string, quantity: number}",
+        "Export EquipmentPack interface and EQUIPMENT_PACKS array",
+        "Export helper function: getPackByName()",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Add class starting equipment options to classes data",
+      "description": "As a developer, I need starting equipment options defined for each class.",
+      "acceptanceCriteria": [
+        "Update src/data/classes.ts ClassData interface to include startingEquipment and startingGold fields",
+        "Add startingEquipment array to each class with choice objects (e.g., {choice: ['longsword', 'any martial weapon']})",
+        "Add startingGold string to each class (dice formula like '5d4 x 10')",
+        "Include class-specific packs in startingEquipment options",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Update Character type for enhanced equipment tracking",
+      "description": "As a developer, I need to update the Character type to support the new equipment system.",
+      "acceptanceCriteria": [
+        "Update Weapon interface to add isEquipped boolean and isTwoHanding boolean (for versatile)",
+        "Create CharacterArmor interface with: name, isEquipped, isShield",
+        "Add armor array field to Character (type CharacterArmor[])",
+        "Add InventoryItem interface: name, quantity, weight, category, notes",
+        "Add inventory field to Character (type InventoryItem[])",
+        "Add toolProficiencies field to Character (type string[])",
+        "Add manualACOverride optional number field to Character",
+        "Update DEFAULT values and createDefaultSkills pattern for new fields",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Create AC calculation utility",
+      "description": "As a user, I want my AC calculated automatically based on equipped armor.",
+      "acceptanceCriteria": [
+        "Create calculateAC() function in src/utils/calculations.ts",
+        "Function takes: equippedArmor, hasShield, dexMod, conMod, wisMod, characterClass, manualOverride",
+        "Calculate base armor AC + Dex modifier (respecting armor limits: none for heavy, max 2 for medium, full for light)",
+        "Add +2 for shield if equipped",
+        "Handle Barbarian unarmored defense: 10 + Dex + Con when no armor",
+        "Handle Monk unarmored defense: 10 + Dex + Wis when no armor",
+        "Handle no armor default: 10 + Dex",
+        "Return manualOverride if set, otherwise calculated AC",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Create attack bonus calculation utility",
+      "description": "As a user, I want my weapon attack bonuses calculated automatically.",
+      "acceptanceCriteria": [
+        "Create calculateAttackBonus() function in src/utils/calculations.ts",
+        "Function takes: weapon, strMod, dexMod, proficiencyBonus, isProficient",
+        "Use Strength mod for melee weapons by default",
+        "Use Dexterity mod for ranged weapons by default",
+        "Handle Finesse property: use higher of Str or Dex",
+        "Add proficiency bonus if isProficient is true",
+        "Add weapon.attackBonus if present (magic weapons)",
+        "Return total attack bonus as number",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Create damage bonus calculation utility",
+      "description": "As a user, I want my weapon damage displayed with the correct modifier.",
+      "acceptanceCriteria": [
+        "Create calculateDamageBonus() function in src/utils/calculations.ts",
+        "Function takes: weapon, strMod, dexMod, isOffhand (for two-weapon fighting)",
+        "Use Str mod for melee, Dex for ranged, higher for Finesse",
+        "Return 0 for off-hand attacks (unless feature grants bonus, but that's future scope)",
+        "Create formatWeaponDamage() function that returns string like '1d8+3 slashing'",
+        "Handle versatile weapons: show '1d8+3 / 1d10+3' format",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Create encumbrance calculation utilities",
+      "description": "As a user, I want to see my current carry weight and encumbrance status.",
+      "acceptanceCriteria": [
+        "Create calculateCarryingCapacity() function: Strength score x 15",
+        "Create calculateCurrentWeight() function that sums: inventory items, equipped weapons, equipped armor",
+        "Create getEncumbranceStatus() returning 'normal' | 'encumbered' | 'heavily_encumbered'",
+        "Encumbered threshold: Strength x 5",
+        "Heavily encumbered threshold: Strength x 10",
+        "Create getEncumbrancePenalties() returning speed reduction and other effects",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Create tool check calculation utility",
+      "description": "As a user, I want to make tool proficiency checks with the correct bonus.",
+      "acceptanceCriteria": [
+        "Create calculateToolCheckBonus() function in src/utils/calculations.ts",
+        "Function takes: toolName, abilityMod, proficiencyBonus, hasProficiency, hasExpertise",
+        "Return abilityMod + proficiencyBonus if proficient",
+        "Return abilityMod + (proficiencyBonus * 2) if has expertise",
+        "Return just abilityMod if not proficient",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Add weapon selection to character creation",
+      "description": "As a user, I want to select my starting weapons during character creation.",
+      "acceptanceCriteria": [
+        "Add 'Starting Equipment' section to CharacterCreatePage after class selection",
+        "Display class's weapon choices from startingEquipment data",
+        "Show weapon picker dropdown/modal for each choice",
+        "Display weapon stats (damage, properties) when hovering/selecting",
+        "Store selected weapons in component state",
+        "Add selected weapons to character on creation with isEquipped: true",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Add armor selection to character creation",
+      "description": "As a user, I want to select my starting armor during character creation.",
+      "acceptanceCriteria": [
+        "Add armor selection to Starting Equipment section",
+        "Show only armor types the class is proficient with",
+        "Display armor stats (AC, properties) when selecting",
+        "Show calculated AC preview based on selection and character's Dex",
+        "Store selected armor as equipped in character",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Add equipment pack or gold choice to character creation",
+      "description": "As a user, I want to choose between starting equipment packs or starting gold.",
+      "acceptanceCriteria": [
+        "Add toggle/radio: 'Equipment Pack' vs 'Starting Gold' in character creation",
+        "If pack selected: show pack contents, add all items to inventory on creation",
+        "If gold selected: show dice formula, add roll button, store gold in currency",
+        "Use existing DiceRoller component for gold roll",
+        "Display total gold value prominently",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Display weapons section on character sheet",
+      "description": "As a user, I want to see my weapons with calculated attack bonus and damage.",
+      "acceptanceCriteria": [
+        "Add Weapons section to CharacterSheetPage",
+        "Display each weapon with: name, attack bonus (e.g. '+5'), damage (e.g. '1d8+3 slashing')",
+        "Show weapon properties as small badges/tags",
+        "Show checkmark or indicator if character is proficient with weapon",
+        "Add equip/unequip toggle for each weapon",
+        "For versatile weapons, show toggle for 1h/2h mode with different damage",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Display armor and AC on character sheet",
+      "description": "As a user, I want to see my equipped armor and calculated AC.",
+      "acceptanceCriteria": [
+        "Add prominent AC display to CharacterSheetPage (large number)",
+        "Show equipped armor name below AC",
+        "Show equipped shield indicator if shield equipped",
+        "Add tooltip/popover showing AC breakdown: base + dex + shield + other",
+        "Add 'Override AC' toggle that shows manual input field",
+        "When override set, show both calculated and override values",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Create inventory management UI",
+      "description": "As a user, I want to manage my inventory with add/remove/edit capabilities.",
+      "acceptanceCriteria": [
+        "Add Inventory section to CharacterSheetPage",
+        "Display items grouped by category (gear, ammunition, containers)",
+        "Show: item name, quantity, weight each, total weight for that item",
+        "Add 'Add Item' button that opens modal with gear search/filter",
+        "Allow adding custom items (name, weight, quantity, notes fields)",
+        "Allow editing quantity inline (number input or +/- buttons)",
+        "Add delete button with confirmation for each item",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Display encumbrance status on character sheet",
+      "description": "As a user, I want to see my current carry weight and encumbrance status.",
+      "acceptanceCriteria": [
+        "Add encumbrance display near inventory section",
+        "Show current weight / max capacity (e.g. '45 / 150 lbs')",
+        "Add visual progress bar showing weight percentage",
+        "Color code: green for normal, yellow for encumbered, red for heavily encumbered",
+        "Display active penalties when encumbered (speed -10, etc.)",
+        "Add info tooltip explaining encumbrance thresholds",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "Add tool proficiency section to character sheet",
+      "description": "As a user, I want to see my tool proficiencies and make tool checks.",
+      "acceptanceCriteria": [
+        "Add Tool Proficiencies section to CharacterSheetPage",
+        "List all tools character is proficient with",
+        "Show associated ability and check bonus for each",
+        "Add 'Roll' button next to each tool that rolls d20 + bonus using DiceRoller",
+        "Add 'Add Tool' button to add new proficiencies",
+        "Add remove button for each tool proficiency",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-021",
+      "title": "Create weapon picker modal component",
+      "description": "As a user, I want to add weapons from the database to my character.",
+      "acceptanceCriteria": [
+        "Create WeaponPickerModal component",
+        "Show searchable list of all weapons from WEAPONS data",
+        "Filter by category (simple/martial) and properties",
+        "Display weapon details on selection (damage, type, properties, weight)",
+        "Confirm button adds weapon to character's weapons array",
+        "Integrate modal with 'Add Weapon' button on character sheet",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-022",
+      "title": "Create armor picker modal component",
+      "description": "As a user, I want to add armor from the database to my character.",
+      "acceptanceCriteria": [
+        "Create ArmorPickerModal component",
+        "Show searchable list of all armor from ARMOR data",
+        "Filter by category (light/medium/heavy/shield)",
+        "Display armor details on selection (AC, requirements, weight)",
+        "Show warning if character lacks proficiency",
+        "Confirm button adds armor to character's armor array",
+        "Integrate modal with 'Add Armor' button on character sheet",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 22,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-023",
+      "title": "Implement armor equip/unequip with AC update",
+      "description": "As a user, I want to equip armor and have my AC update automatically.",
+      "acceptanceCriteria": [
+        "Add equip/unequip toggle to each armor item in armor list",
+        "Only allow one non-shield armor equipped at a time (auto-unequip previous)",
+        "Allow one shield equipped alongside body armor",
+        "AC recalculates and displays immediately on equip/unequip",
+        "Show warning badge if wearing armor without proficiency",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 23,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-024",
+      "title": "Enhance currency management UI",
+      "description": "As a user, I want to manage my currency with conversion options.",
+      "acceptanceCriteria": [
+        "Display all 5 currency types (cp, sp, ep, gp, pp) with editable number inputs",
+        "Add 'Quick Add' button that prompts for amount and type",
+        "Add 'Convert' button that consolidates coins to highest denominations",
+        "Show total value in gold pieces below currency display",
+        "Optionally show coin weight (50 coins = 1 lb) if inventory tracks weight",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 24,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

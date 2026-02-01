@@ -5,10 +5,9 @@ import { getCharacterById, saveCharacter, exportCharacterAsJson } from '../utils
 import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus } from '../utils/calculations'
 import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel } from '../data/classes'
 import { getSpeciesByName } from '../data/species'
-import { getSpellSaveDC, getSpellAttackBonus, getXPForNextLevel, XP_THRESHOLDS } from '../utils/calculations'
+import { getSpellSaveDC, getSpellAttackBonus, XP_THRESHOLDS } from '../utils/calculations'
 import { getSpellsByClass } from '../data/spells'
 import { FEATS, getFeatByName } from '../data/feats'
-import type { FeatData } from '../data/feats'
 import type { Spell } from '../types'
 import type { AbilityName, SkillName, DamageType, WeaponProperty, Weapon, Alignment } from '../types'
 import { SKILL_ABILITIES } from '../types'
@@ -321,7 +320,7 @@ export default function CharacterSheetPage() {
     }
   }
 
-  const updateBackstory = (field: keyof typeof character.backstory, value: string | Alignment | string[]) => {
+  const updateBackstory = (field: keyof Character['backstory'], value: string | Alignment | string[]) => {
     if (!character) return
     updateCharacter({
       backstory: { ...character.backstory, [field]: value }

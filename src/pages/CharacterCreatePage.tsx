@@ -15,7 +15,6 @@ import {
   DEFAULT_CURRENCY,
   DEFAULT_DEATH_SAVES,
   DEFAULT_BACKSTORY,
-  DEFAULT_PROFICIENCIES,
 } from '../types'
 import { useDarkModeContext } from '../context/DarkModeContext'
 
