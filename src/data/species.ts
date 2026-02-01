@@ -232,6 +232,21 @@ export const SPECIES: Species[] = [
       },
     ],
     languages: ['Common', 'Gnomish'],
+    ancestry: {
+      choiceName: 'Gnomish Lineage',
+      options: [
+        {
+          name: 'Forest Gnome',
+          description: 'You know the Minor Illusion cantrip. You can also cast Speak with Animals once per Long Rest without expending a spell slot.',
+          spells: ['Minor Illusion'],
+        },
+        {
+          name: 'Rock Gnome',
+          description: 'You know the Prestidigitation cantrip. You also have proficiency with Tinker\'s Tools and can use them to craft tiny clockwork devices.',
+          spells: ['Prestidigitation'],
+        },
+      ],
+    },
   },
   {
     name: 'Tiefling',
@@ -253,6 +268,26 @@ export const SPECIES: Species[] = [
       },
     ],
     languages: ['Common', 'Infernal'],
+    ancestry: {
+      choiceName: 'Fiendish Legacy',
+      options: [
+        {
+          name: 'Abyssal',
+          description: 'You have poison resistance. You also know the Poison Spray cantrip. Starting at level 3, you can cast Ray of Sickness once per Long Rest. Starting at level 5, you can cast Hold Person once per Long Rest.',
+          damageResistance: 'poison',
+        },
+        {
+          name: 'Chthonic',
+          description: 'You have necrotic resistance. You also know the Chill Touch cantrip. Starting at level 3, you can cast False Life once per Long Rest. Starting at level 5, you can cast Ray of Enfeeblement once per Long Rest.',
+          damageResistance: 'necrotic',
+        },
+        {
+          name: 'Infernal',
+          description: 'You have fire resistance. You also know the Fire Bolt cantrip. Starting at level 3, you can cast Hellish Rebuke once per Long Rest. Starting at level 5, you can cast Darkness once per Long Rest.',
+          damageResistance: 'fire',
+        },
+      ],
+    },
   },
   {
     name: 'Orc',
@@ -298,6 +333,38 @@ export const SPECIES: Species[] = [
       },
     ],
     languages: ['Common', 'Giant'],
+    ancestry: {
+      choiceName: 'Giant Ancestry',
+      options: [
+        {
+          name: 'Cloud',
+          description: 'You can cast Misty Step as a Bonus Action without expending a spell slot. You can use this trait a number of times equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest.',
+        },
+        {
+          name: 'Fire',
+          description: 'You have resistance to fire damage.',
+          damageResistance: 'fire',
+        },
+        {
+          name: 'Frost',
+          description: 'You have resistance to cold damage.',
+          damageResistance: 'cold',
+        },
+        {
+          name: 'Hill',
+          description: 'When you take the Dash or Dodge action, you gain Heroic Inspiration.',
+        },
+        {
+          name: 'Stone',
+          description: 'You have Tremorsense with a range of 15 feet.',
+        },
+        {
+          name: 'Storm',
+          description: 'You have resistance to lightning and thunder damage.',
+          damageResistance: 'lightning',
+        },
+      ],
+    },
   },
   {
     name: 'Aasimar',
@@ -328,6 +395,19 @@ export const SPECIES: Species[] = [
       },
     ],
     languages: ['Common', 'Celestial'],
+    ancestry: {
+      choiceName: 'Celestial Revelation',
+      options: [
+        {
+          name: 'Heavenly Wings',
+          description: 'When you transform, you gain a Fly Speed equal to your Speed for 1 minute.',
+        },
+        {
+          name: 'Radiant Soul',
+          description: 'When you transform, damage you deal with spells or weapons has extra Radiant damage equal to your Proficiency Bonus for 1 minute.',
+        },
+      ],
+    },
   },
 ]
 
