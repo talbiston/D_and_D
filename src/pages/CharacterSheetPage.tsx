@@ -5,12 +5,13 @@ import { getCharacterById, saveCharacter, exportCharacterAsJson } from '../utils
 import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC } from '../utils/calculations'
 import { getWeaponByName } from '../data/weapons'
 import { getArmorByName } from '../data/armor'
+import { GEAR, type GearData, type GearCategory } from '../data/gear'
 import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel } from '../data/classes'
 import { getSpeciesByName } from '../data/species'
 import { getSpellSaveDC, getSpellAttackBonus, XP_THRESHOLDS } from '../utils/calculations'
 import { getSpellsByClass } from '../data/spells'
 import { FEATS, getFeatByName } from '../data/feats'
-import type { Spell } from '../types'
+import type { Spell, InventoryItem } from '../types'
 import type { AbilityName, SkillName, DamageType, WeaponProperty, Weapon, Alignment } from '../types'
 import { SKILL_ABILITIES } from '../types'
 import { useDarkModeContext } from '../context/DarkModeContext'
@@ -93,6 +94,17 @@ export default function CharacterSheetPage() {
   const [showACOverride, setShowACOverride] = useState(false)
   const [acOverrideValue, setAcOverrideValue] = useState('')
   const [showACBreakdown, setShowACBreakdown] = useState(false)
+  // Inventory management state
+  const [showInventoryModal, setShowInventoryModal] = useState(false)
+  const [inventorySearchQuery, setInventorySearchQuery] = useState('')
+  const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<GearCategory | 'all'>('all')
+  const [showCustomItemForm, setShowCustomItemForm] = useState(false)
+  const [newItemName, setNewItemName] = useState('')
+  const [newItemWeight, setNewItemWeight] = useState(0)
+  const [newItemQuantity, setNewItemQuantity] = useState(1)
+  const [newItemCategory, setNewItemCategory] = useState('adventuring gear')
+  const [newItemNotes, setNewItemNotes] = useState('')
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null)
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
   useEffect(() => {
@@ -265,6 +277,85 @@ export default function CharacterSheetPage() {
       currency: { ...character.currency, [type]: value }
     })
   }
+
+  // Inventory management functions
+  const addInventoryItem = (item: InventoryItem) => {
+    if (!character) return
+    // Check if item already exists, if so increase quantity
+    const existingIndex = character.inventory.findIndex(i => i.name === item.name)
+    if (existingIndex >= 0) {
+      const newInventory = [...character.inventory]
+      newInventory[existingIndex] = {
+        ...newInventory[existingIndex],
+        quantity: newInventory[existingIndex].quantity + item.quantity
+      }
+      updateCharacter({ inventory: newInventory })
+    } else {
+      updateCharacter({ inventory: [...character.inventory, item] })
+    }
+  }
+
+  const addGearToInventory = (gear: GearData) => {
+    addInventoryItem({
+      name: gear.name,
+      quantity: 1,
+      weight: gear.weight,
+      category: gear.category,
+      notes: gear.description
+    })
+    setShowInventoryModal(false)
+    setInventorySearchQuery('')
+    setInventoryCategoryFilter('all')
+  }
+
+  const addCustomItem = () => {
+    if (!newItemName.trim()) return
+    addInventoryItem({
+      name: newItemName.trim(),
+      quantity: newItemQuantity || 1,
+      weight: newItemWeight || 0,
+      category: newItemCategory,
+      notes: newItemNotes.trim() || undefined
+    })
+    // Reset form
+    setNewItemName('')
+    setNewItemWeight(0)
+    setNewItemQuantity(1)
+    setNewItemCategory('adventuring gear')
+    setNewItemNotes('')
+    setShowCustomItemForm(false)
+    setShowInventoryModal(false)
+  }
+
+  const updateInventoryQuantity = (index: number, quantity: number) => {
+    if (!character) return
+    if (quantity <= 0) {
+      // Remove item if quantity is 0 or less
+      removeInventoryItem(index)
+      return
+    }
+    const newInventory = [...character.inventory]
+    newInventory[index] = { ...newInventory[index], quantity }
+    updateCharacter({ inventory: newInventory })
+  }
+
+  const removeInventoryItem = (index: number) => {
+    if (!character) return
+    const newInventory = [...character.inventory]
+    newInventory.splice(index, 1)
+    updateCharacter({ inventory: newInventory })
+    setItemToDelete(null)
+  }
+
+  // Group inventory items by category
+  const groupedInventory = character?.inventory.reduce((groups, item, index) => {
+    const category = item.category || 'other'
+    if (!groups[category]) {
+      groups[category] = []
+    }
+    groups[category].push({ item, index })
+    return groups
+  }, {} as Record<string, { item: InventoryItem; index: number }[]>) || {}
 
   // Check if character is proficient with a weapon
   const isWeaponProficient = (weapon: Weapon): boolean => {
@@ -1648,6 +1739,109 @@ export default function CharacterSheetPage() {
             ))}
           </div>
         </div>
+
+        {/* Inventory Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Inventory
+            </h2>
+            <button
+              onClick={() => setShowInventoryModal(true)}
+              className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+            >
+              Add Item
+            </button>
+          </div>
+
+          {character.inventory.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No items in inventory yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(groupedInventory).map(([category, items]) => (
+                <div key={category}>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 capitalize">
+                    {category}
+                  </h3>
+                  <div className="space-y-2">
+                    {items.map(({ item, index }) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg px-4 py-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-900 dark:text-white font-medium truncate">{item.name}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              ({item.weight} lb{item.weight !== 1 ? 's' : ''} each)
+                            </span>
+                          </div>
+                          {item.notes && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate" title={item.notes}>
+                              {item.notes}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          {/* Quantity controls with +/- buttons */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => updateInventoryQuantity(index, item.quantity - 1)}
+                              className="w-7 h-7 flex items-center justify-center rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                              </svg>
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) => updateInventoryQuantity(index, parseInt(e.target.value) || 1)}
+                              className="w-12 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
+                            />
+                            <button
+                              onClick={() => updateInventoryQuantity(index, item.quantity + 1)}
+                              className="w-7 h-7 flex items-center justify-center rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </button>
+                          </div>
+                          {/* Total weight for this item */}
+                          <span className="text-xs text-gray-500 dark:text-gray-400 w-14 text-right">
+                            {(item.weight * item.quantity).toFixed(1)} lbs
+                          </span>
+                          {/* Delete button */}
+                          <button
+                            onClick={() => setItemToDelete(index)}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            title="Remove item"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* Total inventory weight */}
+              <div className="border-t border-gray-200 dark:border-gray-600 pt-3 mt-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Total Inventory Weight:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {character.inventory.reduce((total, item) => total + (item.weight * item.quantity), 0).toFixed(1)} lbs
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
           </>
         )}
 
@@ -2122,6 +2316,248 @@ export default function CharacterSheetPage() {
                 className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
               >
                 Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Inventory Item Modal */}
+      {showInventoryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {showCustomItemForm ? 'Add Custom Item' : 'Add Item to Inventory'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowInventoryModal(false)
+                  setInventorySearchQuery('')
+                  setInventoryCategoryFilter('all')
+                  setShowCustomItemForm(false)
+                  setNewItemName('')
+                  setNewItemWeight(0)
+                  setNewItemQuantity(1)
+                  setNewItemCategory('adventuring gear')
+                  setNewItemNotes('')
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Toggle between gear list and custom item */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setShowCustomItemForm(false)}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  !showCustomItemForm
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                From Gear List
+              </button>
+              <button
+                onClick={() => setShowCustomItemForm(true)}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  showCustomItemForm
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                Custom Item
+              </button>
+            </div>
+
+            {showCustomItemForm ? (
+              /* Custom Item Form */
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Item Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                    placeholder="e.g., Mysterious Orb"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    autoFocus
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Weight (lbs)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={newItemWeight}
+                      onChange={(e) => setNewItemWeight(parseFloat(e.target.value) || 0)}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={newItemQuantity}
+                      onChange={(e) => setNewItemQuantity(parseInt(e.target.value) || 1)}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={newItemCategory}
+                    onChange={(e) => setNewItemCategory(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="adventuring gear">Adventuring Gear</option>
+                    <option value="container">Container</option>
+                    <option value="ammunition">Ammunition</option>
+                    <option value="arcane focus">Arcane Focus</option>
+                    <option value="druidic focus">Druidic Focus</option>
+                    <option value="holy symbol">Holy Symbol</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    value={newItemNotes}
+                    onChange={(e) => setNewItemNotes(e.target.value)}
+                    placeholder="Description or notes..."
+                    rows={2}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                  />
+                </div>
+                <button
+                  onClick={addCustomItem}
+                  disabled={!newItemName.trim()}
+                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
+                >
+                  Add to Inventory
+                </button>
+              </div>
+            ) : (
+              /* Gear List */
+              <>
+                {/* Search and Filter */}
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={inventorySearchQuery}
+                    onChange={(e) => setInventorySearchQuery(e.target.value)}
+                    placeholder="Search gear..."
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    autoFocus
+                  />
+                  <select
+                    value={inventoryCategoryFilter}
+                    onChange={(e) => setInventoryCategoryFilter(e.target.value as GearCategory | 'all')}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="adventuring gear">Adventuring Gear</option>
+                    <option value="container">Containers</option>
+                    <option value="ammunition">Ammunition</option>
+                    <option value="arcane focus">Arcane Focus</option>
+                    <option value="druidic focus">Druidic Focus</option>
+                    <option value="holy symbol">Holy Symbol</option>
+                  </select>
+                </div>
+
+                {/* Gear List */}
+                <div className="overflow-y-auto flex-1 space-y-1">
+                  {(() => {
+                    const filteredGear = GEAR
+                      .filter((gear) => {
+                        if (inventoryCategoryFilter !== 'all' && gear.category !== inventoryCategoryFilter) return false
+                        if (inventorySearchQuery) {
+                          const query = inventorySearchQuery.toLowerCase()
+                          return gear.name.toLowerCase().includes(query) ||
+                                 gear.description.toLowerCase().includes(query)
+                        }
+                        return true
+                      })
+                      .sort((a, b) => a.name.localeCompare(b.name))
+
+                    if (filteredGear.length === 0) {
+                      return (
+                        <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                          No gear found matching your criteria.
+                        </p>
+                      )
+                    }
+
+                    return filteredGear.map((gear) => (
+                      <button
+                        key={gear.name}
+                        onClick={() => addGearToInventory(gear)}
+                        className="w-full px-4 py-3 flex items-center justify-between text-left bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded capitalize">
+                              {gear.category}
+                            </span>
+                            <span className="font-medium text-gray-900 dark:text-white truncate">{gear.name}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                            {gear.weight} lb • {gear.cost} • {gear.description}
+                          </p>
+                        </div>
+                        <svg className="w-5 h-5 text-indigo-500 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
+                    ))
+                  })()}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Item Confirmation Modal */}
+      {itemToDelete !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Remove Item?
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Are you sure you want to remove <span className="font-medium">{character?.inventory[itemToDelete]?.name}</span> from your inventory?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setItemToDelete(null)}
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => removeInventoryItem(itemToDelete)}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Remove
               </button>
             </div>
           </div>
