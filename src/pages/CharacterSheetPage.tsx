@@ -17,7 +17,7 @@ import DiceRoller from '../components/DiceRoller'
 import LevelUpHPModal from '../components/LevelUpHPModal'
 import ASIModal, { type ASIChoice } from '../components/ASIModal'
 import LevelUpSummaryModal from '../components/LevelUpSummaryModal'
-import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown } from '../utils/calculations'
+import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel } from '../utils/calculations'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -399,7 +399,7 @@ export default function CharacterSheetPage() {
         }
       }
     } else if (newLevel < oldLevel) {
-      // Recalculate HP from scratch when reducing level
+      // Recalculate HP from scratch when reducing level (using average)
       const classData = getClassByName(character.class)
       if (classData) {
         const hitDie = classData.hitDie
@@ -413,13 +413,51 @@ export default function CharacterSheetPage() {
       }
     }
 
-    updateCharacter({
+    // Base update object
+    const updates: Partial<Character> = {
       level: newLevel,
       xp: editXp,
       maxHp: newMaxHp,
       currentHp: Math.min(character.currentHp, newMaxHp),
       hitDice: { ...character.hitDice, total: newLevel }
-    })
+    }
+
+    // When decreasing level, also update features and spell slots
+    if (newLevel < oldLevel) {
+      // Get features for the new level
+      const classFeatures = getClassFeaturesForLevel(character.class, newLevel)
+      const subclassFeatures = character.subclass
+        ? getSubclassFeaturesForLevel(character.class, character.subclass, newLevel)
+        : []
+
+      // Keep any manually added features that aren't from class/subclass definitions
+      const allClassSubclassFeatures = character.subclass
+        ? [...getClassFeaturesForLevel(character.class, 20), ...getSubclassFeaturesForLevel(character.class, character.subclass, 20)]
+        : getClassFeaturesForLevel(character.class, 20)
+
+      const manualFeatures = character.classFeatures.filter(cf =>
+        !allClassSubclassFeatures.some(f => f.name === cf.name && f.level === cf.level)
+      )
+
+      updates.classFeatures = [...classFeatures, ...subclassFeatures, ...manualFeatures]
+
+      // Update spell slots for new level
+      const newSpellSlots = getSpellSlotsForLevel(character.class, newLevel)
+      updates.spellSlots = {
+        1: { total: newSpellSlots[1].total, expended: Math.min(character.spellSlots[1].expended, newSpellSlots[1].total) },
+        2: { total: newSpellSlots[2].total, expended: Math.min(character.spellSlots[2].expended, newSpellSlots[2].total) },
+        3: { total: newSpellSlots[3].total, expended: Math.min(character.spellSlots[3].expended, newSpellSlots[3].total) },
+        4: { total: newSpellSlots[4].total, expended: Math.min(character.spellSlots[4].expended, newSpellSlots[4].total) },
+        5: { total: newSpellSlots[5].total, expended: Math.min(character.spellSlots[5].expended, newSpellSlots[5].total) },
+        6: { total: newSpellSlots[6].total, expended: Math.min(character.spellSlots[6].expended, newSpellSlots[6].total) },
+        7: { total: newSpellSlots[7].total, expended: Math.min(character.spellSlots[7].expended, newSpellSlots[7].total) },
+        8: { total: newSpellSlots[8].total, expended: Math.min(character.spellSlots[8].expended, newSpellSlots[8].total) },
+        9: { total: newSpellSlots[9].total, expended: Math.min(character.spellSlots[9].expended, newSpellSlots[9].total) },
+      }
+      // Note: Equipment, currency, feats, and spells are preserved (not modified)
+    }
+
+    updateCharacter(updates)
     setShowLevelModal(false)
   }
 
@@ -1993,6 +2031,17 @@ export default function CharacterSheetPage() {
                       Roll HP
                     </button>
                   </div>
+                </div>
+              )}
+              {editLevel < (character?.level || 1) && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300 mb-1">
+                    Warning: Decreasing Level
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400">
+                    This will remove class features above level {editLevel} and recalculate HP using average values.
+                    Equipment, currency, feats, and spells will be preserved.
+                  </p>
                 </div>
               )}
             </div>
