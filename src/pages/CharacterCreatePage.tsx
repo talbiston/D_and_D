@@ -15,7 +15,6 @@ import {
   DEFAULT_CURRENCY,
   DEFAULT_DEATH_SAVES,
   DEFAULT_BACKSTORY,
-  DEFAULT_PROFICIENCIES,
 } from '../types'
 import { useDarkModeContext } from '../context/DarkModeContext'
 
@@ -68,6 +67,9 @@ const SKILLS_BY_ABILITY: Record<AbilityName, SkillName[]> = {
   charisma: ['deception', 'intimidation', 'performance', 'persuasion'],
 }
 
+// Ability score increase mode type
+type AbilityIncreaseMode = 'standard' | 'balanced'
+
 export default function CharacterCreatePage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
@@ -80,17 +82,62 @@ export default function CharacterCreatePage() {
   const [skills, setSkills] = useState<Skill[]>(createDefaultSkills())
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
+  // Background ability score increase state
+  const [abilityIncreaseMode, setAbilityIncreaseMode] = useState<AbilityIncreaseMode>('standard')
+  const [primaryAbility, setPrimaryAbility] = useState<AbilityName | ''>('')
+  const [secondaryAbility, setSecondaryAbility] = useState<AbilityName | ''>('')
+  const [balancedAbilities, setBalancedAbilities] = useState<AbilityName[]>([])
+
   const backgroundOptions = getBackgroundNames()
+  const backgroundData = background ? getBackgroundByName(background) : undefined
 
   const subclassOptions = characterClass ? getSubclassNames(characterClass) : []
+
+  // Reset ability selections when background changes
+  const handleBackgroundChange = (newBackground: string) => {
+    setBackground(newBackground)
+    setPrimaryAbility('')
+    setSecondaryAbility('')
+    setBalancedAbilities([])
+  }
+
+  // Toggle balanced ability selection
+  const toggleBalancedAbility = (ability: AbilityName) => {
+    setBalancedAbilities((prev) => {
+      if (prev.includes(ability)) {
+        return prev.filter((a) => a !== ability)
+      }
+      if (prev.length < 3) {
+        return [...prev, ability]
+      }
+      return prev
+    })
+  }
+
+  // Calculate ability score bonuses from background
+  const getAbilityBonus = (ability: AbilityName): number => {
+    if (!backgroundData) return 0
+    if (abilityIncreaseMode === 'standard') {
+      if (primaryAbility === ability) return 2
+      if (secondaryAbility === ability) return 1
+    } else {
+      if (balancedAbilities.includes(ability)) return 1
+    }
+    return 0
+  }
+
+  // Get final ability score with background bonus
+  const getFinalAbilityScore = (ability: AbilityName): number => {
+    return abilityScores[ability] + getAbilityBonus(ability)
+  }
 
   const speciesOptions = getSpeciesNames()
   const classOptions = getClassNames()
   const proficiencyBonus = getProficiencyBonus(level)
 
-  // Calculate passive perception
+  // Calculate passive perception (using final score with bonuses)
   const perceptionSkill = skills.find((s) => s.name === 'perception')
-  const wisdomMod = getAbilityModifier(abilityScores.wisdom)
+  const wisdomMod = getAbilityModifier(getFinalAbilityScore('wisdom'))
   const passivePerception = getPassivePerception(
     wisdomMod,
     proficiencyBonus,
@@ -120,15 +167,40 @@ export default function CharacterCreatePage() {
 
     const classData = getClassByName(characterClass)
     const speciesData = getSpeciesByName(species)
-    const backgroundData = getBackgroundByName(background)
+    const bgData = getBackgroundByName(background)
 
-    // Calculate max HP: hit die max + CON modifier
-    const conMod = getAbilityModifier(abilityScores.constitution)
+    // Apply background ability score bonuses to final scores
+    const finalAbilityScores: AbilityScores = {
+      strength: getFinalAbilityScore('strength'),
+      dexterity: getFinalAbilityScore('dexterity'),
+      constitution: getFinalAbilityScore('constitution'),
+      intelligence: getFinalAbilityScore('intelligence'),
+      wisdom: getFinalAbilityScore('wisdom'),
+      charisma: getFinalAbilityScore('charisma'),
+    }
+
+    // Calculate max HP: hit die max + CON modifier (using final scores)
+    const conMod = getAbilityModifier(finalAbilityScores.constitution)
     const hitDie = classData?.hitDie ?? 8
     const maxHp = hitDie + conMod
 
     // Build feats array with origin feat if background selected
-    const feats = backgroundData ? [backgroundData.originFeat] : []
+    const feats = bgData ? [bgData.originFeat] : []
+
+    // Apply background skill proficiencies
+    const finalSkills = skills.map((skill) => {
+      const hasBackgroundProficiency = bgData?.skillProficiencies.includes(skill.name)
+      return {
+        ...skill,
+        proficient: skill.proficient || hasBackgroundProficiency || false,
+      }
+    })
+
+    // Build equipment from background
+    const equipment = bgData?.equipment.map((item) => ({
+      name: item,
+      quantity: 1,
+    })) ?? []
 
     // Build character object
     const character: Character = {
@@ -140,16 +212,16 @@ export default function CharacterCreatePage() {
       background,
       level,
       xp: 0,
-      abilityScores,
-      skills,
+      abilityScores: finalAbilityScores,
+      skills: finalSkills,
       maxHp,
       currentHp: maxHp,
       tempHp: 0,
-      armorClass: 10 + getAbilityModifier(abilityScores.dexterity),
+      armorClass: 10 + getAbilityModifier(finalAbilityScores.dexterity),
       speed: speciesData?.speed ?? 30,
       size: speciesData?.size ?? 'medium',
       weapons: [],
-      equipment: [],
+      equipment,
       spells: [],
       spellSlots: { ...DEFAULT_SPELL_SLOTS },
       spellcastingAbility: classData?.spellcastingAbility,
@@ -163,8 +235,9 @@ export default function CharacterCreatePage() {
       proficiencies: {
         armor: classData?.armorProficiencies ?? [],
         weapons: classData?.weaponProficiencies ?? [],
-        tools: [],
+        tools: bgData ? [bgData.toolProficiency] : [],
       },
+      pendingASI: 0,
     }
 
     // Save and navigate
@@ -310,7 +383,7 @@ export default function CharacterCreatePage() {
               <select
                 id="background"
                 value={background}
-                onChange={(e) => setBackground(e.target.value)}
+                onChange={(e) => handleBackgroundChange(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
                 <option value="">Select a background (optional)</option>
@@ -320,13 +393,133 @@ export default function CharacterCreatePage() {
                   </option>
                 ))}
               </select>
-              {background && (
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Origin Feat: {getBackgroundByName(background)?.originFeat.name}
-                </p>
+              {backgroundData && (
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                  <p><span className="font-medium">Origin Feat:</span> {backgroundData.originFeat.name}</p>
+                  <p><span className="font-medium">Skills:</span> {backgroundData.skillProficiencies.map(s => SKILL_LABELS[s]).join(', ')}</p>
+                  <p><span className="font-medium">Tool:</span> {backgroundData.toolProficiency}</p>
+                </div>
               )}
             </div>
           </div>
+
+          {/* Background Ability Score Increases */}
+          {backgroundData && (
+            <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg p-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                Background Ability Score Increases
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Your background grants ability score increases. Choose how to distribute them:
+              </p>
+
+              {/* Mode selection */}
+              <div className="flex gap-4 mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="abilityMode"
+                    checked={abilityIncreaseMode === 'standard'}
+                    onChange={() => {
+                      setAbilityIncreaseMode('standard')
+                      setBalancedAbilities([])
+                    }}
+                    className="text-indigo-600"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">+2 / +1</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="abilityMode"
+                    checked={abilityIncreaseMode === 'balanced'}
+                    onChange={() => {
+                      setAbilityIncreaseMode('balanced')
+                      setPrimaryAbility('')
+                      setSecondaryAbility('')
+                    }}
+                    className="text-indigo-600"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">+1 / +1 / +1</span>
+                </label>
+              </div>
+
+              {/* Standard mode: +2 and +1 dropdowns */}
+              {abilityIncreaseMode === 'standard' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      +2 Bonus
+                    </label>
+                    <select
+                      value={primaryAbility}
+                      onChange={(e) => {
+                        setPrimaryAbility(e.target.value as AbilityName)
+                        if (e.target.value === secondaryAbility) {
+                          setSecondaryAbility('')
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    >
+                      <option value="">Select ability</option>
+                      {backgroundData.abilityScoreOptions.map((ability) => (
+                        <option key={ability} value={ability}>
+                          {ABILITY_LABELS[ability as AbilityName]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      +1 Bonus
+                    </label>
+                    <select
+                      value={secondaryAbility}
+                      onChange={(e) => setSecondaryAbility(e.target.value as AbilityName)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    >
+                      <option value="">Select ability</option>
+                      {backgroundData.abilityScoreOptions
+                        .filter((a) => a !== primaryAbility)
+                        .map((ability) => (
+                          <option key={ability} value={ability}>
+                            {ABILITY_LABELS[ability as AbilityName]}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Balanced mode: select 3 abilities for +1 each */}
+              {abilityIncreaseMode === 'balanced' && (
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    Select 3 abilities ({balancedAbilities.length}/3 selected):
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {backgroundData.abilityScoreOptions.map((ability) => {
+                      const isSelected = balancedAbilities.includes(ability as AbilityName)
+                      return (
+                        <button
+                          key={ability}
+                          type="button"
+                          onClick={() => toggleBalancedAbility(ability as AbilityName)}
+                          className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                            isSelected
+                              ? 'bg-indigo-600 text-white'
+                              : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                          }`}
+                        >
+                          {ABILITY_LABELS[ability as AbilityName]} +1
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Proficiency Bonus display */}
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
@@ -342,8 +535,10 @@ export default function CharacterCreatePage() {
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {ABILITY_ORDER.map((ability) => {
-                const score = abilityScores[ability]
-                const modifier = getAbilityModifier(score)
+                const baseScore = abilityScores[ability]
+                const bonus = getAbilityBonus(ability)
+                const finalScore = getFinalAbilityScore(ability)
+                const modifier = getAbilityModifier(finalScore)
                 return (
                   <div
                     key={ability}
@@ -355,15 +550,27 @@ export default function CharacterCreatePage() {
                     >
                       {ABILITY_LABELS[ability]}
                     </label>
-                    <input
-                      type="number"
-                      id={ability}
-                      value={score}
-                      onChange={(e) => updateAbilityScore(ability, parseInt(e.target.value) || 10)}
-                      min={1}
-                      max={30}
-                      className="w-20 px-2 py-1 text-center text-xl font-bold border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
+                    <div className="flex items-center justify-center gap-1">
+                      <input
+                        type="number"
+                        id={ability}
+                        value={baseScore}
+                        onChange={(e) => updateAbilityScore(ability, parseInt(e.target.value) || 10)}
+                        min={1}
+                        max={30}
+                        className="w-16 px-2 py-1 text-center text-xl font-bold border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      />
+                      {bonus > 0 && (
+                        <span className="text-green-600 dark:text-green-400 font-bold text-lg">
+                          +{bonus}
+                        </span>
+                      )}
+                    </div>
+                    {bonus > 0 && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        = {finalScore}
+                      </p>
+                    )}
                     <p className="mt-2 text-lg font-semibold text-indigo-600 dark:text-indigo-400">
                       {formatModifier(modifier)}
                     </p>
@@ -392,8 +599,11 @@ export default function CharacterCreatePage() {
                   <div className="space-y-1">
                     {SKILLS_BY_ABILITY[ability].map((skillName) => {
                       const skill = skills.find((s) => s.name === skillName)!
-                      const abilityMod = getAbilityModifier(abilityScores[SKILL_ABILITIES[skillName]])
-                      const bonus = getSkillBonus(abilityMod, proficiencyBonus, skill.proficient, skill.expertise)
+                      const skillAbility = SKILL_ABILITIES[skillName]
+                      const abilityMod = getAbilityModifier(getFinalAbilityScore(skillAbility))
+                      const hasBackgroundProficiency = backgroundData?.skillProficiencies.includes(skillName) ?? false
+                      const isProficient = skill.proficient || hasBackgroundProficiency
+                      const bonus = getSkillBonus(abilityMod, proficiencyBonus, isProficient, skill.expertise)
                       return (
                         <div
                           key={skillName}
@@ -403,13 +613,17 @@ export default function CharacterCreatePage() {
                             <button
                               type="button"
                               onClick={() => toggleSkillProficiency(skillName)}
+                              disabled={hasBackgroundProficiency}
                               className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                skill.proficient
-                                  ? 'bg-indigo-600 border-indigo-600 text-white'
+                                isProficient
+                                  ? hasBackgroundProficiency
+                                    ? 'bg-green-600 border-green-600 text-white cursor-not-allowed'
+                                    : 'bg-indigo-600 border-indigo-600 text-white'
                                   : 'border-gray-400 dark:border-gray-500'
                               }`}
+                              title={hasBackgroundProficiency ? 'Granted by background' : undefined}
                             >
-                              {skill.proficient && (
+                              {isProficient && (
                                 <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                   <path
                                     fillRule="evenodd"
@@ -421,9 +635,12 @@ export default function CharacterCreatePage() {
                             </button>
                             <span className="text-gray-900 dark:text-white">
                               {SKILL_LABELS[skillName]}
+                              {hasBackgroundProficiency && (
+                                <span className="ml-1 text-xs text-green-600 dark:text-green-400">(BG)</span>
+                              )}
                             </span>
                           </div>
-                          <span className={`font-semibold ${skill.proficient ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                          <span className={`font-semibold ${isProficient ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'}`}>
                             {formatModifier(bonus)}
                           </span>
                         </div>
