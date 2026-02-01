@@ -137,3 +137,35 @@ Started: Sun Feb  1 04:01:39 PM CST 2026
   - Class orders follow similar pattern to species ancestry
   - handleClassChange resets classOrder along with other class-specific state
 ---
+
+## 2026-02-01 - US-009
+- What was implemented: Apply Class Order Proficiencies
+  - Cleric Protector grants Martial weapon and Heavy armor proficiency
+  - Cleric Thaumaturge grants Religion skill proficiency
+  - Druid Magician grants Arcana skill proficiency
+  - Druid Warden grants Martial weapon proficiency
+  - Added class order display on character sheet header
+- Files changed:
+  - src/pages/CharacterCreatePage.tsx
+  - src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Class order proficiencies are applied in handleCreateCharacter using IIFEs
+  - Skill proficiencies from class order are added to finalSkills calculation
+  - Class order is displayed below class/subclass in character sheet header
+---
+
+## 2026-02-01 - US-010
+- What was implemented: Level 4 Spells (Part 1) A-F
+  - Added 20 level 4 spells to spells.ts:
+    - Arcane Eye, Aura of Life, Aura of Purity, Banishment, Blight, Charm Monster
+    - Compulsion, Confusion, Conjure Minor Elementals, Conjure Woodland Beings, Control Water
+    - Death Ward, Dimension Door, Divination, Dominate Beast, Elemental Bane
+    - Evard's Black Tentacles, Fabricate, Fire Shield, Freedom of Movement
+  - Each spell has proper 2024 PHB metadata: school, casting time, range, components, duration, concentration, ritual, description, classes
+- Files changed:
+  - src/data/spells.ts
+- **Learnings for future iterations:**
+  - Spells are organized by level in spells.ts with comments
+  - 2024 PHB uses Emanation terminology for aura effects
+  - Some spells (like Conjure Minor Elementals/Woodland Beings) were reworked significantly in 2024 PHB
+---
