@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listCharacters, deleteCharacter as deleteCharacterApi, type CharacterSummary } from '../utils/api'
 import { useDarkModeContext } from '../context/DarkModeContext'
+import ClassIcon from '../components/ClassIcon'
+import SpeciesIcon from '../components/SpeciesIcon'
 
 export default function HomePage() {
   const [characters, setCharacters] = useState<CharacterSummary[]>([])
@@ -129,7 +131,15 @@ export default function HomePage() {
                     {character.name}
                   </h2>
                   <p className="text-gray-600 dark:text-gray-400">
-                    Level {character.level} {character.species} {character.class}
+                    Level {character.level}{' '}
+                    <span className="inline-flex items-center gap-1">
+                      <SpeciesIcon species={character.species} size={18} />
+                      {character.species}
+                    </span>{' '}
+                    <span className="inline-flex items-center gap-1">
+                      <ClassIcon className={character.class} size={18} />
+                      {character.class}
+                    </span>
                   </p>
                 </Link>
                 <button
