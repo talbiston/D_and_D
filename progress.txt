@@ -9,6 +9,9 @@ Started: Sun Feb  1 03:09:55 AM CST 2026
 - Database module in `server/db/index.ts` exports `initializeDatabase()` and `getDatabase()`
 - SQLite database stored at `server/data/characters.db` (gitignored)
 - Use nanoid v3 for generating unique IDs (CommonJS compatible)
+- Docker build: `docker build -t dnd-app .` - multi-stage build with frontend, backend, production stages
+- Production server serves static frontend from `/app/dist` when `NODE_ENV=production`
+- Production data directory: `/data` (via DATA_DIR env var) for SQLite persistence
 
 ---
 
@@ -87,4 +90,95 @@ Started: Sun Feb  1 03:09:55 AM CST 2026
   - Patterns discovered: Use stmt.all() instead of stmt.get() for queries that return multiple rows
   - Gotchas encountered: Place the list route BEFORE the :id route so Express matches it correctly
   - Useful context: GET /api/characters returns array of summaries with id, name, class, level, species, updated_at sorted by updated_at DESC
+---
+
+## 2026-02-01 - US-008
+- What was implemented: Dockerfile with multi-stage build for full application
+- Files changed:
+  - Dockerfile (new) - multi-stage build with frontend, backend, and production stages
+  - server/index.ts (modified) - added static file serving for production
+  - server/db/index.ts (modified) - added DATA_DIR env var support for production
+- **Learnings for future iterations:**
+  - Patterns discovered: Use `NODE_ENV=production` to enable static file serving in Express
+  - Gotchas encountered: Static path in compiled JS needs to use `__dirname` which is relative to the compiled output
+  - Useful context: Frontend dist is served from `/app/dist` and SPA catch-all route handles client-side routing
+  - Useful context: DATA_DIR env var controls SQLite database location (defaults to `./data` for dev, `/data` for production)
+---
+
+## 2026-02-01 - US-009
+- What was implemented: Fly.io configuration files for deployment
+- Files changed:
+  - fly.toml (new) - Fly.io app configuration with health check, persistent volume mount
+  - .dockerignore (new) - excludes node_modules, .git, data/, build outputs from Docker context
+  - README.md (modified) - added deployment instructions for Docker and Fly.io
+- **Learnings for future iterations:**
+  - Patterns discovered: Fly.io uses `fly.toml` for configuration, volumes are created separately with `fly volumes create`
+  - Gotchas encountered: Volume must be created before first deploy with `fly volumes create dnd_data --region ord --size 1`
+  - Useful context: Health check configured at /api/health, app name is "dnd-character-sheet", primary region is "ord" (Chicago)
+---
+
+## 2026-02-01 - US-010
+- What was implemented: API client utilities for frontend-backend communication
+- Files changed:
+  - src/utils/api.ts (new) - API client functions for CRUD operations
+- **Learnings for future iterations:**
+  - Patterns discovered: Use `import.meta.env.VITE_API_URL` for API base URL configuration (Vite env vars)
+  - Patterns discovered: Create ApiError class extending Error for typed API error handling
+  - Gotchas encountered: Use `Omit<Character, 'id'>` for create/update payloads since server generates the ID
+  - Useful context: API functions export CharacterSummary type for list endpoint responses
+---
+
+## 2026-02-01 - US-011
+- What was implemented: Updated character creation flow to use API instead of localStorage
+- Files changed:
+  - src/pages/CharacterCreatePage.tsx (modified) - replaced localStorage with API call, added loading/error states
+- **Learnings for future iterations:**
+  - Patterns discovered: Use async/await for API calls in React event handlers
+  - Patterns discovered: Add isSaving and saveError state for API loading/error UI
+  - Gotchas encountered: Don't include `id` in character data when creating - server generates it
+  - Gotchas encountered: Make sure to disable button during save to prevent double-submits
+  - Useful context: The "Retry" button text automatically appears when saveError is set
+  - Note: Manual browser verification needed - no dev-browser skill available
+---
+
+## 2026-02-01 - US-012
+- What was implemented: Updated character sheet page to load character from API instead of localStorage
+- Files changed:
+  - src/pages/CharacterSheetPage.tsx (modified) - replaced getCharacterById with getCharacter API call, added notFound/loadError states
+  - src/utils/api.ts (modified) - fixed ApiError class for erasableSyntaxOnly compatibility
+  - src/pages/CharacterCreatePage.tsx (modified) - removed unused Character type import
+- **Learnings for future iterations:**
+  - Patterns discovered: Use async function inside useEffect for API calls (not async callback directly)
+  - Patterns discovered: Separate notFound from loadError states for proper 404 vs error handling
+  - Gotchas encountered: ApiError class cannot use parameter properties when erasableSyntaxOnly is enabled in tsconfig
+  - Gotchas encountered: Must import ApiError from api.ts to check error.status for 404 detection
+  - Useful context: Loading spinner uses Tailwind animate-spin with border-t-transparent for animation
+  - Note: Manual browser verification needed - no dev-browser skill available
+---
+
+## 2026-02-01 - US-013
+- What was implemented: Auto-save functionality for character changes with debouncing and UI feedback
+- Files changed:
+  - src/pages/CharacterSheetPage.tsx (modified) - added debounced API save, save status indicators, retry functionality
+- **Learnings for future iterations:**
+  - Patterns discovered: Use useRef for timeout IDs to enable cleanup and avoid stale closures
+  - Patterns discovered: Use pendingCharacterRef to track latest data for retry functionality
+  - Patterns discovered: Separate "saved" timeout (2s display) from "debounce" timeout (500ms before save)
+  - Gotchas encountered: Must strip `id` from character data when calling updateCharacter API (use destructuring)
+  - Useful context: Save status uses 'idle' | 'saving' | 'saved' | 'error' state machine pattern
+  - Useful context: SVG spinner animation uses animate-spin with opacity-based path coloring
+  - Note: Manual browser verification needed - no dev-browser skill available
+---
+
+## 2026-02-01 - US-014
+- What was implemented: Updated home page to list characters from API instead of localStorage
+- Files changed:
+  - src/pages/HomePage.tsx (modified) - replaced localStorage with listCharacters API, added loading state, updated delete to use API
+- **Learnings for future iterations:**
+  - Patterns discovered: Use CharacterSummary type from api.ts for list endpoint responses
+  - Patterns discovered: Rename imported function with `as` for clarity (e.g., `deleteCharacter as deleteCharacterApi`)
+  - Gotchas encountered: Removed import-from-JSON functionality as it no longer fits the API-based architecture
+  - Gotchas encountered: CharacterSummary doesn't include subclass field, so removed subclass display from cards
+  - Useful context: Delete confirmation modal disables buttons and shows "Deleting..." during API call
+  - Note: Manual browser verification needed - no dev-browser skill available
 ---
