@@ -134,19 +134,43 @@ export const CLASSES: ClassData[] = [
     subclassName: 'Bard College',
     subclasses: [
       {
+        name: 'College of Dance',
+        description: 'Bards of the College of Dance know that the words of creation are not just sounds or music—they are the steps of creation itself.',
+        features: [
+          { name: 'Dazzling Footwork', level: 3, description: 'While you are not wearing armor or wielding a Shield, your AC equals 10 + your Dexterity modifier + your Charisma modifier. In addition, when you take the Attack action on your turn, your Speed increases by 10 feet until the end of the turn, and if you use Bardic Inspiration as part of that action, you don\'t expend the use of Bardic Inspiration.' },
+          { name: 'Inspiring Movement', level: 3, description: 'When an enemy you can see ends its turn within 5 feet of you, you can take a Reaction to expend one use of your Bardic Inspiration and move up to half your Speed. Then one ally within 30 feet who can see you can also use their Reaction to move up to half their Speed.' },
+          { name: 'Tandem Footwork', level: 6, description: 'When you roll Initiative, you can expend one use of your Bardic Inspiration if you don\'t have the Incapacitated condition. When you do so, roll your Bardic Inspiration die; you and each ally within 30 feet of you who can see you gains a bonus to Initiative equal to the number rolled.' },
+          { name: 'Leading Evasion', level: 14, description: 'When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the saving throw and only half damage if you fail. If any creatures within 5 feet of you are making the same Dexterity saving throw, you can share this benefit with them for that save.' },
+        ],
+      },
+      {
+        name: 'College of Glamour',
+        description: 'The College of Glamour is the home of bards who mastered their craft in the vibrant realm of the Feywild or under the tutelage of someone who dwelled there.',
+        features: [
+          { name: 'Beguiling Magic', level: 3, description: 'Whenever you cast a spell that has a duration of 1 minute or longer and requires Concentration, you can expend one use of Bardic Inspiration (no action required) to make the spell last for its full duration without requiring Concentration. When you do so, you can\'t use this feature again until you finish a Long Rest.' },
+          { name: 'Mantle of Inspiration', level: 3, description: 'As a Bonus Action, you can expend one use of your Bardic Inspiration to give yourself a wondrous appearance. When you do so, choose a number of creatures you can see within 60 feet of you, up to a number equal to your Charisma modifier (minimum of one creature). Each of them gains Temporary Hit Points equal to twice your Bard level and can immediately use its Reaction to move up to its Speed without provoking Opportunity Attacks.' },
+          { name: 'Mantle of Majesty', level: 6, description: 'As a Bonus Action, you cast Command without expending a spell slot. You take on an appearance of unearthly beauty for 1 minute or until your concentration ends. During this time, you can cast Command as a Bonus Action on each of your turns without expending a spell slot. Any creature Charmed by you automatically fails its saving throw against the Command you cast with this feature.' },
+          { name: 'Unbreakable Majesty', level: 14, description: 'As a Bonus Action, you can assume a magically majestic presence for 1 minute or until you are Incapacitated. For the duration, whenever any creature tries to attack you for the first time on a turn, the attacker must make a Charisma saving throw against your spell save DC. On a failed save, it can\'t attack you on this turn and must choose a new target for its attack or the attack is wasted. On a successful save, it can attack you on this turn but has Disadvantage on any saving throw it makes against your spells on your next turn.' },
+        ],
+      },
+      {
         name: 'College of Lore',
         description: 'Bards of the College of Lore know something about most things.',
         features: [
           { name: 'Bonus Proficiencies', level: 3, description: 'You gain proficiency with three skills of your choice.' },
           { name: 'Cutting Words', level: 3, description: 'When a creature you can see within 60 feet makes an attack roll, ability check, or damage roll, you can use your reaction to expend one use of your Bardic Inspiration to subtract the number rolled from the creature\'s roll.' },
+          { name: 'Magical Discoveries', level: 6, description: 'You learn two spells of your choice. These spells can come from any spell list, but they must be of a level you can cast. The spells count as Bard spells for you but don\'t count against the number of spells you know.' },
+          { name: 'Peerless Skill', level: 14, description: 'When you make an ability check or attack roll and fail, you can expend one use of Bardic Inspiration, rolling the Bardic Inspiration die and adding the number rolled to your d20 roll, potentially turning a failure into a success. If the roll still fails, the Bardic Inspiration is not expended.' },
         ],
       },
       {
         name: 'College of Valor',
         description: 'Bards of the College of Valor are daring skalds whose tales keep alive the memory of the great heroes of the past.',
         features: [
-          { name: 'Bonus Proficiencies', level: 3, description: 'You gain proficiency with medium armor, shields, and martial weapons.' },
           { name: 'Combat Inspiration', level: 3, description: 'A creature that has a Bardic Inspiration die from you can roll that die and add the number rolled to a weapon damage roll it just made, or add it to their AC until the start of your next turn.' },
+          { name: 'Martial Training', level: 3, description: 'You gain proficiency with Medium armor and with Martial weapons.' },
+          { name: 'Extra Attack', level: 6, description: 'You can attack twice, instead of once, whenever you take the Attack action on your turn.' },
+          { name: 'Battle Magic', level: 14, description: 'When you use your action to cast a Bard spell, you can make one weapon attack as a Bonus Action.' },
         ],
       },
     ],
