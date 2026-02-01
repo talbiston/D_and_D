@@ -293,7 +293,9 @@ export default function CharacterSheetPage() {
       name: newWeaponName.trim(),
       damage: newWeaponDamage,
       damageType: newWeaponDamageType,
-      properties: newWeaponProperties
+      properties: newWeaponProperties,
+      isEquipped: true,
+      isTwoHanding: false
     }
     updateCharacter({
       weapons: [...character.weapons, newWeapon]

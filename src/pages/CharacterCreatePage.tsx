@@ -164,6 +164,9 @@ export default function CharacterCreatePage() {
         weapons: classData?.weaponProficiencies ?? [],
         tools: [],
       },
+      armor: [],
+      inventory: [],
+      toolProficiencies: [],
     }
 
     // Save and navigate
