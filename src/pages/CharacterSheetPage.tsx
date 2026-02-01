@@ -18,8 +18,10 @@ import LevelUpHPModal from '../components/LevelUpHPModal'
 import ASIModal, { type ASIChoice } from '../components/ASIModal'
 import LevelUpSummaryModal from '../components/LevelUpSummaryModal'
 import InvocationPickerModal from '../components/InvocationPickerModal'
+import ManeuverPickerModal from '../components/ManeuverPickerModal'
 import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel, getPactMagicSlots } from '../utils/calculations'
 import { INVOCATIONS, getInvocationsKnown } from '../data/invocations'
+import { MANEUVERS, getManeuversKnown, getSuperiorityDice } from '../data/maneuvers'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -104,6 +106,7 @@ export default function CharacterSheetPage() {
   const [showLevelUpHPModal, setShowLevelUpHPModal] = useState(false)
   const [showASIModal, setShowASIModal] = useState(false)
   const [showInvocationPicker, setShowInvocationPicker] = useState(false)
+  const [showManeuverPicker, setShowManeuverPicker] = useState(false)
   const [pendingLevelUp, setPendingLevelUp] = useState<{ levelUpResult: LevelUpResult; hpGain: number } | null>(null)
   const [levelUpSummary, setLevelUpSummary] = useState<{
     newLevel: number
@@ -1161,6 +1164,86 @@ export default function CharacterSheetPage() {
             ) : (
               <p className="text-gray-500 dark:text-gray-400">
                 No invocations selected. Click "Manage Invocations" to choose your Eldritch Invocations.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Battle Master Maneuvers (Battle Master Fighter only) */}
+        {character.class === 'Fighter' && character.subclass === 'Battle Master' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Combat Superiority
+                <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                  ({(character.battleMasterManeuvers?.length ?? 0)}/{getManeuversKnown(character.level)} maneuvers)
+                </span>
+              </h2>
+              <button
+                onClick={() => setShowManeuverPicker(true)}
+                className="text-sm px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded transition-colors"
+              >
+                Manage Maneuvers
+              </button>
+            </div>
+            {/* Superiority Dice Display */}
+            {(() => {
+              const { count, size } = getSuperiorityDice(character.level)
+              return (
+                <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/30 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-amber-800 dark:text-amber-200 font-medium">
+                      Superiority Dice
+                    </span>
+                    <span className="text-amber-700 dark:text-amber-300">
+                      {count}{size}
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    Recovered on Short or Long Rest
+                  </p>
+                </div>
+              )
+            })()}
+            {character.battleMasterManeuvers && character.battleMasterManeuvers.length > 0 ? (
+              <div className="space-y-2">
+                {character.battleMasterManeuvers.map((maneuverName) => {
+                  const maneuver = MANEUVERS.find(m => m.name === maneuverName)
+                  if (!maneuver) return null
+                  const isExpanded = expandedFeatures.has(`maneuver-${maneuverName}`)
+                  return (
+                    <div
+                      key={maneuverName}
+                      className="bg-amber-50 dark:bg-amber-900/30 rounded-lg overflow-hidden"
+                    >
+                      <button
+                        onClick={() => toggleFeatureExpanded(`maneuver-${maneuverName}`)}
+                        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
+                      >
+                        <span className="font-medium text-amber-900 dark:text-amber-200">
+                          {maneuver.name}
+                        </span>
+                        <svg
+                          className={`w-5 h-5 text-amber-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {isExpanded && (
+                        <div className="px-4 pb-3 text-sm text-amber-700 dark:text-amber-300">
+                          {maneuver.description}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">
+                No maneuvers selected. Click "Manage Maneuvers" to choose your Combat Maneuvers.
               </p>
             )}
           </div>
@@ -2328,6 +2411,19 @@ export default function CharacterSheetPage() {
             setShowInvocationPicker(false)
           }}
           onCancel={() => setShowInvocationPicker(false)}
+        />
+      )}
+
+      {/* Maneuver Picker Modal */}
+      {showManeuverPicker && character && character.class === 'Fighter' && character.subclass === 'Battle Master' && (
+        <ManeuverPickerModal
+          fighterLevel={character.level}
+          currentManeuvers={character.battleMasterManeuvers ?? []}
+          onConfirm={(maneuvers) => {
+            updateCharacter({ battleMasterManeuvers: maneuvers })
+            setShowManeuverPicker(false)
+          }}
+          onCancel={() => setShowManeuverPicker(false)}
         />
       )}
 

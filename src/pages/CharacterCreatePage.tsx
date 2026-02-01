@@ -226,6 +226,7 @@ export default function CharacterCreatePage() {
       spellSlots: { ...DEFAULT_SPELL_SLOTS },
       pactMagic: characterClass === 'Warlock' ? { ...getPactMagicSlots(level), expended: 0 } : undefined,
       eldritchInvocations: characterClass === 'Warlock' ? [] : undefined,
+      battleMasterManeuvers: characterClass === 'Fighter' && characterSubclass === 'Battle Master' ? [] : undefined,
       spellcastingAbility: classData?.spellcastingAbility,
       classFeatures: getClassFeaturesForLevel(characterClass, level),
       feats,
