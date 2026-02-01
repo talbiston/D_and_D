@@ -936,6 +936,54 @@ export const CLASSES: ClassData[] = [
       { name: 'Ability Score Improvement', level: 19, description: 'Increase one ability score by 2, or two ability scores by 1 each. Alternatively, choose a feat.' },
       { name: 'Signature Spells', level: 20, description: 'You always have two 3rd-level Wizard spells of your choice from your spellbook prepared—they are your Signature Spells. You can cast each of them once at 3rd level without expending a spell slot. When you do so, you can\'t cast that spell again this way until you finish a Short or Long Rest. If you want to cast either spell at a higher level, you must expend a spell slot as normal.' },
     ],
+    subclassLevel: 3,
+    subclassName: 'Arcane Tradition',
+    subclasses: [
+      {
+        name: 'School of Abjuration',
+        description: 'The School of Abjuration emphasizes magic that blocks, banishes, or protects.',
+        features: [
+          { name: 'Abjuration Savant', level: 3, description: 'Choose two Abjuration spells from the Wizard spell list, each of which must be no higher than 2nd level, and add them to your spellbook for free. In addition, whenever you gain access to a new level of spell slots in this class, you can add one Abjuration spell from the Wizard spell list to your spellbook for free. The chosen spell must be of a level for which you have spell slots.' },
+          { name: 'Arcane Ward', level: 3, description: 'You can weave magic around yourself for protection. When you cast an Abjuration spell of 1st level or higher, you can simultaneously use a strand of the spell\'s magic to create a magical ward on yourself that lasts until you finish a Long Rest. The ward has a Hit Point maximum equal to twice your Wizard level plus your Intelligence modifier. Whenever you take damage, the ward takes the damage instead. If the damage reduces the ward to 0 Hit Points, you take any remaining damage. While the ward has 0 Hit Points, it can\'t absorb damage, but its magic remains. Whenever you cast an Abjuration spell of 1st level or higher, the ward regains a number of Hit Points equal to twice the level of the spell.' },
+          { name: 'Projected Ward', level: 6, description: 'When a creature you can see within 30 feet of you takes damage, you can take a Reaction to cause your Arcane Ward to absorb that damage. If this damage reduces the ward to 0 Hit Points, the warded creature takes any remaining damage.' },
+          { name: 'Spell Breaker', level: 10, description: 'You always have the Dispel Magic spell prepared. In addition, when you cast Dispel Magic, you can add your proficiency bonus to the ability check you make to end a spell. You also always have the Counterspell spell prepared, and when you cast it and succeed in countering a spell, you can regain a spell slot of a level lower than the countered spell\'s level (your choice). You can\'t regain a spell slot this way again until you finish a Long Rest.' },
+          { name: 'Spell Resistance', level: 14, description: 'You have Advantage on saving throws against spells. In addition, you have Resistance to the damage of spells.' },
+        ],
+      },
+      {
+        name: 'School of Divination',
+        description: 'The counsel of a diviner is sought by royalty and commoners alike, for all seek a clearer understanding of the past, present, and future.',
+        features: [
+          { name: 'Divination Savant', level: 3, description: 'Choose two Divination spells from the Wizard spell list, each of which must be no higher than 2nd level, and add them to your spellbook for free. In addition, whenever you gain access to a new level of spell slots in this class, you can add one Divination spell from the Wizard spell list to your spellbook for free. The chosen spell must be of a level for which you have spell slots.' },
+          { name: 'Portent', level: 3, description: 'Glimpses of the future begin to press in on your awareness. When you finish a Long Rest, roll two d20s and record the numbers rolled. You can replace any attack roll, saving throw, or ability check made by you or a creature that you can see with one of these foretelling rolls. You must choose to do so before the roll, and you can replace a roll in this way only once per turn. Each foretelling roll can be used only once. When you finish a Long Rest, you lose any unused foretelling rolls.' },
+          { name: 'Expert Divination', level: 6, description: 'Casting Divination spells comes so easily to you that it expends only a fraction of your spellcasting efforts. When you cast a Divination spell of 2nd level or higher using a spell slot, you regain one expended spell slot. The slot you regain must be of a level lower than the spell you cast and can\'t be higher than 5th level.' },
+          { name: 'The Third Eye', level: 10, description: 'As a Bonus Action, you can increase your powers of perception. When you do so, choose one of the following benefits, which lasts until you are Incapacitated or finish a Short or Long Rest. You can\'t use this feature again until you finish a Short or Long Rest. Darkvision: You gain Darkvision with a range of 120 feet. Ethereal Sight: You can see into the Ethereal Plane within 60 feet of you. Greater Comprehension: You can read any language. See Invisibility: You can see Invisible creatures and objects within 10 feet of you that are within line of sight.' },
+          { name: 'Greater Portent', level: 14, description: 'The visions in your dreams intensify and paint a more accurate picture of what is to come. You roll three d20s for your Portent feature rather than two.' },
+        ],
+      },
+      {
+        name: 'School of Evocation',
+        description: 'You focus your study on magic that creates powerful elemental effects such as bitter cold, searing flame, rolling thunder, crackling lightning, and burning acid.',
+        features: [
+          { name: 'Evocation Savant', level: 3, description: 'Choose two Evocation spells from the Wizard spell list, each of which must be no higher than 2nd level, and add them to your spellbook for free. In addition, whenever you gain access to a new level of spell slots in this class, you can add one Evocation spell from the Wizard spell list to your spellbook for free. The chosen spell must be of a level for which you have spell slots.' },
+          { name: 'Potent Cantrip', level: 3, description: 'Your damaging cantrips affect even creatures that avoid the brunt of the effect. When you cast a cantrip at a creature and you miss with the attack roll or the target succeeds on a saving throw against the cantrip, the target takes half the cantrip\'s damage (if any) but suffers no additional effect from the cantrip.' },
+          { name: 'Sculpt Spells', level: 6, description: 'You can create pockets of relative safety within the effects of your evocation spells. When you cast an Evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 plus the spell\'s level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save.' },
+          { name: 'Empowered Evocation', level: 10, description: 'Whenever you cast a Wizard Evocation spell that deals damage, you can add your Intelligence modifier to one damage roll of that spell.' },
+          { name: 'Overchannel', level: 14, description: 'When you cast a Wizard spell of 5th level or lower that deals damage, you can deal maximum damage with that spell. The first time you do so, you suffer no adverse effect. If you use this feature again before you finish a Long Rest, you take 2d12 Necrotic damage for each level of the spell immediately after you cast it. Each time you use this feature again before finishing a Long Rest, the Necrotic damage per spell level increases by 1d12.' },
+        ],
+      },
+      {
+        name: 'School of Illusion',
+        description: 'You focus your studies on magic that dazzles the senses, befuddles the mind, and tricks even the wisest folk.',
+        features: [
+          { name: 'Illusion Savant', level: 3, description: 'Choose two Illusion spells from the Wizard spell list, each of which must be no higher than 2nd level, and add them to your spellbook for free. In addition, whenever you gain access to a new level of spell slots in this class, you can add one Illusion spell from the Wizard spell list to your spellbook for free. The chosen spell must be of a level for which you have spell slots.' },
+          { name: 'Improved Minor Illusion', level: 3, description: 'You learn the Minor Illusion cantrip. If you already know this cantrip, you learn a different Wizard cantrip of your choice. The cantrip doesn\'t count against your number of cantrips known. When you cast Minor Illusion, you can create both a sound and an image with a single casting of the spell.' },
+          { name: 'Malleable Illusions', level: 6, description: 'When you cast an Illusion spell that has a duration of 1 minute or longer, you can use a Bonus Action to change the nature of that illusion (using the spell\'s normal parameters for the illusion), provided that you can see the illusion.' },
+          { name: 'Illusory Self', level: 10, description: 'You can create an illusory duplicate of yourself as an instant, almost instinctual reaction to danger. When a creature makes an attack roll against you, you can take a Reaction to interpose the illusory duplicate between the attacker and yourself. The attack automatically misses you, then the illusion dissipates. Once you use this feature, you can\'t use it again until you finish a Short or Long Rest, or until you expend a spell slot of 2nd level or higher to use it again.' },
+          { name: 'Illusory Reality', level: 14, description: 'You have learned the secret of weaving shadow magic into your illusions to give them a semi-reality. When you cast an Illusion spell of 1st level or higher, you can choose one inanimate, nonmagical object that is part of the illusion and make that object real. You can do this on your turn as a Bonus Action while the spell is ongoing. The object remains real for 1 minute. The object can\'t deal damage or otherwise directly harm anyone.' },
+        ],
+      },
+    ],
   },
 ]
 
