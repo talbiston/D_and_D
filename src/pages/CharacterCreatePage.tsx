@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getSpeciesNames } from '../data/species'
 import { getClassNames } from '../data/classes'
-import type { AbilityScores, AbilityName, Skill, SkillName, Weapon } from '../types'
+import type { AbilityScores, AbilityName, Skill, SkillName, Weapon, InventoryItem, Currency } from '../types'
 import { DEFAULT_ABILITY_SCORES, SKILL_ABILITIES, createDefaultSkills } from '../types'
 import { getAbilityModifier, formatModifier, getProficiencyBonus, getSkillBonus, getPassivePerception } from '../utils/calculations'
 import { saveCharacter } from '../utils/storage'
@@ -24,6 +24,9 @@ import { getArmorByName, getLightArmor, getMediumArmor, getHeavyArmor } from '..
 import type { ArmorData } from '../data/armor'
 import { calculateAC } from '../utils/calculations'
 import type { CharacterArmor } from '../types'
+import { EQUIPMENT_PACKS, getPackByName } from '../data/equipmentPacks'
+import type { EquipmentPack } from '../data/equipmentPacks'
+import { getGearByName } from '../data/gear'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'Strength',
@@ -91,6 +94,12 @@ export default function CharacterCreatePage() {
 
   // Starting equipment armor selections - track which armor is selected for each choice index
   const [armorSelections, setArmorSelections] = useState<Record<number, string>>({})
+
+  // Equipment pack or starting gold choice
+  const [equipmentMode, setEquipmentMode] = useState<'pack' | 'gold'>('pack')
+  const [selectedPack, setSelectedPack] = useState<string>('')
+  const [rolledGold, setRolledGold] = useState<number | null>(null)
+  const [goldRollDetails, setGoldRollDetails] = useState<{ rolls: number[], multiplier: number } | null>(null)
 
   const backgroundOptions = getBackgroundNames()
 
@@ -355,6 +364,102 @@ export default function CharacterCreatePage() {
     setSubclass('')
     setWeaponSelections({})
     setArmorSelections({})
+    setSelectedPack('')
+    setRolledGold(null)
+    setGoldRollDetails(null)
+  }
+
+  // Get available equipment packs for the selected class
+  const getClassPackChoices = (): EquipmentPack[] => {
+    const classData = getClassByName(characterClass)
+    if (!classData?.startingEquipment) return []
+
+    const packNames = new Set<string>()
+
+    classData.startingEquipment.forEach(choice => {
+      if (choice.choice) {
+        choice.choice.forEach(opt => {
+          // Check if option is a pack name
+          const pack = getPackByName(opt)
+          if (pack) {
+            packNames.add(pack.name)
+          }
+        })
+      }
+      if (choice.items) {
+        choice.items.forEach(item => {
+          const pack = getPackByName(item.item)
+          if (pack) {
+            packNames.add(pack.name)
+          }
+        })
+      }
+    })
+
+    return Array.from(packNames).map(name => getPackByName(name)!).filter(Boolean)
+  }
+
+  // Parse starting gold formula (e.g., "5d4 x 10" -> { dice: 5, sides: 4, multiplier: 10 })
+  const parseGoldFormula = (formula: string): { dice: number, sides: number, multiplier: number } | null => {
+    // Match patterns like "5d4 x 10", "5d4", "2d4 x 10"
+    const match = formula.match(/^(\d+)d(\d+)(?:\s*[xX×]\s*(\d+))?$/)
+    if (!match) return null
+
+    return {
+      dice: parseInt(match[1]),
+      sides: parseInt(match[2]),
+      multiplier: match[3] ? parseInt(match[3]) : 1,
+    }
+  }
+
+  // Roll starting gold
+  const rollStartingGold = () => {
+    const classData = getClassByName(characterClass)
+    if (!classData?.startingGold) return
+
+    const parsed = parseGoldFormula(classData.startingGold)
+    if (!parsed) return
+
+    const rolls: number[] = []
+    for (let i = 0; i < parsed.dice; i++) {
+      rolls.push(Math.floor(Math.random() * parsed.sides) + 1)
+    }
+
+    const total = rolls.reduce((sum, r) => sum + r, 0) * parsed.multiplier
+    setRolledGold(total)
+    setGoldRollDetails({ rolls, multiplier: parsed.multiplier })
+  }
+
+  // Build starting inventory from selected pack
+  const buildStartingInventory = (): InventoryItem[] => {
+    if (equipmentMode !== 'pack' || !selectedPack) return []
+
+    const pack = getPackByName(selectedPack)
+    if (!pack) return []
+
+    return pack.contents.map(item => {
+      const gearData = getGearByName(item.item)
+      return {
+        name: item.item,
+        quantity: item.quantity,
+        weight: gearData?.weight ?? 0,
+        category: gearData?.category ?? 'adventuring gear',
+      }
+    })
+  }
+
+  // Build starting currency
+  const buildStartingCurrency = (): Currency => {
+    if (equipmentMode === 'gold' && rolledGold !== null) {
+      return {
+        cp: 0,
+        sp: 0,
+        ep: 0,
+        gp: rolledGold,
+        pp: 0,
+      }
+    }
+    return { ...DEFAULT_CURRENCY }
   }
 
   // Build weapons array from selections and fixed items
@@ -427,6 +532,12 @@ export default function CharacterCreatePage() {
     // Build starting armor from selections and fixed items
     const startingArmor = buildStartingArmor()
 
+    // Build starting inventory from equipment pack
+    const startingInventory = buildStartingInventory()
+
+    // Build starting currency
+    const startingCurrency = buildStartingCurrency()
+
     // Calculate initial AC based on equipped armor
     const equippedBodyArmor = startingArmor.find(a => !a.isShield && a.isEquipped)
     const hasShield = startingArmor.some(a => a.isShield && a.isEquipped)
@@ -467,7 +578,7 @@ export default function CharacterCreatePage() {
       classFeatures: getClassFeaturesForLevel(characterClass, level),
       feats,
       speciesTraits: speciesData?.traits ?? [],
-      currency: { ...DEFAULT_CURRENCY },
+      currency: startingCurrency,
       deathSaves: { ...DEFAULT_DEATH_SAVES },
       hitDice: { total: level, spent: 0 },
       backstory: { ...DEFAULT_BACKSTORY },
@@ -477,7 +588,7 @@ export default function CharacterCreatePage() {
         tools: [],
       },
       armor: startingArmor,
-      inventory: [],
+      inventory: startingInventory,
       toolProficiencies: [],
     }
 
@@ -1000,6 +1111,182 @@ export default function CharacterCreatePage() {
                   return null
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Equipment Pack or Starting Gold */}
+          {characterClass && getClassByName(characterClass)?.startingGold && (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Equipment Pack or Starting Gold
+              </h2>
+
+              {/* Toggle between pack and gold */}
+              <div className="flex gap-4 mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="equipmentMode"
+                    value="pack"
+                    checked={equipmentMode === 'pack'}
+                    onChange={() => {
+                      setEquipmentMode('pack')
+                      setRolledGold(null)
+                      setGoldRollDetails(null)
+                    }}
+                    className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-gray-900 dark:text-white font-medium">Equipment Pack</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="equipmentMode"
+                    value="gold"
+                    checked={equipmentMode === 'gold'}
+                    onChange={() => {
+                      setEquipmentMode('gold')
+                      setSelectedPack('')
+                    }}
+                    className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-gray-900 dark:text-white font-medium">Starting Gold</span>
+                </label>
+              </div>
+
+              {/* Pack selection */}
+              {equipmentMode === 'pack' && (
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Select an equipment pack:
+                  </label>
+                  {getClassPackChoices().length > 0 ? (
+                    <>
+                      <select
+                        value={selectedPack}
+                        onChange={(e) => setSelectedPack(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      >
+                        <option value="">Select a pack</option>
+                        {getClassPackChoices().map((pack) => (
+                          <option key={pack.name} value={pack.name}>
+                            {pack.name} ({pack.cost})
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Display pack contents */}
+                      {selectedPack && getPackByName(selectedPack) && (
+                        <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                            {selectedPack} Contents:
+                          </h4>
+                          <ul className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                            {getPackByName(selectedPack)!.contents.map((item, idx) => (
+                              <li key={idx} className="flex justify-between">
+                                <span>{item.item}</span>
+                                <span className="text-gray-500 dark:text-gray-400">×{item.quantity}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Select from available packs or choose any pack:
+                    </p>
+                  )}
+
+                  {/* Show all packs if class doesn't have specific pack choices */}
+                  {getClassPackChoices().length === 0 && (
+                    <>
+                      <select
+                        value={selectedPack}
+                        onChange={(e) => setSelectedPack(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent mt-2"
+                      >
+                        <option value="">Select a pack</option>
+                        {EQUIPMENT_PACKS.map((pack) => (
+                          <option key={pack.name} value={pack.name}>
+                            {pack.name} ({pack.cost})
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Display pack contents */}
+                      {selectedPack && getPackByName(selectedPack) && (
+                        <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                            {selectedPack} Contents:
+                          </h4>
+                          <ul className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                            {getPackByName(selectedPack)!.contents.map((item, idx) => (
+                              <li key={idx} className="flex justify-between">
+                                <span>{item.item}</span>
+                                <span className="text-gray-500 dark:text-gray-400">×{item.quantity}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Starting gold */}
+              {equipmentMode === 'gold' && (
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Starting Gold Formula:
+                      </p>
+                      <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                        {getClassByName(characterClass)?.startingGold} gp
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={rollStartingGold}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Roll Gold
+                    </button>
+                  </div>
+
+                  {/* Display roll result */}
+                  {rolledGold !== null && goldRollDetails && (
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg border border-yellow-200 dark:border-yellow-700">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                            Rolled: [{goldRollDetails.rolls.join(', ')}]{goldRollDetails.multiplier > 1 && ` × ${goldRollDetails.multiplier}`}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                            {rolledGold} gp
+                          </p>
+                          <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                            Starting Gold
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {rolledGold === null && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Click "Roll Gold" to determine your starting gold. You can purchase equipment later.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
