@@ -67,3 +67,22 @@ Started: Sun Feb  1 04:01:39 PM CST 2026
   - Some ancestries grant abilities (like Misty Step for Cloud Goliath) rather than resistances
   - Gnome ancestries use the `spells` field to track cantrips granted
 ---
+
+## 2026-02-01 - US-004
+- What was implemented: Ancestry Selection UI to Character Creation
+  - Added `speciesAncestry` state to CharacterCreatePage.tsx
+  - Added `handleSpeciesChange` function that resets ancestry when species changes
+  - Computed `speciesData`, `ancestryOptions`, and `selectedAncestryOption` for easy access
+  - Added ancestry dropdown that appears when selected species has ancestry data
+  - Dropdown label uses the species ancestry `choiceName` (e.g., "Draconic Ancestry")
+  - Shows description of selected ancestry option below the dropdown
+  - Updated `isValid` check to require ancestry selection when species has ancestry
+  - Included `speciesAncestry` in character data object when saving
+- Files changed:
+  - src/pages/CharacterCreatePage.tsx
+- **Learnings for future iterations:**
+  - `getSpeciesByName(species)` returns the Species object with ancestry data
+  - Ancestry options are accessed via `speciesData.ancestry.options`
+  - The `isValid` pattern allows easy composition with additional requirements
+  - Species data also provides `speed` and `size` for character creation
+---
