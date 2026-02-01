@@ -1,0 +1,801 @@
+{
+  "project": "D&D 2024 Level-Up System",
+  "branchName": "ralph/level-up-system",
+  "description": "Complete level progression system (1-20) for D&D 2024 character sheet with auto-applied benefits, HP choices, ASI/feat selection, spell slot progression, and scaling features",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add Barbarian features for levels 6-20",
+      "description": "As a player, I want Barbarian features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Subclass feature placeholder",
+        "Add level 7: Feral Instinct, Instinctive Pounce",
+        "Add level 8: ASI",
+        "Add level 9: Brutal Strike",
+        "Add level 10: Subclass feature placeholder",
+        "Add level 11: Relentless Rage",
+        "Add level 12: ASI",
+        "Add level 13: Improved Brutal Strike",
+        "Add level 14: Subclass feature placeholder",
+        "Add level 15: Persistent Rage",
+        "Add level 16: ASI",
+        "Add level 17: Improved Brutal Strike (2nd improvement)",
+        "Add level 18: Indomitable Might",
+        "Add level 19: ASI",
+        "Add level 20: Primal Champion",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Add Bard features for levels 6-20",
+      "description": "As a player, I want Bard features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Subclass feature placeholder",
+        "Add level 7: Countercharm",
+        "Add level 8: ASI",
+        "Add level 9: Expertise (2nd set)",
+        "Add level 10: Magical Secrets",
+        "Add level 11: No new feature (dash)",
+        "Add level 12: ASI",
+        "Add level 14: Subclass feature placeholder",
+        "Add level 15: No new feature (Bardic Inspiration scales to d12 - handled in scaling)",
+        "Add level 16: ASI",
+        "Add level 18: Superior Inspiration",
+        "Add level 19: ASI",
+        "Add level 20: Words of Creation",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Add Cleric features for levels 6-20",
+      "description": "As a player, I want Cleric features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Subclass feature placeholder, Channel Divinity (2/rest)",
+        "Add level 7: Blessed Strikes",
+        "Add level 8: ASI",
+        "Add level 10: Divine Intervention",
+        "Add level 12: ASI",
+        "Add level 14: Improved Blessed Strikes",
+        "Add level 16: ASI",
+        "Add level 17: Subclass feature placeholder",
+        "Add level 18: Channel Divinity (3/rest)",
+        "Add level 19: ASI",
+        "Add level 20: Greater Divine Intervention",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Add Druid features for levels 6-20",
+      "description": "As a player, I want Druid features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Subclass feature placeholder",
+        "Add level 7: Elemental Fury",
+        "Add level 8: ASI",
+        "Add level 10: Subclass feature placeholder",
+        "Add level 12: ASI",
+        "Add level 14: Subclass feature placeholder",
+        "Add level 15: Improved Elemental Fury",
+        "Add level 16: ASI",
+        "Add level 18: Beast Spells",
+        "Add level 19: ASI",
+        "Add level 20: Archdruid",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Add Fighter features for levels 6-20",
+      "description": "As a player, I want Fighter features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: ASI",
+        "Add level 7: Subclass feature placeholder",
+        "Add level 8: ASI",
+        "Add level 9: Indomitable (1 use), Tactical Master",
+        "Add level 10: Subclass feature placeholder",
+        "Add level 11: Two Extra Attacks (3 total)",
+        "Add level 12: ASI",
+        "Add level 13: Indomitable (2 uses), Studied Attacks",
+        "Add level 14: ASI",
+        "Add level 15: Subclass feature placeholder",
+        "Add level 16: ASI",
+        "Add level 17: Action Surge (2 uses), Indomitable (3 uses)",
+        "Add level 18: Subclass feature placeholder",
+        "Add level 19: ASI",
+        "Add level 20: Three Extra Attacks (4 total)",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Add Monk features for levels 6-20",
+      "description": "As a player, I want Monk features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Subclass feature placeholder, Unarmored Movement (+15 ft)",
+        "Add level 7: Evasion",
+        "Add level 8: ASI",
+        "Add level 9: Acrobatic Movement",
+        "Add level 10: Heightened Focus, Self-Restoration, Unarmored Movement (+20 ft)",
+        "Add level 11: Subclass feature placeholder",
+        "Add level 12: ASI",
+        "Add level 13: Deflect Energy",
+        "Add level 14: Disciplined Survivor, Unarmored Movement (+25 ft)",
+        "Add level 15: Perfect Focus",
+        "Add level 16: ASI",
+        "Add level 17: Subclass feature placeholder",
+        "Add level 18: Superior Defense, Unarmored Movement (+30 ft)",
+        "Add level 19: ASI",
+        "Add level 20: Body and Mind",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Add Paladin features for levels 6-20",
+      "description": "As a player, I want Paladin features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Aura of Protection",
+        "Add level 7: Subclass feature placeholder",
+        "Add level 8: ASI",
+        "Add level 9: Abjure Foes",
+        "Add level 10: Aura of Courage",
+        "Add level 11: Radiant Strikes",
+        "Add level 12: ASI",
+        "Add level 14: Restoring Touch",
+        "Add level 15: Subclass feature placeholder",
+        "Add level 16: ASI",
+        "Add level 18: Aura Expansion",
+        "Add level 19: ASI",
+        "Add level 20: Subclass feature placeholder",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Add Ranger features for levels 6-20",
+      "description": "As a player, I want Ranger features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Roving",
+        "Add level 7: Subclass feature placeholder",
+        "Add level 8: ASI",
+        "Add level 9: Expertise",
+        "Add level 10: Tireless",
+        "Add level 11: Subclass feature placeholder",
+        "Add level 12: ASI",
+        "Add level 13: Relentless Hunter",
+        "Add level 14: Nature's Veil",
+        "Add level 15: Subclass feature placeholder",
+        "Add level 16: ASI",
+        "Add level 17: Precise Hunter",
+        "Add level 18: Feral Senses",
+        "Add level 19: ASI",
+        "Add level 20: Foe Slayer",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Add Rogue features for levels 6-20",
+      "description": "As a player, I want Rogue features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Expertise (2nd set)",
+        "Add level 7: Evasion, Subclass feature placeholder",
+        "Add level 8: ASI",
+        "Add level 10: ASI",
+        "Add level 11: Reliable Talent",
+        "Add level 12: ASI",
+        "Add level 13: Subclass feature placeholder, Subtle Strikes",
+        "Add level 14: Devious Strikes",
+        "Add level 15: Slippery Mind",
+        "Add level 16: ASI",
+        "Add level 18: Elusive",
+        "Add level 19: ASI",
+        "Add level 20: Stroke of Luck",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Add Sorcerer features for levels 6-20",
+      "description": "As a player, I want Sorcerer features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Subclass feature placeholder",
+        "Add level 7: Sorcery Incarnate",
+        "Add level 8: ASI",
+        "Add level 10: Metamagic (+1 option)",
+        "Add level 12: ASI",
+        "Add level 14: Subclass feature placeholder",
+        "Add level 16: ASI",
+        "Add level 17: Metamagic (+1 option)",
+        "Add level 18: Subclass feature placeholder",
+        "Add level 19: ASI",
+        "Add level 20: Arcane Apotheosis",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Add Warlock features for levels 6-20",
+      "description": "As a player, I want Warlock features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Subclass feature placeholder",
+        "Add level 7: Eldritch Invocation (+1)",
+        "Add level 8: ASI",
+        "Add level 9: Contact Patron, Eldritch Invocation (+1)",
+        "Add level 10: Subclass feature placeholder",
+        "Add level 11: Mystic Arcanum (6th level)",
+        "Add level 12: ASI, Eldritch Invocation (+1)",
+        "Add level 13: Mystic Arcanum (7th level)",
+        "Add level 14: Subclass feature placeholder",
+        "Add level 15: Eldritch Invocation (+1), Mystic Arcanum (8th level)",
+        "Add level 16: ASI",
+        "Add level 17: Mystic Arcanum (9th level)",
+        "Add level 18: Eldritch Invocation (+1)",
+        "Add level 19: ASI",
+        "Add level 20: Eldritch Master",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Add Wizard features for levels 6-20",
+      "description": "As a player, I want Wizard features from levels 6-20 so my character gains correct abilities.",
+      "acceptanceCriteria": [
+        "Add level 6: Subclass feature placeholder",
+        "Add level 8: ASI",
+        "Add level 10: Subclass feature placeholder",
+        "Add level 12: ASI",
+        "Add level 14: Subclass feature placeholder",
+        "Add level 16: ASI",
+        "Add level 18: Spell Mastery",
+        "Add level 19: ASI",
+        "Add level 20: Signature Spells",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Add Barbarian subclasses (Berserker, Wild Heart, World Tree, Zealot)",
+      "description": "As a player, I want all Barbarian subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "Path of the Berserker: level 3 Frenzy, level 6 Mindless Rage, level 10 Retaliation, level 14 Intimidating Presence",
+        "Path of the Wild Heart: level 3 Animal Speaker + Rage of the Wilds, level 6 Aspect of the Wilds, level 10 Nature Speaker, level 14 Power of the Wilds",
+        "Path of the World Tree: level 3 Vitality of the Tree, level 6 Branches of the Tree, level 10 Battering Roots, level 14 Travel Along the Tree",
+        "Path of the Zealot: level 3 Divine Fury + Warrior of the Gods, level 6 Fanatical Focus, level 10 Zealous Presence, level 14 Rage Beyond Death",
+        "Typecheck passes"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Add Bard subclasses (Dance, Glamour, Lore, Valor)",
+      "description": "As a player, I want all Bard subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "College of Dance: level 3 Dazzling Footwork + Inspiring Movement, level 6 Tandem Footwork, level 14 Leading Evasion",
+        "College of Glamour: level 3 Beguiling Magic + Mantle of Inspiration, level 6 Mantle of Majesty, level 14 Unbreakable Majesty",
+        "College of Lore: level 3 Bonus Proficiencies + Cutting Words, level 6 Magical Discoveries, level 14 Peerless Skill",
+        "College of Valor: level 3 Combat Inspiration + Martial Training, level 6 Extra Attack, level 14 Battle Magic",
+        "Typecheck passes"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Add Cleric subclasses (Life, Light, Trickery, War)",
+      "description": "As a player, I want all Cleric subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "Life Domain: level 3 Disciple of Life + Domain Spells, level 6 Preserve Life, level 17 Supreme Healing",
+        "Light Domain: level 3 Warding Flare + Domain Spells, level 6 Radiance of the Dawn, level 17 Corona of Light",
+        "Trickery Domain: level 3 Blessing of the Trickster + Domain Spells, level 6 Invoke Duplicity, level 17 Improved Duplicity",
+        "War Domain: level 3 War Priest + Domain Spells, level 6 War God's Blessing, level 17 Avatar of Battle",
+        "Typecheck passes"
+      ],
+      "priority": 15,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Add Druid subclasses (Land, Moon, Sea, Stars)",
+      "description": "As a player, I want all Druid subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "Circle of the Land: level 3 Land's Aid + Circle Spells, level 6 Natural Recovery, level 10 Nature's Ward, level 14 Nature's Sanctuary",
+        "Circle of the Moon: level 3 Combat Wild Shape + Circle Forms, level 6 Improved Circle Forms, level 10 Elemental Wild Shape, level 14 Thousand Forms",
+        "Circle of the Sea: level 3 Wrath of the Sea + Circle Spells, level 6 Aquatic Affinity, level 10 Stormborn, level 14 Oceanic Gift",
+        "Circle of the Stars: level 3 Star Map + Starry Form, level 6 Cosmic Omen, level 10 Twinkling Constellations, level 14 Full of Stars",
+        "Typecheck passes"
+      ],
+      "priority": 16,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Add Fighter subclasses (Battle Master, Champion, Eldritch Knight, Psi Warrior)",
+      "description": "As a player, I want all Fighter subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "Battle Master: level 3 Combat Superiority + Student of War, level 7 Know Your Enemy, level 10 Improved Combat Superiority, level 15 Relentless, level 18 Ultimate Combat Superiority",
+        "Champion: level 3 Improved Critical + Remarkable Athlete, level 7 Additional Fighting Style, level 10 Heroic Warrior, level 15 Superior Critical, level 18 Survivor",
+        "Eldritch Knight: level 3 Spellcasting + War Bond, level 7 War Magic, level 10 Eldritch Strike, level 15 Arcane Charge, level 18 Improved War Magic",
+        "Psi Warrior: level 3 Psionic Power, level 7 Telekinetic Adept, level 10 Guarded Mind, level 15 Bulwark of Force, level 18 Telekinetic Master",
+        "Typecheck passes"
+      ],
+      "priority": 17,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Add Monk subclasses (Mercy, Shadow, Elements, Open Hand)",
+      "description": "As a player, I want all Monk subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "Way of Mercy: level 3 Hand of Healing + Hand of Harm, level 6 Physician's Touch, level 11 Flurry of Healing and Harm, level 17 Hand of Ultimate Mercy",
+        "Way of Shadow: level 3 Shadow Arts, level 6 Shadow Step, level 11 Cloak of Shadows, level 17 Opportunist",
+        "Way of the Four Elements: level 3 Elemental Attunement + Disciple of the Elements, level 6 Extra Elemental Discipline, level 11 Extra Elemental Discipline, level 17 Extra Elemental Discipline",
+        "Way of the Open Hand: level 3 Open Hand Technique, level 6 Wholeness of Body, level 11 Fleet Step, level 17 Quivering Palm",
+        "Typecheck passes"
+      ],
+      "priority": 18,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Add Paladin subclasses (Devotion, Glory, Ancients, Vengeance)",
+      "description": "As a player, I want all Paladin subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "Oath of Devotion: level 3 Oath Spells + Sacred Weapon + Turn the Unholy, level 7 Aura of Devotion, level 15 Smite of Protection, level 20 Holy Nimbus",
+        "Oath of Glory: level 3 Oath Spells + Peerless Athlete + Inspiring Smite, level 7 Aura of Alacrity, level 15 Glorious Defense, level 20 Living Legend",
+        "Oath of the Ancients: level 3 Oath Spells + Nature's Wrath + Turn the Faithless, level 7 Aura of Warding, level 15 Undying Sentinel, level 20 Elder Champion",
+        "Oath of Vengeance: level 3 Oath Spells + Abjure Enemy + Vow of Enmity, level 7 Relentless Avenger, level 15 Soul of Vengeance, level 20 Avenging Angel",
+        "Typecheck passes"
+      ],
+      "priority": 19,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "Add Ranger subclasses (Beast Master, Fey Wanderer, Gloom Stalker, Hunter)",
+      "description": "As a player, I want all Ranger subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "Beast Master: level 3 Primal Companion, level 7 Exceptional Training, level 11 Bestial Fury, level 15 Share Spells",
+        "Fey Wanderer: level 3 Dreadful Strikes + Fey Wanderer Magic + Otherworldly Glamour, level 7 Beguiling Twist, level 11 Fey Reinforcements, level 15 Misty Wanderer",
+        "Gloom Stalker: level 3 Dread Ambusher + Gloom Stalker Magic + Umbral Sight, level 7 Iron Mind, level 11 Stalker's Flurry, level 15 Shadowy Dodge",
+        "Hunter: level 3 Hunter's Prey, level 7 Defensive Tactics, level 11 Superior Hunter's Prey, level 15 Superior Hunter's Defense",
+        "Typecheck passes"
+      ],
+      "priority": 20,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-021",
+      "title": "Add Rogue subclasses (Arcane Trickster, Assassin, Soulknife, Thief)",
+      "description": "As a player, I want all Rogue subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "Arcane Trickster: level 3 Spellcasting + Mage Hand Legerdemain, level 7 Magical Ambush, level 13 Versatile Trickster, level 17 Spell Thief",
+        "Assassin: level 3 Assassinate + Assassin's Tools, level 7 Infiltration Expertise, level 13 Envenom Weapons, level 17 Death Strike",
+        "Soulknife: level 3 Psionic Power + Psychic Blades, level 7 Soul Blades, level 13 Psychic Veil, level 17 Rend Mind",
+        "Thief: level 3 Fast Hands + Second-Story Work, level 7 Supreme Sneak, level 13 Use Magic Device, level 17 Thief's Reflexes",
+        "Typecheck passes"
+      ],
+      "priority": 21,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-022",
+      "title": "Add Sorcerer subclasses (Aberrant, Clockwork, Draconic, Wild Magic)",
+      "description": "As a player, I want all Sorcerer subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "Aberrant Sorcery: level 3 Psionic Spells + Telepathic Speech, level 6 Psionic Sorcery + Psychic Defenses, level 14 Revelation in Flesh, level 18 Warping Implosion",
+        "Clockwork Sorcery: level 3 Clockwork Magic + Restore Balance, level 6 Bastion of Law, level 14 Trance of Order, level 18 Clockwork Cavalcade",
+        "Draconic Sorcery: level 3 Draconic Resilience + Dragon Speech, level 6 Elemental Affinity, level 14 Dragon Wings, level 18 Draconic Presence",
+        "Wild Magic Sorcery: level 3 Wild Magic Surge + Tides of Chaos, level 6 Bend Luck, level 14 Controlled Chaos, level 18 Spell Bombardment",
+        "Typecheck passes"
+      ],
+      "priority": 22,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-023",
+      "title": "Add Warlock subclasses (Archfey, Celestial, Fiend, Great Old One)",
+      "description": "As a player, I want all Warlock subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "Archfey Patron: level 3 Fey Presence + Patron Spells, level 6 Misty Escape, level 10 Beguiling Defenses, level 14 Dark Delirium",
+        "Celestial Patron: level 3 Healing Light + Patron Spells, level 6 Radiant Soul, level 10 Celestial Resilience, level 14 Searing Vengeance",
+        "Fiend Patron: level 3 Dark One's Blessing + Patron Spells, level 6 Dark One's Own Luck, level 10 Fiendish Resilience, level 14 Hurl Through Hell",
+        "Great Old One Patron: level 3 Awakened Mind + Patron Spells, level 6 Clairvoyant Combatant, level 10 Thought Shield, level 14 Create Thrall",
+        "Typecheck passes"
+      ],
+      "priority": 23,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-024",
+      "title": "Add Wizard subclasses (Abjurer, Diviner, Evoker, Illusionist)",
+      "description": "As a player, I want all Wizard subclass features so I can use my full subclass abilities.",
+      "acceptanceCriteria": [
+        "School of Abjuration: level 3 Abjuration Savant + Arcane Ward, level 6 Projected Ward, level 10 Spell Breaker, level 14 Spell Resistance",
+        "School of Divination: level 3 Divination Savant + Portent, level 6 Expert Divination, level 10 The Third Eye, level 14 Greater Portent",
+        "School of Evocation: level 3 Evocation Savant + Potent Cantrip, level 6 Sculpt Spells, level 10 Empowered Evocation, level 14 Overchannel",
+        "School of Illusion: level 3 Illusion Savant + Improved Minor Illusion, level 6 Malleable Illusions, level 10 Illusory Self, level 14 Illusory Reality",
+        "Typecheck passes"
+      ],
+      "priority": 24,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-025",
+      "title": "Create spell slot progression data for all casters",
+      "description": "As a player, I want spell slots to update correctly when I level up.",
+      "acceptanceCriteria": [
+        "Create FULL_CASTER_SLOTS constant with slot counts for levels 1-20 (Bard, Cleric, Druid, Sorcerer, Wizard)",
+        "Create HALF_CASTER_SLOTS constant for Paladin and Ranger (slots start level 2)",
+        "Create PACT_MAGIC_SLOTS constant for Warlock (slot count and slot level per level)",
+        "Create getSpellSlotsForLevel(className, level) function",
+        "Function returns correct SpellSlots object based on class type",
+        "Warlock returns separate pactSlots object with count and slotLevel",
+        "Typecheck passes"
+      ],
+      "priority": 25,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-026",
+      "title": "Create scaling feature calculation utilities",
+      "description": "As a player, I want scaling features to show correct values for my level.",
+      "acceptanceCriteria": [
+        "Create getSneakAttackDice(rogueLevel): returns dice count (1 at 1, +1 every odd level)",
+        "Create getBardicInspirationDie(bardLevel): returns 'd6'/'d8'/'d10'/'d12'",
+        "Create getMartialArtsDie(monkLevel): returns 'd6'/'d8'/'d10'/'d12'",
+        "Create getRageDamage(barbarianLevel): returns 2/3/4",
+        "Create getRageCount(barbarianLevel): returns 2-6 or 'unlimited'",
+        "Create getFocusPoints(monkLevel): returns level",
+        "Create getSorceryPoints(sorcererLevel): returns level",
+        "Create getChannelDivinityUses(clericLevel): returns 1/2/3",
+        "Create getLayOnHandsPool(paladinLevel): returns 5 * level",
+        "All functions exported from src/utils/calculations.ts",
+        "Typecheck passes"
+      ],
+      "priority": 26,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-027",
+      "title": "Add ASI level tracking per class",
+      "description": "As a player, I want to know when I get Ability Score Improvements.",
+      "acceptanceCriteria": [
+        "Create ASI_LEVELS constant mapping class name to array of ASI levels",
+        "Standard classes: [4, 8, 12, 16, 19]",
+        "Fighter: [4, 6, 8, 12, 14, 16, 19]",
+        "Rogue: [4, 8, 10, 12, 16, 19]",
+        "Create isASILevel(className, level) function",
+        "Create getASICount(className, level) function returning total ASIs earned",
+        "Add pendingASI field to Character type to track unclaimed ASIs",
+        "Typecheck passes"
+      ],
+      "priority": 27,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-028",
+      "title": "Create level-up button on character sheet",
+      "description": "As a player, I want a Level Up button to quickly advance my character.",
+      "acceptanceCriteria": [
+        "Add 'Level Up' button near level display in character sheet header",
+        "Button only visible when character level < 20",
+        "Button styled prominently (primary color, clear icon)",
+        "Clicking button triggers level-up flow",
+        "Typecheck passes",
+        "Verify in browser: button visible on level 1 character"
+      ],
+      "priority": 28,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-029",
+      "title": "Create HP increase modal for level-up",
+      "description": "As a player, I want to choose how to increase HP when leveling up.",
+      "acceptanceCriteria": [
+        "Create LevelUpHPModal component",
+        "Modal shows current class hit die (d6/d8/d10/d12)",
+        "Shows current CON modifier",
+        "'Roll' button: generates random 1-hitDie + CON mod (minimum 1)",
+        "'Take Average' button: uses (hitDie/2)+1 + CON mod",
+        "Preview shows HP gain and new max HP",
+        "Confirm button applies HP increase and closes modal",
+        "Typecheck passes",
+        "Verify in browser: modal appears and calculates correctly"
+      ],
+      "priority": 29,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-030",
+      "title": "Create ASI/Feat selection modal",
+      "description": "As a player, I want to choose between ability increases or a feat at ASI levels.",
+      "acceptanceCriteria": [
+        "Create ASIModal component",
+        "Two tabs: 'Ability Scores' and 'Feat'",
+        "Ability Scores tab: two dropdowns for selecting abilities",
+        "Option: +2 to one ability OR +1 to two abilities",
+        "Shows current score and preview of new score",
+        "Enforces max of 20",
+        "Feat tab: searchable list using existing feat picker pattern",
+        "Shows feat prerequisites, disables ineligible feats",
+        "Confirm applies choice and closes modal",
+        "Typecheck passes",
+        "Verify in browser: ASI modal works correctly"
+      ],
+      "priority": 30,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-031",
+      "title": "Implement level-up auto-apply logic",
+      "description": "As a player, I want level-up to automatically apply standard benefits.",
+      "acceptanceCriteria": [
+        "Create levelUp(character) function in utils",
+        "Increments character.level by 1",
+        "Updates character.classFeatures with new features for level",
+        "Updates character.spellSlots using getSpellSlotsForLevel()",
+        "Updates hit dice total to match new level",
+        "Returns list of choices needed (HP, ASI if applicable)",
+        "Does not save until all choices made",
+        "Typecheck passes"
+      ],
+      "priority": 31,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-032",
+      "title": "Wire up level-up flow in character sheet",
+      "description": "As a player, I want the full level-up flow to work end-to-end.",
+      "acceptanceCriteria": [
+        "Clicking Level Up button calls levelUp() function",
+        "HP modal always appears first",
+        "ASI modal appears after HP if current level is ASI level",
+        "After all modals complete, character is saved",
+        "Character sheet refreshes to show new level and features",
+        "Typecheck passes",
+        "Verify in browser: full level 1→2 flow works"
+      ],
+      "priority": 32,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-033",
+      "title": "Display level-up summary after completion",
+      "description": "As a player, I want to see what I gained when leveling up.",
+      "acceptanceCriteria": [
+        "Create LevelUpSummaryModal component",
+        "Shows new level prominently",
+        "Lists new class features gained",
+        "Lists new subclass features gained (if any)",
+        "Shows HP increase and new max HP",
+        "Shows new spell slots (if changed)",
+        "Shows ASI/feat chosen (if applicable)",
+        "'Got it' button dismisses modal",
+        "Typecheck passes",
+        "Verify in browser: summary shows after level-up"
+      ],
+      "priority": 33,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-034",
+      "title": "Update class features display with scaling values",
+      "description": "As a player, I want to see current scaling values in my features.",
+      "acceptanceCriteria": [
+        "Sneak Attack shows current dice count (e.g., 'Sneak Attack (3d6)')",
+        "Bardic Inspiration shows current die size (e.g., 'Bardic Inspiration (d8)')",
+        "Martial Arts shows current die size",
+        "Rage shows current damage bonus and uses per day",
+        "Focus Points shows current total",
+        "Sorcery Points shows current total",
+        "Channel Divinity shows uses per rest",
+        "Lay on Hands shows current pool size",
+        "Values update when level changes",
+        "Typecheck passes",
+        "Verify in browser: scaling values display correctly"
+      ],
+      "priority": 34,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-035",
+      "title": "Add cantrips known tracking for casters",
+      "description": "As a spellcaster, I want to know how many cantrips I can know.",
+      "acceptanceCriteria": [
+        "Create CANTRIPS_KNOWN constant with counts per class per level",
+        "Create getCantripsKnown(className, level) function",
+        "Display 'Cantrips Known: X/Y' in spellcasting section",
+        "X = current cantrips, Y = max allowed",
+        "Typecheck passes"
+      ],
+      "priority": 35,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-036",
+      "title": "Add Extra Attack display with correct count",
+      "description": "As a martial character, I want Extra Attack to show correct attack count.",
+      "acceptanceCriteria": [
+        "Create getExtraAttackCount(className, level) function",
+        "Returns 1 (normal) for non-martial classes",
+        "Returns 2 at level 5 for Barbarian, Fighter, Monk, Paladin, Ranger",
+        "Returns 3 at level 11 for Fighter",
+        "Returns 4 at level 20 for Fighter",
+        "Extra Attack feature description shows attack count",
+        "Typecheck passes"
+      ],
+      "priority": 36,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-037",
+      "title": "Handle level decrease gracefully",
+      "description": "As a player, I want to be able to lower my level without breaking my character.",
+      "acceptanceCriteria": [
+        "Edit Level modal warns when decreasing level",
+        "When level decreases: remove features above new level",
+        "Recalculate HP based on new level (using average)",
+        "Update spell slots to new level",
+        "Keep manually added feats and spells",
+        "Keep equipment and currency",
+        "Typecheck passes"
+      ],
+      "priority": 37,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-038",
+      "title": "Add Warlock Pact Magic display",
+      "description": "As a Warlock, I want my Pact Magic slots displayed correctly.",
+      "acceptanceCriteria": [
+        "Warlock spell slots section shows 'Pact Magic' label",
+        "Shows slot count and slot level (e.g., '2 slots at 3rd level')",
+        "Slots display as single row (not tiered like other casters)",
+        "Short rest button resets Pact Magic slots",
+        "Long rest also resets Pact Magic slots",
+        "Typecheck passes",
+        "Verify in browser: Warlock spell slots display correctly"
+      ],
+      "priority": 38,
+      "passes": true,
+      "notes": "Implementation already existed from previous work on spell slot system"
+    },
+    {
+      "id": "US-039",
+      "title": "Create Eldritch Invocations data and picker",
+      "description": "As a Warlock, I want to select and manage Eldritch Invocations.",
+      "acceptanceCriteria": [
+        "Create src/data/invocations.ts with Invocation interface",
+        "Include 20+ common invocations with name, description, prerequisites",
+        "Prerequisites can be: level requirement, Pact Boon requirement, or none",
+        "Create getInvocationsKnown(warlockLevel) function",
+        "Add invocation picker modal (similar to feat picker)",
+        "Filter out invocations with unmet prerequisites",
+        "Store selected invocations on character",
+        "Display invocations in class features section",
+        "Typecheck passes"
+      ],
+      "priority": 39,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-040",
+      "title": "Create Battle Master Maneuvers data and picker",
+      "description": "As a Battle Master Fighter, I want to select and manage maneuvers.",
+      "acceptanceCriteria": [
+        "Create src/data/maneuvers.ts with Maneuver interface",
+        "Include all Battle Master maneuvers with name and description",
+        "Create getManeuversKnown(fighterLevel) function (3 at 3, +2 at 7/10/15)",
+        "Create getSuperioritDice(fighterLevel) function (count and size)",
+        "Add maneuver picker modal for Battle Master subclass",
+        "Store selected maneuvers on character",
+        "Display maneuvers and superiority dice in class features",
+        "Typecheck passes"
+      ],
+      "priority": 40,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-041",
+      "title": "Create Metamagic options data and picker",
+      "description": "As a Sorcerer, I want to select and manage Metamagic options.",
+      "acceptanceCriteria": [
+        "Create src/data/metamagic.ts with Metamagic interface",
+        "Include all Metamagic options with name, sorcery point cost, description",
+        "Create getMetamagicKnown(sorcererLevel) function (2 at 2, +1 at 10/17)",
+        "Add Metamagic picker modal for Sorcerer",
+        "Store selected Metamagic on character",
+        "Display Metamagic options and Sorcery Points in class features",
+        "Typecheck passes"
+      ],
+      "priority": 41,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-042",
+      "title": "Add new spell selection during level-up for known casters",
+      "description": "As a Bard/Ranger/Sorcerer/Warlock, I want to learn new spells when leveling up.",
+      "acceptanceCriteria": [
+        "Create SPELLS_KNOWN constant with spells known per level per class",
+        "Create getSpellsKnown(className, level) function",
+        "During level-up, calculate new spells to learn",
+        "Show spell picker modal if new spells earned",
+        "Filter spells by class list and max spell level",
+        "Add selected spells to character",
+        "Typecheck passes",
+        "Verify in browser: Bard prompted to learn spell at level 2"
+      ],
+      "priority": 42,
+      "passes": true,
+      "notes": ""
+    }
+  ]
+}

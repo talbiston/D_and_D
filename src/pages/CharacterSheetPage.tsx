@@ -24,7 +24,8 @@ import { INVOCATIONS, getInvocationsKnown } from '../data/invocations'
 import { MANEUVERS, getManeuversKnown, getSuperiorityDice } from '../data/maneuvers'
 import { METAMAGIC_OPTIONS, getMetamagicKnown } from '../data/metamagic'
 import MetamagicPickerModal from '../components/MetamagicPickerModal'
-import { getSorceryPoints } from '../utils/calculations'
+import LevelUpSpellPickerModal from '../components/LevelUpSpellPickerModal'
+import { getSorceryPoints, isKnownCaster } from '../utils/calculations'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -111,7 +112,8 @@ export default function CharacterSheetPage() {
   const [showInvocationPicker, setShowInvocationPicker] = useState(false)
   const [showManeuverPicker, setShowManeuverPicker] = useState(false)
   const [showMetamagicPicker, setShowMetamagicPicker] = useState(false)
-  const [pendingLevelUp, setPendingLevelUp] = useState<{ levelUpResult: LevelUpResult; hpGain: number } | null>(null)
+  const [showLevelUpSpellPicker, setShowLevelUpSpellPicker] = useState(false)
+  const [pendingLevelUp, setPendingLevelUp] = useState<{ levelUpResult: LevelUpResult; hpGain: number; asiChoice?: ASIChoice } | null>(null)
   const [levelUpSummary, setLevelUpSummary] = useState<{
     newLevel: number
     previousLevel: number
@@ -515,6 +517,66 @@ export default function CharacterSheetPage() {
     setShowLevelUpHPModal(true)
   }
 
+  // Helper to complete the level-up and show summary
+  const completeLevelUp = (
+    levelUpResult: LevelUpResult,
+    hpGain: number,
+    asiChoice?: ASIChoice,
+    newSpells?: Spell[]
+  ) => {
+    if (!character) return
+
+    const newMaxHp = character.maxHp + hpGain
+    let updatedCharacter = { ...levelUpResult.character }
+
+    // Apply ASI choice if present
+    if (asiChoice) {
+      if (asiChoice.type === 'asi') {
+        const newAbilityScores = { ...updatedCharacter.abilityScores }
+        for (const increase of asiChoice.increases) {
+          newAbilityScores[increase.ability] = Math.min(20, newAbilityScores[increase.ability] + increase.amount)
+        }
+        updatedCharacter = { ...updatedCharacter, abilityScores: newAbilityScores }
+      } else {
+        const newFeats = [...updatedCharacter.feats, {
+          name: asiChoice.feat.name,
+          description: asiChoice.feat.description,
+          prerequisite: asiChoice.feat.prerequisite
+        }]
+        updatedCharacter = { ...updatedCharacter, feats: newFeats }
+      }
+    }
+
+    // Apply new spells if present
+    if (newSpells && newSpells.length > 0) {
+      updatedCharacter = {
+        ...updatedCharacter,
+        spells: [...updatedCharacter.spells, ...newSpells]
+      }
+    }
+
+    // Apply HP changes
+    updatedCharacter = {
+      ...updatedCharacter,
+      maxHp: newMaxHp,
+      currentHp: Math.min(character.currentHp + hpGain, newMaxHp)
+    }
+
+    updateCharacter(updatedCharacter)
+
+    // Show level-up summary
+    setLevelUpSummary({
+      newLevel: levelUpResult.character.level,
+      previousLevel: character.level,
+      hpGain,
+      newMaxHp,
+      levelUpResult,
+      asiChoice,
+    })
+
+    setPendingLevelUp(null)
+  }
+
   const handleLevelUpHPConfirm = (hpGain: number) => {
     if (!character) return
     setShowLevelUpHPModal(false)
@@ -527,74 +589,52 @@ export default function CharacterSheetPage() {
       // Store pending level up data and show ASI modal
       setPendingLevelUp({ levelUpResult, hpGain })
       setShowASIModal(true)
+    } else if (levelUpResult.choices.newSpellsToLearn > 0 && isKnownCaster(character.class)) {
+      // No ASI, but needs spell selection (for known casters)
+      setPendingLevelUp({ levelUpResult, hpGain })
+      setShowLevelUpSpellPicker(true)
     } else {
-      // No ASI at this level, complete level-up directly
-      const newMaxHp = character.maxHp + hpGain
-      updateCharacter({
-        ...levelUpResult.character,
-        maxHp: newMaxHp,
-        currentHp: Math.min(character.currentHp + hpGain, newMaxHp)
-      })
-      // Show level-up summary
-      setLevelUpSummary({
-        newLevel: levelUpResult.character.level,
-        previousLevel: character.level,
-        hpGain,
-        newMaxHp,
-        levelUpResult,
-      })
+      // No ASI and no spells to learn, complete level-up directly
+      completeLevelUp(levelUpResult, hpGain)
     }
   }
 
   const handleASIConfirm = (choice: ASIChoice) => {
     if (!character || !pendingLevelUp) return
     const { levelUpResult, hpGain } = pendingLevelUp
-    const newMaxHp = character.maxHp + hpGain
-
-    if (choice.type === 'asi') {
-      // Apply ability score increases
-      const newAbilityScores = { ...levelUpResult.character.abilityScores }
-      for (const increase of choice.increases) {
-        newAbilityScores[increase.ability] = Math.min(20, newAbilityScores[increase.ability] + increase.amount)
-      }
-      updateCharacter({
-        ...levelUpResult.character,
-        maxHp: newMaxHp,
-        currentHp: Math.min(character.currentHp + hpGain, newMaxHp),
-        abilityScores: newAbilityScores
-      })
-    } else {
-      // Apply feat
-      const newFeats = [...levelUpResult.character.feats, {
-        name: choice.feat.name,
-        description: choice.feat.description,
-        prerequisite: choice.feat.prerequisite
-      }]
-      updateCharacter({
-        ...levelUpResult.character,
-        maxHp: newMaxHp,
-        currentHp: Math.min(character.currentHp + hpGain, newMaxHp),
-        feats: newFeats
-      })
-    }
 
     setShowASIModal(false)
-    setPendingLevelUp(null)
 
-    // Show level-up summary with ASI/feat choice
-    setLevelUpSummary({
-      newLevel: levelUpResult.character.level,
-      previousLevel: character.level,
-      hpGain,
-      newMaxHp,
-      levelUpResult,
-      asiChoice: choice,
-    })
+    // Check if we also need to select spells
+    if (levelUpResult.choices.newSpellsToLearn > 0 && isKnownCaster(character.class)) {
+      // Store the ASI choice and show spell picker
+      setPendingLevelUp({ levelUpResult, hpGain, asiChoice: choice })
+      setShowLevelUpSpellPicker(true)
+    } else {
+      // No spells to learn, complete level-up with ASI choice
+      completeLevelUp(levelUpResult, hpGain, choice)
+    }
   }
 
   const handleASICancel = () => {
     // Cancel ASI modal - also cancels the level up
     setShowASIModal(false)
+    setPendingLevelUp(null)
+  }
+
+  const handleLevelUpSpellsConfirm = (selectedSpells: Spell[]) => {
+    if (!character || !pendingLevelUp) return
+    const { levelUpResult, hpGain, asiChoice } = pendingLevelUp
+
+    setShowLevelUpSpellPicker(false)
+
+    // Complete level-up with ASI choice (if any) and new spells
+    completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells)
+  }
+
+  const handleLevelUpSpellsCancel = () => {
+    // Cancel spell picker - also cancels the level up
+    setShowLevelUpSpellPicker(false)
     setPendingLevelUp(null)
   }
 
@@ -2481,6 +2521,18 @@ export default function CharacterSheetPage() {
           newLevel={pendingLevelUp.levelUpResult.character.level}
           onConfirm={handleASIConfirm}
           onCancel={handleASICancel}
+        />
+      )}
+
+      {/* Level-Up Spell Picker Modal */}
+      {showLevelUpSpellPicker && character && pendingLevelUp && (
+        <LevelUpSpellPickerModal
+          characterClass={character.class}
+          currentSpells={character.spells}
+          spellsToSelect={pendingLevelUp.levelUpResult.choices.newSpellsToLearn}
+          maxSpellLevel={pendingLevelUp.levelUpResult.choices.maxSpellLevel}
+          onConfirm={handleLevelUpSpellsConfirm}
+          onCancel={handleLevelUpSpellsCancel}
         />
       )}
 

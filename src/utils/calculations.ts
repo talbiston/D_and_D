@@ -544,6 +544,10 @@ import { getClassFeaturesForLevel, getSubclassFeaturesForLevel } from '../data/c
 export interface LevelUpChoices {
   needsHP: boolean
   needsASI: boolean
+  /** Number of new spells to learn (for known casters) */
+  newSpellsToLearn: number
+  /** Maximum spell level that can be selected */
+  maxSpellLevel: number
 }
 
 /**
@@ -581,7 +585,7 @@ export function levelUp(character: Character): LevelUpResult {
   if (character.level >= 20) {
     return {
       character,
-      choices: { needsHP: false, needsASI: false },
+      choices: { needsHP: false, needsASI: false, newSpellsToLearn: 0, maxSpellLevel: 0 },
       newClassFeatures: [],
       newSubclassFeatures: []
     }
@@ -639,6 +643,15 @@ export function levelUp(character: Character): LevelUpResult {
       8: { total: newSpellSlots[8].total, expended: Math.min(character.spellSlots[8].expended, newSpellSlots[8].total) },
       9: { total: newSpellSlots[9].total, expended: Math.min(character.spellSlots[9].expended, newSpellSlots[9].total) },
     },
+    // Update Pact Magic for Warlocks
+    pactMagic: className === 'Warlock'
+      ? {
+          ...getPactMagicSlots(newLevel),
+          expended: character.pactMagic
+            ? Math.min(character.pactMagic.expended, getPactMagicSlots(newLevel).slotCount)
+            : 0
+        }
+      : character.pactMagic,
     // Update hit dice total to match new level
     hitDice: {
       ...character.hitDice,
@@ -646,10 +659,16 @@ export function levelUp(character: Character): LevelUpResult {
     }
   }
 
+  // Calculate new spells to learn for known casters
+  const newSpellsToLearn = getNewSpellsOnLevelUp(className, character.level, newLevel)
+  const maxSpellLevel = getMaxSpellLevelForClass(className, newLevel)
+
   // Determine what choices the player needs to make
   const choices: LevelUpChoices = {
     needsHP: true, // Always need to choose HP increase (roll or average)
-    needsASI: isASILevel(className, newLevel)
+    needsASI: isASILevel(className, newLevel),
+    newSpellsToLearn,
+    maxSpellLevel
   }
 
   return {
@@ -711,6 +730,125 @@ export function getCantripsKnown(className: string, level: number): number {
     return 0
   }
   return classCantrips[clampedLevel] ?? 0
+}
+
+// =============================================================================
+// SPELLS KNOWN (for known casters: Bard, Ranger, Sorcerer, Warlock)
+// =============================================================================
+
+/**
+ * Spells known per level for "known caster" classes
+ * These are classes that learn a fixed number of spells and can swap one on level-up
+ * Index is character level (1-20), value is number of spells known
+ *
+ * Note: Prepared casters (Cleric, Druid, Paladin, Wizard) don't use this - they
+ * can prepare any spell from their list each day
+ */
+export const SPELLS_KNOWN: Record<string, Record<number, number>> = {
+  // Bard: Full caster with spells known progression
+  Bard: {
+    1: 4, 2: 5, 3: 6, 4: 7, 5: 8, 6: 9, 7: 10, 8: 11, 9: 12, 10: 14,
+    11: 15, 12: 15, 13: 16, 14: 16, 15: 17, 16: 17, 17: 18, 18: 18, 19: 19, 20: 19
+  },
+  // Ranger: Half caster with spells known (starts at level 2)
+  Ranger: {
+    1: 0, 2: 2, 3: 3, 4: 3, 5: 4, 6: 4, 7: 5, 8: 5, 9: 6, 10: 6,
+    11: 7, 12: 7, 13: 8, 14: 8, 15: 9, 16: 9, 17: 10, 18: 10, 19: 11, 20: 11
+  },
+  // Sorcerer: Full caster with spells known progression
+  Sorcerer: {
+    1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 11,
+    11: 12, 12: 12, 13: 13, 14: 13, 15: 14, 16: 14, 17: 15, 18: 15, 19: 15, 20: 15
+  },
+  // Warlock: Pact caster with spells known progression
+  Warlock: {
+    1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8, 8: 9, 9: 10, 10: 10,
+    11: 11, 12: 11, 13: 12, 14: 12, 15: 13, 16: 13, 17: 14, 18: 14, 19: 15, 20: 15
+  }
+} as const
+
+/**
+ * Classes that use "spells known" progression (as opposed to preparing spells)
+ */
+export const KNOWN_CASTER_CLASSES = ['Bard', 'Ranger', 'Sorcerer', 'Warlock'] as const
+
+/**
+ * Get the number of spells known for a "known caster" class at a given level
+ *
+ * @param className - The class name
+ * @param level - The character level (1-20)
+ * @returns The number of spells known, or 0 if the class doesn't use spells known
+ */
+export function getSpellsKnown(className: string, level: number): number {
+  const clampedLevel = Math.max(1, Math.min(20, level))
+  const classSpellsKnown = SPELLS_KNOWN[className]
+  if (!classSpellsKnown) {
+    return 0
+  }
+  return classSpellsKnown[clampedLevel] ?? 0
+}
+
+/**
+ * Check if a class uses the "spells known" system
+ *
+ * @param className - The class name
+ * @returns True if the class learns a fixed number of spells
+ */
+export function isKnownCaster(className: string): boolean {
+  return KNOWN_CASTER_CLASSES.includes(className as typeof KNOWN_CASTER_CLASSES[number])
+}
+
+/**
+ * Calculate how many new spells a character can learn when leveling up
+ *
+ * @param className - The class name
+ * @param oldLevel - The level before leveling up
+ * @param newLevel - The new level after leveling up
+ * @returns The number of new spells to learn (can be 0)
+ */
+export function getNewSpellsOnLevelUp(className: string, oldLevel: number, newLevel: number): number {
+  if (!isKnownCaster(className)) {
+    return 0
+  }
+  const oldSpellsKnown = getSpellsKnown(className, oldLevel)
+  const newSpellsKnown = getSpellsKnown(className, newLevel)
+  return Math.max(0, newSpellsKnown - oldSpellsKnown)
+}
+
+/**
+ * Get the maximum spell level a character can learn at a given level
+ * This determines what spell levels are available when selecting new spells
+ *
+ * @param className - The class name
+ * @param level - The character level
+ * @returns The maximum spell level (1-9) or 0 if no spellcasting
+ */
+export function getMaxSpellLevelForClass(className: string, level: number): number {
+  const clampedLevel = Math.max(1, Math.min(20, level))
+
+  // Full casters: spell level = ceil(level / 2), max 9
+  if (FULL_CASTER_CLASSES.includes(className as typeof FULL_CASTER_CLASSES[number])) {
+    return Math.min(9, Math.ceil(clampedLevel / 2))
+  }
+
+  // Half casters: spell level = ceil((level - 1) / 4) + 1 when level >= 2, max 5
+  if (HALF_CASTER_CLASSES.includes(className as typeof HALF_CASTER_CLASSES[number])) {
+    if (clampedLevel < 2) return 0
+    // Half caster progression: 1st at level 2, 2nd at level 5, 3rd at level 9, 4th at level 13, 5th at level 17
+    if (clampedLevel >= 17) return 5
+    if (clampedLevel >= 13) return 4
+    if (clampedLevel >= 9) return 3
+    if (clampedLevel >= 5) return 2
+    return 1
+  }
+
+  // Warlock: same as full caster for max spell level (Pact Magic)
+  if (className === 'Warlock') {
+    return Math.min(9, Math.ceil(clampedLevel / 2))
+  }
+
+  // Non-caster
+  return 0
 }
 
 // =============================================================================
