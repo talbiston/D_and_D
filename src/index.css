@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Icon dark mode support */
+.icon-invertible {
+  transition: filter 0.2s ease-in-out;
+}
+
+.dark .icon-invertible {
+  filter: invert(1);
+}
+
 /* Print styles for character sheet */
 @media print {
   /* Hide UI controls and navigation */
