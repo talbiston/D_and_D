@@ -699,6 +699,54 @@ export const CLASSES: ClassData[] = [
       { name: 'Ability Score Improvement', level: 19, description: 'Increase one ability score by 2, or two ability scores by 1 each. Alternatively, choose a feat.' },
       { name: 'Stroke of Luck', level: 20, description: 'You have an uncanny knack for succeeding when you need to. If you fail a d20 Test, you can turn the roll into a 20. Once you use this feature, you can\'t do so again until you finish a Short or Long Rest.' },
     ],
+    subclassLevel: 3,
+    subclassName: 'Roguish Archetype',
+    subclasses: [
+      {
+        name: 'Arcane Trickster',
+        description: 'Some rogues enhance their fine-honed skills of stealth and agility with magic, learning tricks of enchantment and illusion.',
+        features: [
+          { name: 'Spellcasting', level: 3, description: 'You have learned to cast spells. Cantrips: You learn Mage Hand and two other cantrips of your choice from the Wizard spell list. Spells: You know three 1st-level Wizard spells of your choice, two of which must be from the Enchantment or Illusion schools. Intelligence is your spellcasting ability. You learn additional spells as you gain Rogue levels.' },
+          { name: 'Mage Hand Legerdemain', level: 3, description: 'When you cast Mage Hand, you can make the spectral hand invisible, and you can perform the following additional tasks with it: stow or retrieve an object in a container worn or carried by another creature, use Thieves\' Tools to pick locks and disarm traps at range, and control the hand as a Bonus Action.' },
+          { name: 'Magical Ambush', level: 7, description: 'If you have the Hidden condition when you cast a spell on a creature, it has Disadvantage on any saving throw it makes against the spell on that turn.' },
+          { name: 'Versatile Trickster', level: 13, description: 'You gain the ability to distract targets with your Mage Hand. As a Bonus Action on your turn, you can designate a creature within 5 feet of the spectral hand created by the spell. Doing so gives you Advantage on attack rolls against that creature until the end of the turn.' },
+          { name: 'Spell Thief', level: 17, description: 'You gain the ability to magically steal the knowledge of how to cast a spell from another spellcaster. Immediately after a creature casts a spell that targets you or includes you in its area of effect, you can take a Reaction to force the creature to make a saving throw with its spellcasting ability modifier. The DC equals your spell save DC. On a failed save, you negate the spell\'s effect against you, and you steal the knowledge of the spell if it is at least 1st level and of a level you can cast. For the next 8 hours, you know the spell and can cast it using your spell slots. The creature can\'t cast that spell until the 8 hours have passed. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
+        ],
+      },
+      {
+        name: 'Assassin',
+        description: 'You focus your training on the grim art of death. Those who adhere to this archetype are diverse: hired killers, spies, bounty hunters, and even specially anointed priests trained to exterminate the enemies of their deity.',
+        features: [
+          { name: 'Assassinate', level: 3, description: 'You are deadliest when you get the drop on your enemies. You have Advantage on attack rolls against any creature that hasn\'t taken a turn in the combat yet. In addition, any hit you score against a creature that is Surprised is a Critical Hit.' },
+          { name: 'Assassin\'s Tools', level: 3, description: 'You gain proficiency with the Disguise Kit and Poisoner\'s Kit.' },
+          { name: 'Infiltration Expertise', level: 7, description: 'You can unfailingly create false identities for yourself. You must spend 25 GP and 7 days to establish the history, profession, and affiliations for an identity. You can\'t establish an identity that belongs to someone else. Thereafter, if you adopt the new identity as a disguise, other creatures believe you to be that person until given an obvious reason not to.' },
+          { name: 'Envenom Weapons', level: 13, description: 'When you use the Poison option of your Cunning Strike, the target also takes 2d6 Poison damage whenever it fails the saving throw. This damage ignores Resistance to Poison damage.' },
+          { name: 'Death Strike', level: 17, description: 'You become a master of instant death. When you hit a creature that is Surprised with an attack, it must make a Constitution saving throw (DC 8 + your Dexterity modifier + your proficiency bonus). On a failed save, double the damage of your attack against the creature.' },
+        ],
+      },
+      {
+        name: 'Soulknife',
+        description: 'Most assassins strike with physical weapons, and many burglars and spies use thieves\' tools to infiltrate secure locations. In contrast, a Soulknife strikes and infiltrates with the mind, cutting through barriers both physical and psychic.',
+        features: [
+          { name: 'Psionic Power', level: 3, description: 'You harbor a wellspring of psionic energy within yourself. This energy is represented by your Psionic Energy dice, which fuel various psionic powers you have. You have a number of these dice equal to twice your proficiency bonus, and they are d6s. They are expended when you use them, and you regain all expended dice when you finish a Long Rest. You can use these dice for Psi-Bolstered Knack (when you fail an ability check using a skill or tool you\'re proficient with, roll a die and add to the check) and Psychic Whispers (establish telepathic communication with creatures).' },
+          { name: 'Psychic Blades', level: 3, description: 'You can manifest a blade of psychic energy. Whenever you take the Attack action, you can manifest a psychic blade from your free hand and make the attack with that blade. This magic blade is a simple melee weapon with the Finesse and Thrown properties. It deals 1d6 Psychic damage, and its normal and long ranges are 60 and 120 feet. The blade vanishes immediately after it hits or misses its target. After you attack with the blade, you can make a melee or ranged weapon attack with a second psychic blade as a Bonus Action, dealing 1d4 Psychic damage.' },
+          { name: 'Soul Blades', level: 7, description: 'Your Psychic Blades are now an expression of your psi-suffused soul, giving you these powers. Homing Strikes: If you make an attack roll with your Psychic Blade and miss the target, you can roll a Psionic Energy die and add the number rolled to the attack roll. If this causes the attack to hit, you expend the die. Psychic Teleportation: As a Bonus Action, you manifest a Psychic Blade, expend a Psionic Energy die and roll it, and throw the blade at an unoccupied space you can see up to a number of feet away equal to 10 times the number rolled. You then teleport to that space, and the blade vanishes.' },
+          { name: 'Psychic Veil', level: 13, description: 'You can weave a veil of psychic static to mask yourself. As a Magic action, you gain the Invisible condition for 1 hour or until you dismiss this effect (no action required). This invisibility ends early immediately after you deal damage to a creature or you force a creature to make a saving throw. Once you use this feature, you can\'t do so again until you finish a Long Rest, unless you expend a Psionic Energy die (no action required) to restore your use of it.' },
+          { name: 'Rend Mind', level: 17, description: 'You can sweep your Psychic Blade directly through a creature\'s mind. When you use your Psychic Blades to deal Sneak Attack damage to a creature, you can force that target to make a Wisdom saving throw (DC 8 + your proficiency bonus + your Dexterity modifier). On a failed save, the target has the Stunned condition for 1 minute. The stunned target repeats the saving throw at the end of each of its turns, ending the effect on itself on a success. Once you use this feature, you can\'t do so again until you finish a Long Rest, unless you expend three Psionic Energy dice (no action required) to restore your use of it.' },
+        ],
+      },
+      {
+        name: 'Thief',
+        description: 'You hone your skills in the larcenous arts. Burglars, bandits, cutpurses, and other criminals typically follow this archetype, but so do rogues who prefer to think of themselves as professional treasure seekers, explorers, delvers, and investigators.',
+        features: [
+          { name: 'Fast Hands', level: 3, description: 'You have additional options for the Bonus Action granted by your Cunning Action. You can use it to make a Dexterity (Sleight of Hand) check, use Thieves\' Tools to disarm a trap or open a lock, or take the Use an Object action.' },
+          { name: 'Second-Story Work', level: 3, description: 'You have trained to reach especially hard-to-reach places. You gain a Climb Speed equal to your Speed. In addition, when you make a running jump, the distance you cover increases by a number of feet equal to your Dexterity modifier.' },
+          { name: 'Supreme Sneak', level: 7, description: 'You have Advantage on every Dexterity (Stealth) check you make, provided you aren\'t wearing Medium or Heavy armor.' },
+          { name: 'Use Magic Device', level: 13, description: 'You have learned enough about the workings of magic that you can improvise the use of items even when they are not intended for you. You ignore all class, species, and level requirements on the use of magic items.' },
+          { name: 'Thief\'s Reflexes', level: 17, description: 'You have become adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal Initiative, and your second turn at your Initiative minus 10. You can\'t use this feature when you are Surprised.' },
+        ],
+      },
+    ],
   },
   {
     name: 'Sorcerer',
