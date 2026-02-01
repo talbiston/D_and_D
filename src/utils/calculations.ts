@@ -495,3 +495,132 @@ export function getASICount(className: string, level: number): number {
   const asiLevels = ASI_LEVELS[className] ?? DEFAULT_ASI_LEVELS
   return asiLevels.filter((asiLevel) => asiLevel <= clampedLevel).length
 }
+
+// =============================================================================
+// LEVEL-UP LOGIC
+// =============================================================================
+
+import type { Character, ClassFeature } from '../types'
+import { getClassFeaturesForLevel, getSubclassFeaturesForLevel } from '../data/classes'
+
+/**
+ * Choices needed during level-up
+ */
+export interface LevelUpChoices {
+  needsHP: boolean
+  needsASI: boolean
+}
+
+/**
+ * Result of a level-up operation
+ */
+export interface LevelUpResult {
+  /** The updated character (not saved) */
+  character: Character
+  /** Choices that need to be made by the player */
+  choices: LevelUpChoices
+  /** New features gained at this level */
+  newClassFeatures: ClassFeature[]
+  /** New subclass features gained at this level */
+  newSubclassFeatures: ClassFeature[]
+}
+
+/**
+ * Perform level-up on a character
+ *
+ * This function:
+ * - Increments character.level by 1
+ * - Updates character.classFeatures with new features for the new level
+ * - Updates character.spellSlots using getSpellSlotsForLevel()
+ * - Updates hit dice total to match new level
+ * - Returns list of choices needed (HP, ASI if applicable)
+ *
+ * Note: Does NOT save the character - the caller must handle saving after all choices are made
+ * Note: Does NOT update HP - that requires player choice (roll or average)
+ *
+ * @param character - The character to level up
+ * @returns The level-up result with updated character and required choices
+ */
+export function levelUp(character: Character): LevelUpResult {
+  // Cannot level up beyond 20
+  if (character.level >= 20) {
+    return {
+      character,
+      choices: { needsHP: false, needsASI: false },
+      newClassFeatures: [],
+      newSubclassFeatures: []
+    }
+  }
+
+  const newLevel = character.level + 1
+  const className = character.class
+  const subclassName = character.subclass
+
+  // Get new class features for this level
+  const allClassFeatures = getClassFeaturesForLevel(className, newLevel)
+  const previousClassFeatures = getClassFeaturesForLevel(className, character.level)
+  const newClassFeatures = allClassFeatures.filter(
+    f => !previousClassFeatures.some(pf => pf.name === f.name && pf.level === f.level)
+  )
+
+  // Get new subclass features for this level (if subclass is selected)
+  let newSubclassFeatures: ClassFeature[] = []
+  if (subclassName) {
+    const allSubclassFeatures = getSubclassFeaturesForLevel(className, subclassName, newLevel)
+    const previousSubclassFeatures = getSubclassFeaturesForLevel(className, subclassName, character.level)
+    newSubclassFeatures = allSubclassFeatures.filter(
+      f => !previousSubclassFeatures.some(pf => pf.name === f.name && pf.level === f.level)
+    )
+  }
+
+  // Get new spell slots for this level
+  const newSpellSlots = getSpellSlotsForLevel(className, newLevel)
+
+  // Build the updated character
+  const updatedCharacter: Character = {
+    ...character,
+    level: newLevel,
+    // Update class features to include all features up to new level
+    classFeatures: [
+      ...allClassFeatures,
+      ...newSubclassFeatures,
+      // Keep any manually added features that aren't from the class/subclass
+      ...character.classFeatures.filter(cf =>
+        !allClassFeatures.some(f => f.name === cf.name && f.level === cf.level) &&
+        !(subclassName && getSubclassFeaturesForLevel(className, subclassName, newLevel).some(
+          f => f.name === cf.name && f.level === cf.level
+        ))
+      )
+    ],
+    // Update spell slots (preserve expended count if total is same or greater)
+    spellSlots: {
+      1: { total: newSpellSlots[1].total, expended: Math.min(character.spellSlots[1].expended, newSpellSlots[1].total) },
+      2: { total: newSpellSlots[2].total, expended: Math.min(character.spellSlots[2].expended, newSpellSlots[2].total) },
+      3: { total: newSpellSlots[3].total, expended: Math.min(character.spellSlots[3].expended, newSpellSlots[3].total) },
+      4: { total: newSpellSlots[4].total, expended: Math.min(character.spellSlots[4].expended, newSpellSlots[4].total) },
+      5: { total: newSpellSlots[5].total, expended: Math.min(character.spellSlots[5].expended, newSpellSlots[5].total) },
+      6: { total: newSpellSlots[6].total, expended: Math.min(character.spellSlots[6].expended, newSpellSlots[6].total) },
+      7: { total: newSpellSlots[7].total, expended: Math.min(character.spellSlots[7].expended, newSpellSlots[7].total) },
+      8: { total: newSpellSlots[8].total, expended: Math.min(character.spellSlots[8].expended, newSpellSlots[8].total) },
+      9: { total: newSpellSlots[9].total, expended: Math.min(character.spellSlots[9].expended, newSpellSlots[9].total) },
+    },
+    // Update hit dice total to match new level
+    hitDice: {
+      ...character.hitDice,
+      total: newLevel
+    }
+  }
+
+  // Determine what choices the player needs to make
+  const choices: LevelUpChoices = {
+    needsHP: true, // Always need to choose HP increase (roll or average)
+    needsASI: isASILevel(className, newLevel)
+  }
+
+  return {
+    character: updatedCharacter,
+    choices,
+    newClassFeatures,
+    newSubclassFeatures
+  }
+}
