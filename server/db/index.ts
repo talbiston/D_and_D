@@ -2,8 +2,8 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 
-// Database file location
-const DATA_DIR = path.join(process.cwd(), 'data');
+// Database file location - use DATA_DIR env var for production, ./data for development
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const DB_PATH = path.join(DATA_DIR, 'characters.db');
 
 let db: Database.Database | null = null;

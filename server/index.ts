@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { nanoid } from 'nanoid';
 import { initializeDatabase, getDatabase } from './db';
 
@@ -9,6 +10,12 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  const staticPath = path.join(__dirname, '..', '..', 'dist');
+  app.use(express.static(staticPath));
+}
 
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
@@ -134,6 +141,14 @@ app.delete('/api/characters/:id', (req, res) => {
 
 // Initialize database
 initializeDatabase();
+
+// Serve index.html for all other routes in production (SPA catch-all)
+if (process.env.NODE_ENV === 'production') {
+  const staticPath = path.join(__dirname, '..', '..', 'dist');
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(staticPath, 'index.html'));
+  });
+}
 
 // Start server
 app.listen(PORT, () => {
