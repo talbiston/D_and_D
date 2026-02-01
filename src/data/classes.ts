@@ -210,14 +210,40 @@ export const CLASSES: ClassData[] = [
         name: 'Life Domain',
         description: 'The Life domain focuses on the vibrant positive energy that sustains all life.',
         features: [
-          { name: 'Disciple of Life', level: 3, description: 'Your healing spells are more effective. Whenever you use a spell of 1st level or higher to restore hit points, the creature regains additional hit points equal to 2 + the spell\'s level.' },
+          { name: 'Domain Spells', level: 3, description: 'You always have certain spells prepared. At 3rd level, you gain Bless and Cure Wounds. At 5th level, you gain Lesser Restoration and Spiritual Weapon. At 7th level, you gain Mass Healing Word and Revivify. At 9th level, you gain Aura of Life and Death Ward.' },
+          { name: 'Disciple of Life', level: 3, description: 'Your healing spells are more effective. Whenever you use a spell of 1st level or higher to restore Hit Points to a creature, the creature regains additional Hit Points equal to 2 + the spell\'s level.' },
+          { name: 'Preserve Life', level: 6, description: 'As a Magic action, you present your Holy Symbol and expend a use of Channel Divinity to evoke healing energy. Choose any creatures within 30 feet of you and divide Hit Points equal to five times your Cleric level among them. This feature can restore a creature to no more than half of its Hit Point maximum. You can\'t use this feature on an Undead or a Construct.' },
+          { name: 'Supreme Healing', level: 17, description: 'When you would normally roll one or more dice to restore Hit Points to a creature with a spell or Channel Divinity, you instead use the highest number possible for each die. For example, instead of restoring 2d6 Hit Points to a creature, you restore 12.' },
         ],
       },
       {
         name: 'Light Domain',
         description: 'Gods of light promote ideals of rebirth and renewal, truth, vigilance, and beauty.',
         features: [
-          { name: 'Warding Flare', level: 3, description: 'When you are attacked by a creature within 30 feet, you can use your reaction to impose disadvantage on the attack roll by causing light to flare before the attacker.' },
+          { name: 'Domain Spells', level: 3, description: 'You always have certain spells prepared. At 3rd level, you gain Burning Hands and Faerie Fire. At 5th level, you gain Flaming Sphere and Scorching Ray. At 7th level, you gain Daylight and Fireball. At 9th level, you gain Arcane Eye and Wall of Fire.' },
+          { name: 'Warding Flare', level: 3, description: 'When a creature that you can see within 30 feet of you makes an attack roll, you can take a Reaction to impose Disadvantage on the attack roll, causing light to flare before the attacker. An attacker that can\'t be Blinded is immune to this feature. You can use this feature a number of times equal to your Wisdom modifier (minimum once), and you regain all expended uses when you finish a Long Rest.' },
+          { name: 'Radiance of the Dawn', level: 6, description: 'As a Magic action, you present your Holy Symbol and expend a use of Channel Divinity to emit sunlight in a 30-foot Emanation for 1 minute. The Emanation is Bright Light and sheds Dim Light for an additional 30 feet. Whenever a creature ends its turn in the Bright Light, you can force it to make a Constitution saving throw, taking Radiant damage equal to 2d10 + your Cleric level on a failed save, or half as much damage on a successful one.' },
+          { name: 'Corona of Light', level: 17, description: 'You can use a Bonus Action to activate an aura of sunlight that lasts for 1 minute or until you dismiss it (no action required). You emit Bright Light in a 60-foot radius and Dim Light for an additional 30 feet. Your enemies in the Bright Light have Disadvantage on saving throws against any spell that deals Fire or Radiant damage. You can use this feature a number of times equal to your Wisdom modifier (minimum once), and you regain all expended uses when you finish a Long Rest.' },
+        ],
+      },
+      {
+        name: 'Trickery Domain',
+        description: 'Gods of trickery are mischief-makers and instigators who stand as a constant challenge to the accepted order among both gods and mortals.',
+        features: [
+          { name: 'Domain Spells', level: 3, description: 'You always have certain spells prepared. At 3rd level, you gain Charm Person and Disguise Self. At 5th level, you gain Mirror Image and Pass without Trace. At 7th level, you gain Hypnotic Pattern and Nondetection. At 9th level, you gain Confusion and Dimension Door.' },
+          { name: 'Blessing of the Trickster', level: 3, description: 'As a Magic action, you can choose yourself or a willing creature you can see within 30 feet of yourself. The chosen creature has Advantage on Dexterity (Stealth) checks. This blessing lasts for 1 hour or until you use this feature again.' },
+          { name: 'Invoke Duplicity', level: 6, description: 'As a Magic action, you can expend a use of Channel Divinity to create an illusory duplicate of yourself. The duplicate appears in an unoccupied space you can see within 30 feet. The illusion lasts for 1 minute or until you lose Concentration. As a Bonus Action, you can move the illusion up to 30 feet. When you and your illusion are within 5 feet of a creature, you have Advantage on attack rolls against that creature. Additionally, you can cast spells as though you were in the illusion\'s space.' },
+          { name: 'Improved Duplicity', level: 17, description: 'When you use Invoke Duplicity, you can create two duplicates instead of one. If you have two duplicates, you can move them with the same Bonus Action, and if you and both duplicates are within 5 feet of a creature, you have Advantage on attack rolls against it. Additionally, when you or a duplicate is hit by an attack, you can use your Reaction to swap places with the duplicate, potentially making the attack miss.' },
+        ],
+      },
+      {
+        name: 'War Domain',
+        description: 'War has many manifestations. It can make heroes of ordinary people. It can be desperate and horrific, with acts of cruelty and cowardice eclipsing instances of excellence and courage.',
+        features: [
+          { name: 'Domain Spells', level: 3, description: 'You always have certain spells prepared. At 3rd level, you gain Divine Favor and Shield of Faith. At 5th level, you gain Magic Weapon and Spiritual Weapon. At 7th level, you gain Crusader\'s Mantle and Spirit Guardians. At 9th level, you gain Freedom of Movement and Stoneskin.' },
+          { name: 'War Priest', level: 3, description: 'Your god delivers bolts of inspiration to you while you are engaged in battle. When you take the Attack action, you can make one extra attack as a Bonus Action. You can use this feature a number of times equal to your Wisdom modifier (minimum once), and you regain all expended uses when you finish a Long Rest.' },
+          { name: 'War God\'s Blessing', level: 6, description: 'When a creature within 30 feet of you makes an attack roll, you can take a Reaction to expend a use of Channel Divinity to grant a +10 bonus to the roll. You make this choice after you see the roll, but before the DM says whether the attack hits or misses.' },
+          { name: 'Avatar of Battle', level: 17, description: 'You gain resistance to Bludgeoning, Piercing, and Slashing damage.' },
         ],
       },
     ],
