@@ -3,6 +3,7 @@
  */
 
 import { getArmorByName, type ArmorData } from '../data/armor'
+import type { Weapon } from '../types'
 
 /**
  * Calculate ability modifier from ability score
@@ -217,4 +218,57 @@ export function calculateAC(
   }
 
   return baseAC
+}
+
+/**
+ * Calculate weapon attack bonus based on weapon type, ability modifiers, and proficiency
+ *
+ * @param weapon - The weapon being used
+ * @param strMod - Strength modifier
+ * @param dexMod - Dexterity modifier
+ * @param proficiencyBonus - The character's proficiency bonus
+ * @param isProficient - Whether the character is proficient with the weapon
+ * @returns The total attack bonus
+ */
+export function calculateAttackBonus(
+  weapon: Weapon,
+  strMod: number,
+  dexMod: number,
+  proficiencyBonus: number,
+  isProficient: boolean
+): number {
+  let abilityMod: number
+
+  // Determine which ability modifier to use
+  const isFinesse = weapon.properties.includes('finesse')
+  const isRanged = weapon.properties.includes('ammunition') ||
+    (weapon.properties.includes('thrown') && !weapon.properties.some(p =>
+      p !== 'thrown' && p !== 'light' && p !== 'finesse'
+    ))
+
+  if (isFinesse) {
+    // Finesse: use higher of Str or Dex
+    abilityMod = Math.max(strMod, dexMod)
+  } else if (isRanged || weapon.properties.includes('ammunition')) {
+    // Ranged weapons use Dex
+    abilityMod = dexMod
+  } else {
+    // Melee weapons use Str by default
+    abilityMod = strMod
+  }
+
+  // Calculate total bonus
+  let attackBonus = abilityMod
+
+  // Add proficiency bonus if proficient
+  if (isProficient) {
+    attackBonus += proficiencyBonus
+  }
+
+  // Add weapon's attack bonus (magic weapons)
+  if (weapon.attackBonus) {
+    attackBonus += weapon.attackBonus
+  }
+
+  return attackBonus
 }
