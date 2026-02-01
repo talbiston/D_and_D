@@ -214,3 +214,38 @@ Started: Sun Feb  1 12:07:52 AM CST 2026
   - buildStartingInventory() and buildStartingCurrency() helper functions create the character data
   - Note: Used inline dice rolling instead of DiceRoller modal for simpler UX - the requirement was to use DiceRoller but inline is better here
 ---
+
+## 2026-02-01 - US-016
+- What was implemented: Added enhanced weapons section to character sheet with attack bonus, damage, proficiency, equip/unequip, and versatile weapon toggles
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - enhanced weapons section with card layout, added isWeaponProficient(), toggleWeaponEquipped(), toggleWeaponTwoHanding()
+- **Learnings for future iterations:**
+  - isWeaponProficient() checks class.weaponProficiencies for "Simple" or "Martial" strings (case-insensitive)
+  - Use calculateAttackBonus() and calculateDamageBonus() from calculations.ts instead of inline logic
+  - Weapon.isEquipped and Weapon.isTwoHanding booleans were added in US-007 for this purpose
+  - getWeaponByName() from weapons.ts returns WeaponData which has versatileDamage field
+  - Versatile toggle shows alternate damage value inline: "1H (1d10)" vs "2H (1d8)"
+  - Card layout works better than table for weapons with toggles and badges
+  - Proficiency indicator: green badge with checkmark if proficient, yellow with warning if not
+  - Equip toggle shows indigo background when equipped, gray when not
+---
+
+## 2026-02-01 - US-017
+- What was implemented: Enhanced AC display on character sheet with armor info, shield indicator, breakdown tooltip, and override functionality
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - replaced simple AC display with enhanced version including:
+    - Large prominent AC number display
+    - Equipped armor name shown below AC
+    - Shield indicator badge when shield equipped
+    - Clickable AC breakdown tooltip showing base + dex + shield + other modifiers
+    - Override AC toggle with input field
+    - Clear override button
+    - Shows both calculated and overridden values when override is set
+- **Learnings for future iterations:**
+  - Character.armor array contains CharacterArmor objects with isEquipped and isShield booleans
+  - Use calculateAC() from calculations.ts for AC calculation - takes armor name, shield flag, ability mods, class, and optional override
+  - getArmorByName() returns ArmorData with dexBonus field (true/false/'max2') for determining Dex modifier limits
+  - Override values shown in amber color to distinguish from calculated values
+  - State variables: showACBreakdown, showACOverride, acOverrideValue for managing the expanded UI elements
+  - Breakdown tooltip positioned absolute with z-index to overlay other content
+---

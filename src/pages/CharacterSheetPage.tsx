@@ -2,8 +2,9 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import type { Character } from '../types'
 import { getCharacterById, saveCharacter, exportCharacterAsJson } from '../utils/storage'
-import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus } from '../utils/calculations'
+import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC } from '../utils/calculations'
 import { getWeaponByName } from '../data/weapons'
+import { getArmorByName } from '../data/armor'
 import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel } from '../data/classes'
 import { getSpeciesByName } from '../data/species'
 import { getSpellSaveDC, getSpellAttackBonus, XP_THRESHOLDS } from '../utils/calculations'
@@ -89,6 +90,9 @@ export default function CharacterSheetPage() {
   const [editXp, setEditXp] = useState(0)
   const [showFeatPicker, setShowFeatPicker] = useState(false)
   const [featSearchQuery, setFeatSearchQuery] = useState('')
+  const [showACOverride, setShowACOverride] = useState(false)
+  const [acOverrideValue, setAcOverrideValue] = useState('')
+  const [showACBreakdown, setShowACBreakdown] = useState(false)
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
   useEffect(() => {
@@ -691,14 +695,219 @@ export default function CharacterSheetPage() {
           <>
         {/* Combat Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          {/* Armor Class */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-center">
+          {/* Armor Class - Enhanced */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-center relative">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
               Armor Class
             </p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {character.armorClass}
-            </p>
+            {(() => {
+              // Get equipped armor and shield
+              const equippedArmor = character.armor?.find(a => a.isEquipped && !a.isShield)
+              const equippedShield = character.armor?.find(a => a.isEquipped && a.isShield)
+              const dexMod = getAbilityModifier(character.abilityScores.dexterity)
+              const conMod = getAbilityModifier(character.abilityScores.constitution)
+              const wisMod = getAbilityModifier(character.abilityScores.wisdom)
+
+              // Calculate AC components for breakdown
+              const armorData = equippedArmor ? getArmorByName(equippedArmor.name) : null
+              const className = character.class.toLowerCase()
+
+              // Calculate AC using the utility function
+              const calculatedAC = calculateAC(
+                equippedArmor?.name ?? null,
+                !!equippedShield,
+                dexMod,
+                conMod,
+                wisMod,
+                character.class,
+                character.manualACOverride
+              )
+
+              // Determine AC breakdown components
+              let baseAC = 10
+              let dexBonus = dexMod
+              const shieldBonus = equippedShield ? 2 : 0
+              let otherBonus = 0
+              let acDescription = 'Unarmored'
+
+              if (armorData) {
+                baseAC = armorData.baseAC
+                if (armorData.dexBonus === true) {
+                  dexBonus = dexMod
+                  acDescription = `${armorData.name} (Light)`
+                } else if (armorData.dexBonus === 'max2') {
+                  dexBonus = Math.min(dexMod, 2)
+                  acDescription = `${armorData.name} (Medium)`
+                } else {
+                  dexBonus = 0
+                  acDescription = `${armorData.name} (Heavy)`
+                }
+              } else if (!equippedArmor) {
+                // Unarmored defense
+                if (className === 'barbarian') {
+                  otherBonus = conMod
+                  acDescription = 'Unarmored Defense (Barbarian)'
+                } else if (className === 'monk') {
+                  otherBonus = wisMod
+                  acDescription = 'Unarmored Defense (Monk)'
+                }
+              }
+
+              return (
+                <>
+                  {/* Large AC Number */}
+                  <div
+                    className="relative cursor-pointer"
+                    onClick={() => setShowACBreakdown(!showACBreakdown)}
+                    title="Click for AC breakdown"
+                  >
+                    <p className={`text-4xl font-bold ${character.manualACOverride !== undefined ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>
+                      {character.manualACOverride !== undefined ? character.manualACOverride : calculatedAC}
+                    </p>
+                    {character.manualACOverride !== undefined && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        (Calculated: {calculatedAC})
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Equipped Armor Name */}
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    {equippedArmor ? equippedArmor.name : 'No Armor'}
+                  </p>
+
+                  {/* Shield Indicator */}
+                  {equippedShield && (
+                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2A11.954 11.954 0 0110 1.944z" clipRule="evenodd" />
+                      </svg>
+                      Shield (+2)
+                    </span>
+                  )}
+
+                  {/* AC Breakdown Tooltip/Popover */}
+                  {showACBreakdown && (
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-10 bg-white dark:bg-gray-700 rounded-lg shadow-lg p-3 min-w-[200px] text-left border border-gray-200 dark:border-gray-600">
+                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2 border-b border-gray-200 dark:border-gray-600 pb-1">
+                        AC Breakdown
+                      </p>
+                      <div className="space-y-1 text-xs text-gray-600 dark:text-gray-300">
+                        <div className="flex justify-between">
+                          <span>Base:</span>
+                          <span className="font-mono">{baseAC}</span>
+                        </div>
+                        {dexBonus !== 0 && (
+                          <div className="flex justify-between">
+                            <span>Dex Modifier:</span>
+                            <span className="font-mono">{formatModifier(dexBonus)}</span>
+                          </div>
+                        )}
+                        {shieldBonus > 0 && (
+                          <div className="flex justify-between">
+                            <span>Shield:</span>
+                            <span className="font-mono">+{shieldBonus}</span>
+                          </div>
+                        )}
+                        {otherBonus !== 0 && (
+                          <div className="flex justify-between">
+                            <span>{className === 'barbarian' ? 'Con Modifier:' : className === 'monk' ? 'Wis Modifier:' : 'Other:'}</span>
+                            <span className="font-mono">{formatModifier(otherBonus)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between border-t border-gray-200 dark:border-gray-600 pt-1 font-semibold">
+                          <span>Total:</span>
+                          <span className="font-mono">{calculatedAC}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">
+                        {acDescription}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Override AC Toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (showACOverride) {
+                        // Closing - check if we should save or clear
+                        if (acOverrideValue.trim() !== '') {
+                          const newOverride = parseInt(acOverrideValue)
+                          if (!isNaN(newOverride) && newOverride > 0) {
+                            updateCharacter({ manualACOverride: newOverride })
+                          }
+                        }
+                        setShowACOverride(false)
+                        setAcOverrideValue('')
+                      } else {
+                        // Opening - prefill with current override if exists
+                        setAcOverrideValue(character.manualACOverride?.toString() ?? '')
+                        setShowACOverride(true)
+                      }
+                    }}
+                    className="mt-2 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    {character.manualACOverride !== undefined ? 'Edit Override' : 'Override AC'}
+                  </button>
+
+                  {/* Clear Override Button */}
+                  {character.manualACOverride !== undefined && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        updateCharacter({ manualACOverride: undefined })
+                      }}
+                      className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+
+                  {/* Override Input */}
+                  {showACOverride && (
+                    <div className="mt-2 flex items-center gap-2 justify-center">
+                      <input
+                        type="number"
+                        value={acOverrideValue}
+                        onChange={(e) => setAcOverrideValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const newOverride = parseInt(acOverrideValue)
+                            if (!isNaN(newOverride) && newOverride > 0) {
+                              updateCharacter({ manualACOverride: newOverride })
+                            }
+                            setShowACOverride(false)
+                            setAcOverrideValue('')
+                          } else if (e.key === 'Escape') {
+                            setShowACOverride(false)
+                            setAcOverrideValue('')
+                          }
+                        }}
+                        placeholder="AC"
+                        className="w-16 px-2 py-1 text-center text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const newOverride = parseInt(acOverrideValue)
+                          if (!isNaN(newOverride) && newOverride > 0) {
+                            updateCharacter({ manualACOverride: newOverride })
+                          }
+                          setShowACOverride(false)
+                          setAcOverrideValue('')
+                        }}
+                        className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           </div>
 
           {/* Initiative */}
