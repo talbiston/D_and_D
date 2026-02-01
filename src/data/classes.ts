@@ -454,6 +454,50 @@ export const CLASSES: ClassData[] = [
       { name: 'Ability Score Improvement', level: 19, description: 'Increase one ability score by 2, or two ability scores by 1 each. Alternatively, choose a feat.' },
       { name: 'Body and Mind', level: 20, description: 'You have developed your body and mind to their pinnacle. Your Dexterity and Wisdom scores increase by 4. Your maximum for those scores is now 25.' },
     ],
+    subclasses: [
+      {
+        name: 'Way of Mercy',
+        description: 'Monks of the Way of Mercy learn to manipulate the life force of others to bring aid to those in need and to deliver judgment to those who harm others.',
+        features: [
+          { name: 'Hand of Healing', level: 3, description: 'Your mystical touch can mend wounds. As a Magic action, you can spend 1 Focus Point to touch a creature and restore a number of Hit Points equal to a roll of your Martial Arts die plus your Wisdom modifier. When you use your Flurry of Blows, you can replace one of the Unarmed Strikes with a use of this feature without spending a Focus Point for the healing.' },
+          { name: 'Hand of Harm', level: 3, description: 'You use your mystical power to inflict wounds. When you hit a creature with an Unarmed Strike and deal damage, you can spend 1 Focus Point to deal extra Necrotic damage equal to one roll of your Martial Arts die plus your Wisdom modifier. You can use this feature only once per turn.' },
+          { name: 'Physician\'s Touch', level: 6, description: 'You can administer even greater cures. When you use Hand of Healing on a creature, you can also end one disease or one of the following conditions affecting the creature: Blinded, Deafened, Paralyzed, Poisoned, or Stunned. When you use Hand of Harm on a creature, you can give that creature the Poisoned condition until the end of your next turn.' },
+          { name: 'Flurry of Healing and Harm', level: 11, description: 'You can mend and wound with rapid hand strikes. When you use Flurry of Blows, you can replace each of the Unarmed Strikes with a use of your Hand of Healing, without spending Focus Points for the healing. In addition, when you make an Unarmed Strike with Flurry of Blows, you can use Hand of Harm with that strike without the Focus Point cost. You can still use Hand of Harm only once per turn.' },
+          { name: 'Hand of Ultimate Mercy', level: 17, description: 'Your mastery of life energy opens the door to the ultimate mercy. As a Magic action, you can touch the corpse of a creature that died within the past 24 hours and expend 5 Focus Points. The creature then returns to life, regaining a number of Hit Points equal to 4d10 plus your Wisdom modifier. If the creature died while subject to any of the following conditions, it revives with those conditions removed: Blinded, Deafened, Paralyzed, Poisoned, or Stunned. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
+        ],
+      },
+      {
+        name: 'Way of Shadow',
+        description: 'Monks of the Way of Shadow follow a tradition that values stealth and subterfuge, using their abilities to strike from darkness.',
+        features: [
+          { name: 'Shadow Arts', level: 3, description: 'You can use your Focus Points to duplicate the effects of certain spells. As a Magic action, you can spend 2 Focus Points to cast Darkness, Darkvision, Pass without Trace, or Silence without providing Material components. Additionally, you gain the Minor Illusion cantrip if you don\'t already know it, and Wisdom is your spellcasting ability for it.' },
+          { name: 'Shadow Step', level: 6, description: 'You gain the ability to step from one shadow into another. When you are in Dim Light or Darkness, as a Bonus Action you can teleport up to 60 feet to an unoccupied space you can see that is also in Dim Light or Darkness. You then have Advantage on the first melee attack you make before the end of the turn.' },
+          { name: 'Cloak of Shadows', level: 11, description: 'You have learned to become one with the shadows. As a Magic action while in Dim Light or Darkness, you can give yourself the Invisible condition. You remain Invisible until you make an attack roll, force a creature to make a saving throw, or enter Bright Light.' },
+          { name: 'Opportunist', level: 17, description: 'You can exploit a creature\'s momentary distraction when it is hit by an attack. Whenever a creature within 5 feet of you is hit by an attack made by a creature other than you, you can take a Reaction to make an Unarmed Strike against that creature.' },
+        ],
+      },
+      {
+        name: 'Way of the Four Elements',
+        description: 'Monks of the Way of the Four Elements learn to channel the primal forces of the elements through their ki.',
+        features: [
+          { name: 'Elemental Attunement', level: 3, description: 'You have attuned yourself with the elemental forces of the multiverse. You know the Elementalism cantrip, and Wisdom is your spellcasting ability for it.' },
+          { name: 'Disciple of the Elements', level: 3, description: 'You can channel your Focus Points into elemental magic. You learn two Elemental Discipline options of your choice (such as Elemental Burst, Fangs of the Fire Snake, Fist of Unbroken Air, Rush of the Gale Spirits, Shape the Flowing River, or Water Whip). You gain additional disciplines as you gain Monk levels: one at 6th level, one at 11th level, and one at 17th level. To use a discipline, you spend the Focus Points specified for it.' },
+          { name: 'Extra Elemental Discipline', level: 6, description: 'You learn one additional Elemental Discipline option of your choice.' },
+          { name: 'Extra Elemental Discipline', level: 11, description: 'You learn one additional Elemental Discipline option of your choice. You can also replace one discipline you know with a different one.' },
+          { name: 'Extra Elemental Discipline', level: 17, description: 'You learn one additional Elemental Discipline option of your choice. You can also replace one discipline you know with a different one. Additionally, when you cast a spell using a discipline, you can spend additional Focus Points to cast it at a higher level. Each additional Focus Point you spend increases the spell\'s effective level by 1.' },
+        ],
+      },
+      {
+        name: 'Way of the Open Hand',
+        description: 'Monks of the Way of the Open Hand are the ultimate masters of martial arts combat, whether armed or unarmed.',
+        features: [
+          { name: 'Open Hand Technique', level: 3, description: 'You can manipulate your enemy\'s momentum and body to your advantage. Whenever you hit a creature with an attack granted by your Flurry of Blows, you can impose one of the following effects on that target: The target must succeed on a Dexterity saving throw or have the Prone condition. The target must make a Strength saving throw. If it fails, you can push it up to 15 feet away from you. The target can\'t take Reactions until the end of your next turn.' },
+          { name: 'Wholeness of Body', level: 6, description: 'You gain the ability to heal yourself. As a Bonus Action, you can roll your Martial Arts die. You regain a number of Hit Points equal to the number rolled plus your Wisdom modifier. You can use this feature a number of times equal to your Wisdom modifier (minimum 1), and you regain all expended uses when you finish a Long Rest.' },
+          { name: 'Fleet Step', level: 11, description: 'You can easily take the Dash action as a Bonus Action, and you can spend 1 Focus Point to take both the Dash and Disengage actions as a Bonus Action.' },
+          { name: 'Quivering Palm', level: 17, description: 'You gain the ability to set up lethal vibrations in someone\'s body. When you hit a creature with an Unarmed Strike, you can spend 4 Focus Points to start these imperceptible vibrations, which last for a number of days equal to your Monk level. The vibrations are harmless unless you use your action to end them. To do so, you and the target must be on the same plane of existence. When you use this action, the creature must make a Constitution saving throw. If it fails, it is reduced to 0 Hit Points. If it succeeds, it takes 10d12 Necrotic damage. You can have only one creature under the effect of this feature at a time. You can choose to end the vibrations harmlessly without using an action.' },
+        ],
+      },
+    ],
   },
   {
     name: 'Paladin',
