@@ -1143,7 +1143,7 @@ export default function CharacterSheetPage() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                 {character.name}
               </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
+              <p className="text-lg text-gray-600 dark:text-gray-400 flex items-center gap-2 flex-wrap">
                 <button
                   onClick={openLevelModal}
                   className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline transition-colors"
@@ -1154,7 +1154,7 @@ export default function CharacterSheetPage() {
                 {character.level < 20 && (
                   <button
                     onClick={startLevelUp}
-                    className="ml-2 px-2 py-0.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors no-print"
+                    className="px-2 py-0.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors no-print"
                     title="Level up your character"
                   >
                     <span className="inline-flex items-center gap-1">
@@ -1165,10 +1165,16 @@ export default function CharacterSheetPage() {
                     </span>
                   </button>
                 )}
-                {' '}<span className="inline-flex items-center gap-1"><SpeciesIcon species={character.species} size={20} />{character.species}</span>
-                {character.speciesAncestry && ` (${character.speciesAncestry.selectedOption})`}
-                {' '}<span className="inline-flex items-center gap-1"><ClassIcon className={character.class} size={20} />{character.class}</span>
-                {character.subclass && ` (${character.subclass})`}
+                <span className="inline-flex items-center gap-1">
+                  <SpeciesIcon species={character.species} size={20} />
+                  {character.species}
+                  {character.speciesAncestry && ` (${character.speciesAncestry.selectedOption})`}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <ClassIcon className={character.class} size={20} />
+                  {character.class}
+                  {character.subclass && ` (${character.subclass})`}
+                </span>
               </p>
               {character.classOrder && (
                 <p className="text-sm text-gray-500 dark:text-gray-500">
