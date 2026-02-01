@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* Print styles for character sheet */
+@media print {
+  /* Hide UI controls and navigation */
+  .no-print,
+  button:not(.print-show),
+  a[href]:not(.print-show),
+  nav,
+  header a,
+  .fixed {
+    display: none !important;
+  }
+
+  /* Reset dark mode colors for print */
+  .dark {
+    --tw-bg-opacity: 1;
+    background-color: white !important;
+    color: black !important;
+  }
+
+  /* Reset background and text colors */
+  body,
+  .dark body {
+    background-color: white !important;
+    color: black !important;
+    font-size: 10pt !important;
+  }
+
+  /* Make all sections print-friendly */
+  div[class*="bg-gray-"],
+  div[class*="bg-white"],
+  div[class*="dark:bg-gray-"] {
+    background-color: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+    page-break-inside: avoid;
+  }
+
+  /* Text color overrides */
+  p, span, h1, h2, h3, h4, h5, h6, label, td, th {
+    color: black !important;
+  }
+
+  /* Ensure text is readable */
+  [class*="text-gray-"],
+  [class*="text-indigo-"],
+  [class*="dark:text-"] {
+    color: black !important;
+  }
+
+  /* Make badges visible */
+  [class*="bg-indigo-"],
+  [class*="bg-green-"],
+  [class*="bg-amber-"] {
+    background-color: #e5e7eb !important;
+    color: black !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+
+  /* Expand all collapsible content for print */
+  .print-expand {
+    display: block !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Grid layout adjustments */
+  .print-grid-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Remove margins from container */
+  .min-h-screen {
+    min-height: auto !important;
+  }
+
+  /* Compact spacing */
+  .p-6 {
+    padding: 0.5rem !important;
+  }
+
+  .mb-6 {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .space-y-6 > * + * {
+    margin-top: 0.25rem !important;
+  }
+}
