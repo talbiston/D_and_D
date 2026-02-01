@@ -2,13 +2,17 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import type { Character } from '../types'
 import { getCharacterById, saveCharacter, exportCharacterAsJson } from '../utils/storage'
-import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus } from '../utils/calculations'
+import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties, calculateToolCheckBonus } from '../utils/calculations'
+import { getWeaponByName } from '../data/weapons'
+import { getArmorByName } from '../data/armor'
+import { GEAR, type GearData, type GearCategory } from '../data/gear'
+import { TOOLS, getToolByName, type ToolCategory } from '../data/tools'
 import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel } from '../data/classes'
 import { getSpeciesByName } from '../data/species'
 import { getSpellSaveDC, getSpellAttackBonus, XP_THRESHOLDS } from '../utils/calculations'
 import { getSpellsByClass } from '../data/spells'
 import { FEATS, getFeatByName } from '../data/feats'
-import type { Spell } from '../types'
+import type { Spell, InventoryItem } from '../types'
 import type { AbilityName, SkillName, DamageType, WeaponProperty, Weapon, Alignment, Backstory } from '../types'
 import { SKILL_ABILITIES } from '../types'
 import { useDarkModeContext } from '../context/DarkModeContext'
@@ -25,6 +29,8 @@ import { METAMAGIC_OPTIONS, getMetamagicKnown } from '../data/metamagic'
 import MetamagicPickerModal from '../components/MetamagicPickerModal'
 import LevelUpSpellPickerModal from '../components/LevelUpSpellPickerModal'
 import { getSorceryPoints, isKnownCaster } from '../utils/calculations'
+import WeaponPickerModal from '../components/WeaponPickerModal'
+import ArmorPickerModal from '../components/ArmorPickerModal'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -94,6 +100,7 @@ export default function CharacterSheetPage() {
   const [newEquipmentName, setNewEquipmentName] = useState('')
   const [newEquipmentQuantity, setNewEquipmentQuantity] = useState(1)
   const [showAddWeapon, setShowAddWeapon] = useState(false)
+  const [showWeaponPicker, setShowWeaponPicker] = useState(false)
   const [newWeaponName, setNewWeaponName] = useState('')
   const [newWeaponDamage, setNewWeaponDamage] = useState('1d6')
   const [newWeaponDamageType, setNewWeaponDamageType] = useState<DamageType>('slashing')
@@ -106,6 +113,7 @@ export default function CharacterSheetPage() {
   const [editXp, setEditXp] = useState(0)
   const [showFeatPicker, setShowFeatPicker] = useState(false)
   const [featSearchQuery, setFeatSearchQuery] = useState('')
+  // Level-up state
   const [showLevelUpHPModal, setShowLevelUpHPModal] = useState(false)
   const [showASIModal, setShowASIModal] = useState(false)
   const [showInvocationPicker, setShowInvocationPicker] = useState(false)
@@ -121,6 +129,32 @@ export default function CharacterSheetPage() {
     levelUpResult: LevelUpResult
     asiChoice?: ASIChoice
   } | null>(null)
+  // Equipment state
+  const [showACOverride, setShowACOverride] = useState(false)
+  const [acOverrideValue, setAcOverrideValue] = useState('')
+  const [showACBreakdown, setShowACBreakdown] = useState(false)
+  // Inventory management state
+  const [showInventoryModal, setShowInventoryModal] = useState(false)
+  const [inventorySearchQuery, setInventorySearchQuery] = useState('')
+  const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState<GearCategory | 'all'>('all')
+  const [showCustomItemForm, setShowCustomItemForm] = useState(false)
+  const [newItemName, setNewItemName] = useState('')
+  const [newItemWeight, setNewItemWeight] = useState(0)
+  const [newItemQuantity, setNewItemQuantity] = useState(1)
+  const [newItemCategory, setNewItemCategory] = useState('adventuring gear')
+  const [newItemNotes, setNewItemNotes] = useState('')
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null)
+  // Tool proficiency state
+  const [showToolPicker, setShowToolPicker] = useState(false)
+  const [toolSearchQuery, setToolSearchQuery] = useState('')
+  const [toolCategoryFilter, setToolCategoryFilter] = useState<ToolCategory | 'all'>('all')
+  const [toolRollResult, setToolRollResult] = useState<{ toolName: string; roll: number; bonus: number; total: number } | null>(null)
+  // Armor picker state
+  const [showArmorPicker, setShowArmorPicker] = useState(false)
+  // Currency management state
+  const [showQuickAddCurrency, setShowQuickAddCurrency] = useState(false)
+  const [quickAddAmount, setQuickAddAmount] = useState('')
+  const [quickAddType, setQuickAddType] = useState<'cp' | 'sp' | 'ep' | 'gp' | 'pp'>('gp')
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
   useEffect(() => {
@@ -318,30 +352,224 @@ export default function CharacterSheetPage() {
     })
   }
 
+  // Calculate total currency value in gold pieces
+  const getTotalValueInGold = useCallback(() => {
+    if (!character) return 0
+    const { cp, sp, ep, gp, pp } = character.currency
+    // Conversion rates: 1 pp = 10 gp, 1 gp = 1 gp, 1 ep = 0.5 gp, 1 sp = 0.1 gp, 1 cp = 0.01 gp
+    return (pp * 10) + gp + (ep * 0.5) + (sp * 0.1) + (cp * 0.01)
+  }, [character])
+
+  // Calculate total coin weight (50 coins = 1 lb)
+  const getTotalCoinWeight = useCallback(() => {
+    if (!character) return 0
+    const { cp, sp, ep, gp, pp } = character.currency
+    const totalCoins = cp + sp + ep + gp + pp
+    return totalCoins / 50
+  }, [character])
+
+  // Quick add currency
+  const quickAddCurrency = () => {
+    if (!character) return
+    const amount = parseInt(quickAddAmount) || 0
+    if (amount <= 0) return
+    updateCharacter({
+      currency: { ...character.currency, [quickAddType]: character.currency[quickAddType] + amount }
+    })
+    setQuickAddAmount('')
+    setShowQuickAddCurrency(false)
+  }
+
+  // Convert currency to highest denominations
+  const consolidateCurrency = () => {
+    if (!character) return
+    // Convert everything to copper first
+    const { cp, sp, ep, gp, pp } = character.currency
+    let totalCopper = cp + (sp * 10) + (ep * 50) + (gp * 100) + (pp * 1000)
+
+    // Convert back to highest denominations
+    const newPp = Math.floor(totalCopper / 1000)
+    totalCopper %= 1000
+    const newGp = Math.floor(totalCopper / 100)
+    totalCopper %= 100
+    const newSp = Math.floor(totalCopper / 10)
+    totalCopper %= 10
+    const newCp = totalCopper
+
+    updateCharacter({
+      currency: { cp: newCp, sp: newSp, ep: 0, gp: newGp, pp: newPp }
+    })
+  }
+
+  // Inventory management functions
+  const addInventoryItem = (item: InventoryItem) => {
+    if (!character) return
+    // Check if item already exists, if so increase quantity
+    const existingIndex = character.inventory.findIndex(i => i.name === item.name)
+    if (existingIndex >= 0) {
+      const newInventory = [...character.inventory]
+      newInventory[existingIndex] = {
+        ...newInventory[existingIndex],
+        quantity: newInventory[existingIndex].quantity + item.quantity
+      }
+      updateCharacter({ inventory: newInventory })
+    } else {
+      updateCharacter({ inventory: [...character.inventory, item] })
+    }
+  }
+
+  const addGearToInventory = (gear: GearData) => {
+    addInventoryItem({
+      name: gear.name,
+      quantity: 1,
+      weight: gear.weight,
+      category: gear.category,
+      notes: gear.description
+    })
+    setShowInventoryModal(false)
+    setInventorySearchQuery('')
+    setInventoryCategoryFilter('all')
+  }
+
+  const addCustomItem = () => {
+    if (!newItemName.trim()) return
+    addInventoryItem({
+      name: newItemName.trim(),
+      quantity: newItemQuantity || 1,
+      weight: newItemWeight || 0,
+      category: newItemCategory,
+      notes: newItemNotes.trim() || undefined
+    })
+    // Reset form
+    setNewItemName('')
+    setNewItemWeight(0)
+    setNewItemQuantity(1)
+    setNewItemCategory('adventuring gear')
+    setNewItemNotes('')
+    setShowCustomItemForm(false)
+    setShowInventoryModal(false)
+  }
+
+  const updateInventoryQuantity = (index: number, quantity: number) => {
+    if (!character) return
+    if (quantity <= 0) {
+      // Remove item if quantity is 0 or less
+      removeInventoryItem(index)
+      return
+    }
+    const newInventory = [...character.inventory]
+    newInventory[index] = { ...newInventory[index], quantity }
+    updateCharacter({ inventory: newInventory })
+  }
+
+  const removeInventoryItem = (index: number) => {
+    if (!character) return
+    const newInventory = [...character.inventory]
+    newInventory.splice(index, 1)
+    updateCharacter({ inventory: newInventory })
+    setItemToDelete(null)
+  }
+
+  // Tool proficiency functions
+  const addToolProficiency = (toolName: string) => {
+    if (!character) return
+    // Don't add duplicate tools
+    if (character.toolProficiencies.includes(toolName)) return
+    updateCharacter({
+      toolProficiencies: [...character.toolProficiencies, toolName]
+    })
+    setShowToolPicker(false)
+    setToolSearchQuery('')
+    setToolCategoryFilter('all')
+  }
+
+  const removeToolProficiency = (toolName: string) => {
+    if (!character) return
+    updateCharacter({
+      toolProficiencies: character.toolProficiencies.filter(t => t !== toolName)
+    })
+  }
+
+  const rollToolCheck = (toolName: string) => {
+    if (!character) return
+    const toolData = getToolByName(toolName)
+    if (!toolData) return
+
+    const profBonus = getProficiencyBonus(character.level)
+    const abilityMod = getAbilityModifier(character.abilityScores[toolData.abilityUsed])
+    const hasProficiency = true // They have proficiency if it's in their list
+    const hasExpertise = false // TODO: Could add expertise tracking later
+    const bonus = calculateToolCheckBonus(toolName, abilityMod, profBonus, hasProficiency, hasExpertise)
+
+    // Roll d20
+    const roll = Math.floor(Math.random() * 20) + 1
+    const total = roll + bonus
+
+    setToolRollResult({ toolName, roll, bonus, total })
+    // Auto-clear the result after 5 seconds
+    setTimeout(() => setToolRollResult(null), 5000)
+  }
+
+  // Group inventory items by category
+  const groupedInventory = character?.inventory.reduce((groups, item, index) => {
+    const category = item.category || 'other'
+    if (!groups[category]) {
+      groups[category] = []
+    }
+    groups[category].push({ item, index })
+    return groups
+  }, {} as Record<string, { item: InventoryItem; index: number }[]>) || {}
+
+  // Check if character is proficient with a weapon
+  const isWeaponProficient = (weapon: Weapon): boolean => {
+    if (!character) return false
+    const classData = getClassByName(character.class)
+    if (!classData) return false
+
+    // Check weapon proficiencies - classes list "Simple" or "Martial"
+    const weaponData = getWeaponByName(weapon.name)
+    if (weaponData) {
+      const category = weaponData.category
+      if (category === 'simple' && classData.weaponProficiencies.some(p => p.toLowerCase() === 'simple')) {
+        return true
+      }
+      if (category === 'martial' && classData.weaponProficiencies.some(p => p.toLowerCase() === 'martial')) {
+        return true
+      }
+    }
+
+    // Check for specific weapon proficiencies
+    if (classData.weaponProficiencies.some(p => p.toLowerCase() === weapon.name.toLowerCase())) {
+      return true
+    }
+
+    return false
+  }
+
   const getWeaponAttackBonus = (weapon: Weapon) => {
     if (!character) return 0
     const profBonus = getProficiencyBonus(character.level)
     const strMod = getAbilityModifier(character.abilityScores.strength)
     const dexMod = getAbilityModifier(character.abilityScores.dexterity)
+    const isProficient = isWeaponProficient(weapon)
 
-    // Use DEX for finesse, ranged, or ammunition weapons, otherwise STR
-    const usesDex = weapon.properties.some(p =>
-      p === 'finesse' || p === 'ammunition' || p === 'range'
-    )
-    const abilityMod = usesDex ? Math.max(strMod, dexMod) : strMod
-
-    return profBonus + abilityMod + (weapon.attackBonus || 0)
+    return calculateAttackBonus(weapon, strMod, dexMod, profBonus, isProficient)
   }
 
-  const getWeaponDamageBonus = (weapon: Weapon) => {
-    if (!character) return 0
-    const strMod = getAbilityModifier(character.abilityScores.strength)
-    const dexMod = getAbilityModifier(character.abilityScores.dexterity)
+  // Toggle weapon equipped status
+  const toggleWeaponEquipped = (index: number) => {
+    if (!character) return
+    const newWeapons = [...character.weapons]
+    newWeapons[index] = { ...newWeapons[index], isEquipped: !newWeapons[index].isEquipped }
+    updateCharacter({ weapons: newWeapons })
+  }
 
-    const usesDex = weapon.properties.some(p =>
-      p === 'finesse' || p === 'ammunition' || p === 'range'
-    )
-    return usesDex ? Math.max(strMod, dexMod) : strMod
+  // Toggle versatile weapon two-handing
+  const toggleWeaponTwoHanding = (index: number) => {
+    if (!character) return
+    const newWeapons = [...character.weapons]
+    newWeapons[index] = { ...newWeapons[index], isTwoHanding: !newWeapons[index].isTwoHanding }
+    updateCharacter({ weapons: newWeapons })
   }
 
   const addWeapon = () => {
@@ -350,7 +578,9 @@ export default function CharacterSheetPage() {
       name: newWeaponName.trim(),
       damage: newWeaponDamage,
       damageType: newWeaponDamageType,
-      properties: newWeaponProperties
+      properties: newWeaponProperties,
+      isEquipped: true,
+      isTwoHanding: false
     }
     updateCharacter({
       weapons: [...character.weapons, newWeapon]
@@ -362,11 +592,80 @@ export default function CharacterSheetPage() {
     setShowAddWeapon(false)
   }
 
+  // Add weapon from weapon picker modal
+  const addWeaponFromPicker = (weapon: Weapon) => {
+    if (!character) return
+    updateCharacter({
+      weapons: [...character.weapons, weapon]
+    })
+  }
+
   const removeWeapon = (index: number) => {
     if (!character) return
     const newWeapons = [...character.weapons]
     newWeapons.splice(index, 1)
     updateCharacter({ weapons: newWeapons })
+  }
+
+  // Armor management functions
+  const addArmorFromPicker = (armor: { name: string; isEquipped: boolean; isShield: boolean }) => {
+    if (!character) return
+    // Check if armor already exists
+    const existingIndex = character.armor.findIndex(a => a.name === armor.name)
+    if (existingIndex >= 0) {
+      // Already have this armor, just ensure it's equipped
+      const newArmor = [...character.armor]
+      newArmor[existingIndex] = { ...newArmor[existingIndex], isEquipped: armor.isEquipped }
+      updateCharacter({ armor: newArmor })
+    } else {
+      // Add new armor
+      updateCharacter({ armor: [...character.armor, armor] })
+    }
+  }
+
+  const toggleArmorEquipped = (index: number) => {
+    if (!character) return
+    const armor = character.armor[index]
+    const newArmor = [...character.armor]
+
+    if (armor.isShield) {
+      // For shields, just toggle equipped
+      newArmor[index] = { ...armor, isEquipped: !armor.isEquipped }
+    } else {
+      // For body armor, unequip all other body armor first (only one can be worn)
+      for (let i = 0; i < newArmor.length; i++) {
+        if (!newArmor[i].isShield && i !== index) {
+          newArmor[i] = { ...newArmor[i], isEquipped: false }
+        }
+      }
+      newArmor[index] = { ...armor, isEquipped: !armor.isEquipped }
+    }
+
+    updateCharacter({ armor: newArmor })
+  }
+
+  const removeArmor = (index: number) => {
+    if (!character) return
+    const newArmor = [...character.armor]
+    newArmor.splice(index, 1)
+    updateCharacter({ armor: newArmor })
+  }
+
+  const isArmorProficient = (armorName: string): boolean => {
+    if (!character) return false
+    const classData = getClassByName(character.class)
+    if (!classData) return false
+
+    const armorData = getArmorByName(armorName)
+    if (!armorData) return false
+
+    const normalizedProfs = classData.armorProficiencies.map(p => p.toLowerCase())
+
+    if (armorData.category === 'shield') {
+      return normalizedProfs.includes('shields') || normalizedProfs.includes('shield')
+    }
+
+    return normalizedProfs.includes(armorData.category) || normalizedProfs.includes('all')
   }
 
   const toggleWeaponProperty = (prop: WeaponProperty) => {
@@ -906,14 +1205,219 @@ export default function CharacterSheetPage() {
           <>
         {/* Combat Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          {/* Armor Class */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-center">
+          {/* Armor Class - Enhanced */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 text-center relative">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
               Armor Class
             </p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
-              {character.armorClass}
-            </p>
+            {(() => {
+              // Get equipped armor and shield
+              const equippedArmor = character.armor?.find(a => a.isEquipped && !a.isShield)
+              const equippedShield = character.armor?.find(a => a.isEquipped && a.isShield)
+              const dexMod = getAbilityModifier(character.abilityScores.dexterity)
+              const conMod = getAbilityModifier(character.abilityScores.constitution)
+              const wisMod = getAbilityModifier(character.abilityScores.wisdom)
+
+              // Calculate AC components for breakdown
+              const armorData = equippedArmor ? getArmorByName(equippedArmor.name) : null
+              const className = character.class.toLowerCase()
+
+              // Calculate AC using the utility function
+              const calculatedAC = calculateAC(
+                equippedArmor?.name ?? null,
+                !!equippedShield,
+                dexMod,
+                conMod,
+                wisMod,
+                character.class,
+                character.manualACOverride
+              )
+
+              // Determine AC breakdown components
+              let baseAC = 10
+              let dexBonus = dexMod
+              const shieldBonus = equippedShield ? 2 : 0
+              let otherBonus = 0
+              let acDescription = 'Unarmored'
+
+              if (armorData) {
+                baseAC = armorData.baseAC
+                if (armorData.dexBonus === true) {
+                  dexBonus = dexMod
+                  acDescription = `${armorData.name} (Light)`
+                } else if (armorData.dexBonus === 'max2') {
+                  dexBonus = Math.min(dexMod, 2)
+                  acDescription = `${armorData.name} (Medium)`
+                } else {
+                  dexBonus = 0
+                  acDescription = `${armorData.name} (Heavy)`
+                }
+              } else if (!equippedArmor) {
+                // Unarmored defense
+                if (className === 'barbarian') {
+                  otherBonus = conMod
+                  acDescription = 'Unarmored Defense (Barbarian)'
+                } else if (className === 'monk') {
+                  otherBonus = wisMod
+                  acDescription = 'Unarmored Defense (Monk)'
+                }
+              }
+
+              return (
+                <>
+                  {/* Large AC Number */}
+                  <div
+                    className="relative cursor-pointer"
+                    onClick={() => setShowACBreakdown(!showACBreakdown)}
+                    title="Click for AC breakdown"
+                  >
+                    <p className={`text-4xl font-bold ${character.manualACOverride !== undefined ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>
+                      {character.manualACOverride !== undefined ? character.manualACOverride : calculatedAC}
+                    </p>
+                    {character.manualACOverride !== undefined && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        (Calculated: {calculatedAC})
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Equipped Armor Name */}
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    {equippedArmor ? equippedArmor.name : 'No Armor'}
+                  </p>
+
+                  {/* Shield Indicator */}
+                  {equippedShield && (
+                    <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2A11.954 11.954 0 0110 1.944z" clipRule="evenodd" />
+                      </svg>
+                      Shield (+2)
+                    </span>
+                  )}
+
+                  {/* AC Breakdown Tooltip/Popover */}
+                  {showACBreakdown && (
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 z-10 bg-white dark:bg-gray-700 rounded-lg shadow-lg p-3 min-w-[200px] text-left border border-gray-200 dark:border-gray-600">
+                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2 border-b border-gray-200 dark:border-gray-600 pb-1">
+                        AC Breakdown
+                      </p>
+                      <div className="space-y-1 text-xs text-gray-600 dark:text-gray-300">
+                        <div className="flex justify-between">
+                          <span>Base:</span>
+                          <span className="font-mono">{baseAC}</span>
+                        </div>
+                        {dexBonus !== 0 && (
+                          <div className="flex justify-between">
+                            <span>Dex Modifier:</span>
+                            <span className="font-mono">{formatModifier(dexBonus)}</span>
+                          </div>
+                        )}
+                        {shieldBonus > 0 && (
+                          <div className="flex justify-between">
+                            <span>Shield:</span>
+                            <span className="font-mono">+{shieldBonus}</span>
+                          </div>
+                        )}
+                        {otherBonus !== 0 && (
+                          <div className="flex justify-between">
+                            <span>{className === 'barbarian' ? 'Con Modifier:' : className === 'monk' ? 'Wis Modifier:' : 'Other:'}</span>
+                            <span className="font-mono">{formatModifier(otherBonus)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between border-t border-gray-200 dark:border-gray-600 pt-1 font-semibold">
+                          <span>Total:</span>
+                          <span className="font-mono">{calculatedAC}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">
+                        {acDescription}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Override AC Toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (showACOverride) {
+                        // Closing - check if we should save or clear
+                        if (acOverrideValue.trim() !== '') {
+                          const newOverride = parseInt(acOverrideValue)
+                          if (!isNaN(newOverride) && newOverride > 0) {
+                            updateCharacter({ manualACOverride: newOverride })
+                          }
+                        }
+                        setShowACOverride(false)
+                        setAcOverrideValue('')
+                      } else {
+                        // Opening - prefill with current override if exists
+                        setAcOverrideValue(character.manualACOverride?.toString() ?? '')
+                        setShowACOverride(true)
+                      }
+                    }}
+                    className="mt-2 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                  >
+                    {character.manualACOverride !== undefined ? 'Edit Override' : 'Override AC'}
+                  </button>
+
+                  {/* Clear Override Button */}
+                  {character.manualACOverride !== undefined && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        updateCharacter({ manualACOverride: undefined })
+                      }}
+                      className="ml-2 text-xs text-red-600 dark:text-red-400 hover:underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+
+                  {/* Override Input */}
+                  {showACOverride && (
+                    <div className="mt-2 flex items-center gap-2 justify-center">
+                      <input
+                        type="number"
+                        value={acOverrideValue}
+                        onChange={(e) => setAcOverrideValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const newOverride = parseInt(acOverrideValue)
+                            if (!isNaN(newOverride) && newOverride > 0) {
+                              updateCharacter({ manualACOverride: newOverride })
+                            }
+                            setShowACOverride(false)
+                            setAcOverrideValue('')
+                          } else if (e.key === 'Escape') {
+                            setShowACOverride(false)
+                            setAcOverrideValue('')
+                          }
+                        }}
+                        placeholder="AC"
+                        className="w-16 px-2 py-1 text-center text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const newOverride = parseInt(acOverrideValue)
+                          if (!isNaN(newOverride) && newOverride > 0) {
+                            updateCharacter({ manualACOverride: newOverride })
+                          }
+                          setShowACOverride(false)
+                          setAcOverrideValue('')
+                        }}
+                        className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           </div>
 
           {/* Initiative */}
@@ -1771,85 +2275,757 @@ export default function CharacterSheetPage() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Weapons
             </h2>
-            <button
-              onClick={() => setShowAddWeapon(true)}
-              className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
-            >
-              Add Weapon
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowWeaponPicker(true)}
+                className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+              >
+                Add Weapon
+              </button>
+              <button
+                onClick={() => setShowAddWeapon(true)}
+                className="text-sm px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors"
+              >
+                Custom
+              </button>
+            </div>
           </div>
 
           {character.weapons.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-sm">No weapons yet.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                    <th className="pb-2">Name</th>
-                    <th className="pb-2">Attack</th>
-                    <th className="pb-2">Damage</th>
-                    <th className="pb-2 hidden sm:table-cell">Properties</th>
-                    <th className="pb-2 w-8"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {character.weapons.map((weapon, index) => {
-                    const attackBonus = getWeaponAttackBonus(weapon)
-                    const damageBonus = getWeaponDamageBonus(weapon)
-                    return (
-                      <tr key={index} className="text-gray-900 dark:text-white">
-                        <td className="py-2 font-medium">{weapon.name}</td>
-                        <td className="py-2 text-indigo-600 dark:text-indigo-400">
-                          {formatModifier(attackBonus)}
-                        </td>
-                        <td className="py-2">
-                          {weapon.damage}{damageBonus !== 0 && formatModifier(damageBonus)} {weapon.damageType}
-                        </td>
-                        <td className="py-2 text-gray-500 dark:text-gray-400 hidden sm:table-cell">
-                          {weapon.properties.length > 0 ? weapon.properties.join(', ') : '—'}
-                        </td>
-                        <td className="py-2">
-                          <button
-                            onClick={() => removeWeapon(index)}
-                            className="text-gray-400 hover:text-red-500 transition-colors"
-                            title="Remove weapon"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <div className="space-y-3">
+              {character.weapons.map((weapon, index) => {
+                const attackBonus = getWeaponAttackBonus(weapon)
+                const isProficient = isWeaponProficient(weapon)
+                const isVersatile = weapon.properties.includes('versatile')
+                const weaponData = getWeaponByName(weapon.name)
+                const strMod = getAbilityModifier(character.abilityScores.strength)
+                const dexMod = getAbilityModifier(character.abilityScores.dexterity)
+                const damageBonus = calculateDamageBonus(weapon, strMod, dexMod, false)
+
+                // Get current damage based on two-handing state
+                const currentDamage = isVersatile && weapon.isTwoHanding && weaponData?.versatileDamage
+                  ? weaponData.versatileDamage
+                  : weapon.damage
+
+                return (
+                  <div
+                    key={index}
+                    className={`border rounded-lg p-4 ${
+                      weapon.isEquipped
+                        ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50'
+                    }`}
+                  >
+                    {/* Weapon Header Row */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {/* Equip Toggle */}
+                        <button
+                          onClick={() => toggleWeaponEquipped(index)}
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                            weapon.isEquipped
+                              ? 'bg-indigo-600 border-indigo-600 text-white'
+                              : 'border-gray-400 dark:border-gray-500 hover:border-indigo-500'
+                          }`}
+                          title={weapon.isEquipped ? 'Unequip weapon' : 'Equip weapon'}
+                        >
+                          {weapon.isEquipped && (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                          )}
+                        </button>
+
+                        {/* Weapon Name */}
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {weapon.name}
+                        </span>
+
+                        {/* Proficiency Indicator */}
+                        {isProficient ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300" title="Proficient">
+                            <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Prof
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300" title="Not Proficient">
+                            <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            No Prof
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Remove Button */}
+                      <button
+                        onClick={() => removeWeapon(index)}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                        title="Remove weapon"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Attack and Damage Row */}
+                    <div className="flex flex-wrap items-center gap-4 mb-2">
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Attack:</span>
+                        <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                          {formatModifier(attackBonus)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Damage:</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          {currentDamage}{damageBonus !== 0 && formatModifier(damageBonus)} {weapon.damageType}
+                        </span>
+                      </div>
+
+                      {/* Versatile Toggle */}
+                      {isVersatile && weaponData?.versatileDamage && (
+                        <button
+                          onClick={() => toggleWeaponTwoHanding(index)}
+                          className={`px-2 py-1 text-xs rounded transition-colors ${
+                            weapon.isTwoHanding
+                              ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-medium'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
+                          title={weapon.isTwoHanding ? 'Using two hands' : 'Using one hand'}
+                        >
+                          {weapon.isTwoHanding ? '2H' : '1H'}
+                          <span className="ml-1 text-gray-400 dark:text-gray-500">
+                            ({weapon.isTwoHanding ? weapon.damage : weaponData.versatileDamage})
+                          </span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Properties Row */}
+                    {weapon.properties.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {weapon.properties.map((prop) => (
+                          <span
+                            key={prop}
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                          >
+                            {prop}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Armor Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Armor
+            </h2>
+            <button
+              onClick={() => setShowArmorPicker(true)}
+              className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+            >
+              Add Armor
+            </button>
+          </div>
+
+          {(!character.armor || character.armor.length === 0) ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No armor yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {character.armor.map((armor, index) => {
+                const armorData = getArmorByName(armor.name)
+                const isProficient = isArmorProficient(armor.name)
+
+                return (
+                  <div
+                    key={index}
+                    className={`border rounded-lg p-4 ${
+                      armor.isEquipped
+                        ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50'
+                    }`}
+                  >
+                    {/* Armor Header Row */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {/* Equip Toggle */}
+                        <button
+                          onClick={() => toggleArmorEquipped(index)}
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                            armor.isEquipped
+                              ? 'bg-indigo-600 border-indigo-600 text-white'
+                              : 'border-gray-400 dark:border-gray-500 hover:border-indigo-500'
+                          }`}
+                          title={armor.isEquipped ? 'Unequip armor' : 'Equip armor'}
+                        >
+                          {armor.isEquipped && (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+
+                        {/* Armor Name */}
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {armor.name}
+                        </span>
+
+                        {/* Shield Badge */}
+                        {armor.isShield && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
+                            Shield
+                          </span>
+                        )}
+
+                        {/* Category Badge */}
+                        {armorData && !armor.isShield && (
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                            armorData.category === 'light'
+                              ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
+                              : armorData.category === 'medium'
+                              ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                              : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+                          }`}>
+                            {armorData.category}
+                          </span>
+                        )}
+
+                        {/* Proficiency Indicator */}
+                        {isProficient ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300" title="Proficient">
+                            <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Prof
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300" title="Not Proficient - Penalties Apply">
+                            <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            No Prof
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Remove Button */}
+                      <button
+                        onClick={() => removeArmor(index)}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                        title="Remove armor"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Armor Stats Row */}
+                    {armorData && (
+                      <div className="flex flex-wrap items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">AC:</span>
+                          <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                            {armor.isShield ? `+${armorData.baseAC}` : armorData.baseAC}
+                            {armorData.dexBonus === true && ' + Dex'}
+                            {armorData.dexBonus === 'max2' && ' + Dex (max 2)'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Weight:</span>
+                          <span className="text-gray-900 dark:text-white">{armorData.weight} lb.</span>
+                        </div>
+                        {armorData.minStrength > 0 && (
+                          <span className="text-xs px-2 py-0.5 bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 rounded">
+                            Str {armorData.minStrength}+ required
+                          </span>
+                        )}
+                        {armorData.stealthDisadvantage && (
+                          <span className="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded">
+                            Stealth Disadvantage
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
 
         {/* Currency Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Currency
-          </h2>
-          <div className="grid grid-cols-5 gap-4">
-            {(['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((type) => (
-              <div key={type} className="text-center">
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">
-                  {type}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={character.currency[type]}
-                  onChange={(e) => updateCurrency(type, parseInt(e.target.value) || 0)}
-                  className="w-full px-2 py-2 text-center border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-semibold"
-                />
-              </div>
-            ))}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Currency
+            </h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowQuickAddCurrency(true)}
+                className="text-sm px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+              >
+                Quick Add
+              </button>
+              <button
+                onClick={consolidateCurrency}
+                className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+              >
+                Convert
+              </button>
+            </div>
           </div>
+
+          {/* Currency Inputs */}
+          <div className="grid grid-cols-5 gap-4 mb-4">
+            {(['cp', 'sp', 'ep', 'gp', 'pp'] as const).map((type) => {
+              const labels: Record<'cp' | 'sp' | 'ep' | 'gp' | 'pp', string> = {
+                cp: 'Copper',
+                sp: 'Silver',
+                ep: 'Electrum',
+                gp: 'Gold',
+                pp: 'Platinum'
+              }
+              return (
+                <div key={type} className="text-center">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">
+                    {labels[type]}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={character.currency[type]}
+                    onChange={(e) => updateCurrency(type, parseInt(e.target.value) || 0)}
+                    className="w-full px-2 py-2 text-center border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg font-semibold"
+                  />
+                  <span className="text-xs text-gray-400 dark:text-gray-500 uppercase">{type}</span>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Total Value and Weight */}
+          <div className="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Total Value: </span>
+              <span className="font-semibold text-amber-600 dark:text-amber-400">
+                {getTotalValueInGold().toFixed(2)} gp
+              </span>
+            </div>
+            <div className="text-sm">
+              <span className="text-gray-500 dark:text-gray-400">Coin Weight: </span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                {getTotalCoinWeight().toFixed(2)} lbs
+              </span>
+              <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">
+                ({character.currency.cp + character.currency.sp + character.currency.ep + character.currency.gp + character.currency.pp} coins)
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Add Currency Modal */}
+          {showQuickAddCurrency && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Quick Add Currency
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Amount
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={quickAddAmount}
+                      onChange={(e) => setQuickAddAmount(e.target.value)}
+                      placeholder="Enter amount..."
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Currency Type
+                    </label>
+                    <select
+                      value={quickAddType}
+                      onChange={(e) => setQuickAddType(e.target.value as 'cp' | 'sp' | 'ep' | 'gp' | 'pp')}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="cp">Copper (cp)</option>
+                      <option value="sp">Silver (sp)</option>
+                      <option value="ep">Electrum (ep)</option>
+                      <option value="gp">Gold (gp)</option>
+                      <option value="pp">Platinum (pp)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-6">
+                  <button
+                    onClick={() => {
+                      setShowQuickAddCurrency(false)
+                      setQuickAddAmount('')
+                    }}
+                    className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={quickAddCurrency}
+                    disabled={!quickAddAmount || parseInt(quickAddAmount) <= 0}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Inventory Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Inventory
+            </h2>
+            <button
+              onClick={() => setShowInventoryModal(true)}
+              className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+            >
+              Add Item
+            </button>
+          </div>
+
+          {character.inventory.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No items in inventory yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {Object.entries(groupedInventory).map(([category, items]) => (
+                <div key={category}>
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 capitalize">
+                    {category}
+                  </h3>
+                  <div className="space-y-2">
+                    {items.map(({ item, index }) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg px-4 py-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-900 dark:text-white font-medium truncate">{item.name}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              ({item.weight} lb{item.weight !== 1 ? 's' : ''} each)
+                            </span>
+                          </div>
+                          {item.notes && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate" title={item.notes}>
+                              {item.notes}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          {/* Quantity controls with +/- buttons */}
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => updateInventoryQuantity(index, item.quantity - 1)}
+                              className="w-7 h-7 flex items-center justify-center rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                              </svg>
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) => updateInventoryQuantity(index, parseInt(e.target.value) || 1)}
+                              className="w-12 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
+                            />
+                            <button
+                              onClick={() => updateInventoryQuantity(index, item.quantity + 1)}
+                              className="w-7 h-7 flex items-center justify-center rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </button>
+                          </div>
+                          {/* Total weight for this item */}
+                          <span className="text-xs text-gray-500 dark:text-gray-400 w-14 text-right">
+                            {(item.weight * item.quantity).toFixed(1)} lbs
+                          </span>
+                          {/* Delete button */}
+                          <button
+                            onClick={() => setItemToDelete(index)}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            title="Remove item"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* Total inventory weight */}
+              <div className="border-t border-gray-200 dark:border-gray-600 pt-3 mt-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Total Inventory Weight:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {character.inventory.reduce((total, item) => total + (item.weight * item.quantity), 0).toFixed(1)} lbs
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Encumbrance Display */}
+          {(() => {
+            const strScore = character.abilityScores.strength
+            const currentWeight = calculateCurrentWeight(character.inventory, character.weapons, character.armor)
+            const maxCapacity = calculateCarryingCapacity(strScore)
+            const status = getEncumbranceStatus(currentWeight, strScore)
+            const penalties = getEncumbrancePenalties(status)
+            const encumberedThreshold = strScore * 5
+            const heavilyEncumberedThreshold = strScore * 10
+            const weightPercentage = Math.min((currentWeight / maxCapacity) * 100, 100)
+
+            // Color coding based on status
+            const getProgressColor = () => {
+              switch (status) {
+                case 'heavily_encumbered':
+                  return 'bg-red-500'
+                case 'encumbered':
+                  return 'bg-yellow-500'
+                default:
+                  return 'bg-green-500'
+              }
+            }
+
+            const getStatusBadgeColor = () => {
+              switch (status) {
+                case 'heavily_encumbered':
+                  return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                case 'encumbered':
+                  return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                default:
+                  return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+              }
+            }
+
+            const formatStatus = () => {
+              switch (status) {
+                case 'heavily_encumbered':
+                  return 'Heavily Encumbered'
+                case 'encumbered':
+                  return 'Encumbered'
+                default:
+                  return 'Normal'
+              }
+            }
+
+            return (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Encumbrance</h3>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusBadgeColor()}`}>
+                      {formatStatus()}
+                    </span>
+                    {/* Info tooltip */}
+                    <div className="relative group">
+                      <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                      <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                        <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 w-64 shadow-lg">
+                          <div className="font-semibold mb-1">Encumbrance Thresholds</div>
+                          <div className="space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-green-400">Normal:</span>
+                              <span>0 - {encumberedThreshold} lbs</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-yellow-400">Encumbered:</span>
+                              <span>{encumberedThreshold + 1} - {heavilyEncumberedThreshold} lbs</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-red-400">Heavily Encumbered:</span>
+                              <span>&gt; {heavilyEncumberedThreshold} lbs</span>
+                            </div>
+                            <div className="flex justify-between border-t border-gray-700 pt-1 mt-1">
+                              <span className="text-gray-400">Max Capacity:</span>
+                              <span>{maxCapacity} lbs</span>
+                            </div>
+                          </div>
+                          <div className="mt-2 text-gray-400 text-[10px]">
+                            Based on Strength score of {strScore}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {currentWeight.toFixed(1)} / {maxCapacity} lbs
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${getProgressColor()} transition-all duration-300`}
+                    style={{ width: `${weightPercentage}%` }}
+                  />
+                </div>
+
+                {/* Show encumbrance thresholds as markers on the bar */}
+                <div className="relative h-0">
+                  <div
+                    className="absolute top-[-8px] border-l-2 border-yellow-600 dark:border-yellow-400 h-2"
+                    style={{ left: `${(encumberedThreshold / maxCapacity) * 100}%` }}
+                    title={`Encumbered at ${encumberedThreshold} lbs`}
+                  />
+                  <div
+                    className="absolute top-[-8px] border-l-2 border-red-600 dark:border-red-400 h-2"
+                    style={{ left: `${(heavilyEncumberedThreshold / maxCapacity) * 100}%` }}
+                    title={`Heavily encumbered at ${heavilyEncumberedThreshold} lbs`}
+                  />
+                </div>
+
+                {/* Display penalties when encumbered */}
+                {status !== 'normal' && (
+                  <div className={`mt-3 p-2 rounded-lg text-sm ${
+                    status === 'heavily_encumbered'
+                      ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                      : 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300'
+                  }`}>
+                    <div className="font-medium mb-1">Active Penalties:</div>
+                    <ul className="list-disc list-inside space-y-0.5 text-xs">
+                      <li>Speed reduced by {penalties.speedReduction} ft</li>
+                      {penalties.hasDisadvantageOnChecks && (
+                        <li>Disadvantage on Str/Dex/Con ability checks, attack rolls, and saving throws</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+        </div>
+
+        {/* Tool Proficiencies Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Tool Proficiencies
+            </h2>
+            <button
+              onClick={() => setShowToolPicker(true)}
+              className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+            >
+              Add Tool
+            </button>
+          </div>
+
+          {/* Tool Roll Result Display */}
+          {toolRollResult && (
+            <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                  {toolRollResult.toolName} Check
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    {toolRollResult.roll} {toolRollResult.bonus >= 0 ? '+' : ''}{toolRollResult.bonus}
+                  </span>
+                  <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                    = {toolRollResult.total}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {character.toolProficiencies.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No tool proficiencies yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {character.toolProficiencies.map((toolName) => {
+                const toolData = getToolByName(toolName)
+                const abilityUsed = toolData?.abilityUsed || 'intelligence'
+                const abilityMod = getAbilityModifier(character.abilityScores[abilityUsed])
+                const profBonus = getProficiencyBonus(character.level)
+                const totalBonus = abilityMod + profBonus // Proficient with the tool
+
+                return (
+                  <div
+                    key={toolName}
+                    className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded-lg px-4 py-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-900 dark:text-white font-medium">{toolName}</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 uppercase">
+                          {ABILITY_LABELS[abilityUsed]}
+                        </span>
+                      </div>
+                      {toolData && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                          {toolData.category}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {/* Bonus display */}
+                      <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                        {formatModifier(totalBonus)}
+                      </span>
+                      {/* Roll button */}
+                      <button
+                        onClick={() => rollToolCheck(toolName)}
+                        className="px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded hover:bg-indigo-200 dark:hover:bg-indigo-800 transition-colors text-sm font-medium"
+                      >
+                        Roll
+                      </button>
+                      {/* Remove button */}
+                      <button
+                        onClick={() => removeToolProficiency(toolName)}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        title="Remove tool proficiency"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
           </>
         )}
@@ -2225,12 +3401,27 @@ export default function CharacterSheetPage() {
         </div>
       )}
 
-      {/* Add Weapon Modal */}
+      {/* Weapon Picker Modal */}
+      <WeaponPickerModal
+        isOpen={showWeaponPicker}
+        onClose={() => setShowWeaponPicker(false)}
+        onAddWeapon={addWeaponFromPicker}
+      />
+
+      {/* Armor Picker Modal */}
+      <ArmorPickerModal
+        isOpen={showArmorPicker}
+        onClose={() => setShowArmorPicker(false)}
+        onAddArmor={addArmorFromPicker}
+        armorProficiencies={getClassByName(character.class)?.armorProficiencies ?? []}
+      />
+
+      {/* Add Custom Weapon Modal */}
       {showAddWeapon && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Add Weapon
+              Add Custom Weapon
             </h3>
             <div className="space-y-4">
               <div>
@@ -2326,6 +3517,344 @@ export default function CharacterSheetPage() {
               >
                 Add
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Inventory Item Modal */}
+      {showInventoryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {showCustomItemForm ? 'Add Custom Item' : 'Add Item to Inventory'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowInventoryModal(false)
+                  setInventorySearchQuery('')
+                  setInventoryCategoryFilter('all')
+                  setShowCustomItemForm(false)
+                  setNewItemName('')
+                  setNewItemWeight(0)
+                  setNewItemQuantity(1)
+                  setNewItemCategory('adventuring gear')
+                  setNewItemNotes('')
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Toggle between gear list and custom item */}
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setShowCustomItemForm(false)}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  !showCustomItemForm
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                From Gear List
+              </button>
+              <button
+                onClick={() => setShowCustomItemForm(true)}
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  showCustomItemForm
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
+              >
+                Custom Item
+              </button>
+            </div>
+
+            {showCustomItemForm ? (
+              /* Custom Item Form */
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Item Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                    placeholder="e.g., Mysterious Orb"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    autoFocus
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Weight (lbs)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={newItemWeight}
+                      onChange={(e) => setNewItemWeight(parseFloat(e.target.value) || 0)}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={newItemQuantity}
+                      onChange={(e) => setNewItemQuantity(parseInt(e.target.value) || 1)}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={newItemCategory}
+                    onChange={(e) => setNewItemCategory(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="adventuring gear">Adventuring Gear</option>
+                    <option value="container">Container</option>
+                    <option value="ammunition">Ammunition</option>
+                    <option value="arcane focus">Arcane Focus</option>
+                    <option value="druidic focus">Druidic Focus</option>
+                    <option value="holy symbol">Holy Symbol</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Notes (optional)
+                  </label>
+                  <textarea
+                    value={newItemNotes}
+                    onChange={(e) => setNewItemNotes(e.target.value)}
+                    placeholder="Description or notes..."
+                    rows={2}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                  />
+                </div>
+                <button
+                  onClick={addCustomItem}
+                  disabled={!newItemName.trim()}
+                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors"
+                >
+                  Add to Inventory
+                </button>
+              </div>
+            ) : (
+              /* Gear List */
+              <>
+                {/* Search and Filter */}
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={inventorySearchQuery}
+                    onChange={(e) => setInventorySearchQuery(e.target.value)}
+                    placeholder="Search gear..."
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    autoFocus
+                  />
+                  <select
+                    value={inventoryCategoryFilter}
+                    onChange={(e) => setInventoryCategoryFilter(e.target.value as GearCategory | 'all')}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="adventuring gear">Adventuring Gear</option>
+                    <option value="container">Containers</option>
+                    <option value="ammunition">Ammunition</option>
+                    <option value="arcane focus">Arcane Focus</option>
+                    <option value="druidic focus">Druidic Focus</option>
+                    <option value="holy symbol">Holy Symbol</option>
+                  </select>
+                </div>
+
+                {/* Gear List */}
+                <div className="overflow-y-auto flex-1 space-y-1">
+                  {(() => {
+                    const filteredGear = GEAR
+                      .filter((gear) => {
+                        if (inventoryCategoryFilter !== 'all' && gear.category !== inventoryCategoryFilter) return false
+                        if (inventorySearchQuery) {
+                          const query = inventorySearchQuery.toLowerCase()
+                          return gear.name.toLowerCase().includes(query) ||
+                                 gear.description.toLowerCase().includes(query)
+                        }
+                        return true
+                      })
+                      .sort((a, b) => a.name.localeCompare(b.name))
+
+                    if (filteredGear.length === 0) {
+                      return (
+                        <p className="text-gray-500 dark:text-gray-400 text-center py-8">
+                          No gear found matching your criteria.
+                        </p>
+                      )
+                    }
+
+                    return filteredGear.map((gear) => (
+                      <button
+                        key={gear.name}
+                        onClick={() => addGearToInventory(gear)}
+                        className="w-full px-4 py-3 flex items-center justify-between text-left bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded capitalize">
+                              {gear.category}
+                            </span>
+                            <span className="font-medium text-gray-900 dark:text-white truncate">{gear.name}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                            {gear.weight} lb • {gear.cost} • {gear.description}
+                          </p>
+                        </div>
+                        <svg className="w-5 h-5 text-indigo-500 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
+                    ))
+                  })()}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Item Confirmation Modal */}
+      {itemToDelete !== null && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Remove Item?
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Are you sure you want to remove <span className="font-medium">{character?.inventory[itemToDelete]?.name}</span> from your inventory?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setItemToDelete(null)}
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => removeInventoryItem(itemToDelete)}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tool Picker Modal */}
+      {showToolPicker && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Add Tool Proficiency
+              </h3>
+              <button
+                onClick={() => {
+                  setShowToolPicker(false)
+                  setToolSearchQuery('')
+                  setToolCategoryFilter('all')
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Search and Filter */}
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                value={toolSearchQuery}
+                onChange={(e) => setToolSearchQuery(e.target.value)}
+                placeholder="Search tools..."
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                autoFocus
+              />
+              <select
+                value={toolCategoryFilter}
+                onChange={(e) => setToolCategoryFilter(e.target.value as ToolCategory | 'all')}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                <option value="all">All Categories</option>
+                <option value="artisan's tools">Artisan's Tools</option>
+                <option value="gaming set">Gaming Sets</option>
+                <option value="musical instrument">Musical Instruments</option>
+                <option value="other">Other Tools</option>
+              </select>
+            </div>
+
+            {/* Tool List */}
+            <div className="flex-1 overflow-y-auto space-y-1">
+              {(() => {
+                const filteredTools = TOOLS.filter(tool => {
+                  // Filter out tools already in proficiencies
+                  if (character.toolProficiencies.includes(tool.name)) return false
+                  // Apply search filter
+                  if (toolSearchQuery && !tool.name.toLowerCase().includes(toolSearchQuery.toLowerCase())) return false
+                  // Apply category filter
+                  if (toolCategoryFilter !== 'all' && tool.category !== toolCategoryFilter) return false
+                  return true
+                })
+
+                if (filteredTools.length === 0) {
+                  return (
+                    <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                      {toolSearchQuery || toolCategoryFilter !== 'all'
+                        ? 'No matching tools found'
+                        : 'All tools already added'}
+                    </p>
+                  )
+                }
+
+                return filteredTools.map(tool => (
+                  <button
+                    key={tool.name}
+                    onClick={() => addToolProficiency(tool.name)}
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg text-left transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded capitalize">
+                          {tool.category}
+                        </span>
+                        <span className="font-medium text-gray-900 dark:text-white truncate">{tool.name}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {tool.weight} lb • {tool.cost} • Uses {ABILITY_LABELS[tool.abilityUsed]}
+                      </p>
+                    </div>
+                    <svg className="w-5 h-5 text-indigo-500 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                ))
+              })()}
             </div>
           </div>
         </div>

@@ -6,6 +6,17 @@ export interface Subclass {
   features: ClassFeature[]
 }
 
+/**
+ * Represents an equipment choice during character creation
+ * - If `choice` has multiple items, player picks one
+ * - If `items` is present, player receives all listed items (fixed equipment)
+ * - quantity defaults to 1 if not specified
+ */
+export interface StartingEquipmentChoice {
+  choice?: string[] // Pick one from these options
+  items?: { item: string; quantity?: number }[] // Fixed items (receive all)
+}
+
 export interface ClassData {
   name: string
   hitDie: number
@@ -18,6 +29,8 @@ export interface ClassData {
   subclassLevel?: number
   subclassName?: string // e.g., "Primal Path", "Bard College"
   subclasses?: Subclass[]
+  startingEquipment?: StartingEquipmentChoice[] // Equipment choices for character creation
+  startingGold?: string // Dice formula for starting gold (e.g., "5d4 x 10")
 }
 
 export const CLASSES: ClassData[] = [
@@ -101,6 +114,13 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Greataxe', 'any martial melee weapon'] },
+      { choice: ['Two Handaxes', 'any simple weapon'] },
+      { items: [{ item: "Explorer's Pack", quantity: 1 }] },
+      { items: [{ item: 'Javelin', quantity: 4 }] },
+    ],
+    startingGold: '2d4 x 10',
   },
   {
     name: 'Bard',
@@ -174,6 +194,14 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Rapier', 'Longsword', 'any simple weapon'] },
+      { choice: ["Diplomat's Pack", "Entertainer's Pack"] },
+      { choice: ['Lute', 'any musical instrument'] },
+      { items: [{ item: 'Leather Armor', quantity: 1 }] },
+      { items: [{ item: 'Dagger', quantity: 1 }] },
+    ],
+    startingGold: '5d4 x 10',
   },
   {
     name: 'Cleric',
@@ -247,6 +275,15 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Mace', 'Warhammer (if proficient)'] },
+      { choice: ['Scale Mail', 'Leather Armor', 'Chain Mail (if proficient)'] },
+      { choice: ['Light Crossbow and 20 Bolts', 'any simple weapon'] },
+      { choice: ["Priest's Pack", "Explorer's Pack"] },
+      { items: [{ item: 'Shield', quantity: 1 }] },
+      { items: [{ item: 'Holy Symbol', quantity: 1 }] },
+    ],
+    startingGold: '5d4 x 10',
   },
   {
     name: 'Druid',
@@ -325,6 +362,14 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Wooden Shield', 'any simple weapon'] },
+      { choice: ['Scimitar', 'any simple melee weapon'] },
+      { items: [{ item: 'Leather Armor', quantity: 1 }] },
+      { items: [{ item: "Explorer's Pack", quantity: 1 }] },
+      { items: [{ item: 'Druidic Focus', quantity: 1 }] },
+    ],
+    startingGold: '2d4 x 10',
   },
   {
     name: 'Fighter',
@@ -413,6 +458,13 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Chain Mail', 'Leather Armor, Longbow, and 20 Arrows'] },
+      { choice: ['any martial weapon and a Shield', 'two martial weapons'] },
+      { choice: ['Light Crossbow and 20 Bolts', 'two Handaxes'] },
+      { choice: ["Dungeoneer's Pack", "Explorer's Pack"] },
+    ],
+    startingGold: '5d4 x 10',
   },
   {
     name: 'Monk',
@@ -498,6 +550,12 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Shortsword', 'any simple weapon'] },
+      { choice: ["Dungeoneer's Pack", "Explorer's Pack"] },
+      { items: [{ item: 'Dart', quantity: 10 }] },
+    ],
+    startingGold: '5d4',
   },
   {
     name: 'Paladin',
@@ -582,6 +640,14 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['any martial weapon and a Shield', 'two martial weapons'] },
+      { choice: ['five Javelins', 'any simple melee weapon'] },
+      { choice: ["Priest's Pack", "Explorer's Pack"] },
+      { items: [{ item: 'Chain Mail', quantity: 1 }] },
+      { items: [{ item: 'Holy Symbol', quantity: 1 }] },
+    ],
+    startingGold: '5d4 x 10',
   },
   {
     name: 'Ranger',
@@ -664,6 +730,14 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Scale Mail', 'Leather Armor'] },
+      { choice: ['two Shortswords', 'two simple melee weapons'] },
+      { choice: ["Dungeoneer's Pack", "Explorer's Pack"] },
+      { items: [{ item: 'Longbow', quantity: 1 }] },
+      { items: [{ item: 'Arrows', quantity: 20 }] },
+    ],
+    startingGold: '5d4 x 10',
   },
   {
     name: 'Rogue',
@@ -747,6 +821,15 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Rapier', 'Shortsword'] },
+      { choice: ['Shortbow and 20 Arrows', 'Shortsword'] },
+      { choice: ["Burglar's Pack", "Dungeoneer's Pack", "Explorer's Pack"] },
+      { items: [{ item: 'Leather Armor', quantity: 1 }] },
+      { items: [{ item: 'Dagger', quantity: 2 }] },
+      { items: [{ item: "Thieves' Tools", quantity: 1 }] },
+    ],
+    startingGold: '4d4 x 10',
   },
   {
     name: 'Sorcerer',
@@ -825,6 +908,13 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Light Crossbow and 20 Bolts', 'any simple weapon'] },
+      { choice: ['Component Pouch', 'Arcane Focus'] },
+      { choice: ["Dungeoneer's Pack", "Explorer's Pack"] },
+      { items: [{ item: 'Dagger', quantity: 2 }] },
+    ],
+    startingGold: '3d4 x 10',
   },
   {
     name: 'Warlock',
@@ -909,6 +999,15 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Light Crossbow and 20 Bolts', 'any simple weapon'] },
+      { choice: ['Component Pouch', 'Arcane Focus'] },
+      { choice: ["Scholar's Pack", "Dungeoneer's Pack"] },
+      { items: [{ item: 'Leather Armor', quantity: 1 }] },
+      { items: [{ item: 'any simple weapon', quantity: 1 }] },
+      { items: [{ item: 'Dagger', quantity: 2 }] },
+    ],
+    startingGold: '4d4 x 10',
   },
   {
     name: 'Wizard',
@@ -984,6 +1083,13 @@ export const CLASSES: ClassData[] = [
         ],
       },
     ],
+    startingEquipment: [
+      { choice: ['Quarterstaff', 'Dagger'] },
+      { choice: ['Component Pouch', 'Arcane Focus'] },
+      { choice: ["Scholar's Pack", "Explorer's Pack"] },
+      { items: [{ item: 'Spellbook', quantity: 1 }] },
+    ],
+    startingGold: '4d4 x 10',
   },
 ]
 

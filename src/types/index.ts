@@ -85,11 +85,14 @@ export interface Character {
   currentHp: number
   tempHp: number
   armorClass: number
+  manualACOverride?: number // Optional manual AC override
   speed: number
   size: Size
   // Combat & equipment
   weapons: Weapon[]
+  armor: CharacterArmor[]
   equipment: Equipment[]
+  inventory: InventoryItem[]
   // Spells
   spells: Spell[]
   spellSlots: SpellSlots
@@ -111,6 +114,8 @@ export interface Character {
   proficiencies: Proficiencies
   // Level-up tracking
   pendingASI: number // Number of unclaimed Ability Score Improvements
+  // Equipment tracking
+  toolProficiencies: string[]
 }
 
 // Damage types
@@ -149,6 +154,24 @@ export interface Weapon {
   damageType: DamageType
   properties: WeaponProperty[]
   attackBonus?: number
+  notes?: string
+  isEquipped: boolean
+  isTwoHanding: boolean // For versatile weapons being used two-handed
+}
+
+// Character armor type (for equipped/owned armor)
+export interface CharacterArmor {
+  name: string
+  isEquipped: boolean
+  isShield: boolean
+}
+
+// Inventory item type
+export interface InventoryItem {
+  name: string
+  quantity: number
+  weight: number
+  category: string
   notes?: string
 }
 
@@ -365,3 +388,12 @@ export const DEFAULT_PROFICIENCIES: Proficiencies = {
   weapons: [],
   tools: [],
 }
+
+// Default armor (empty array)
+export const DEFAULT_ARMOR: CharacterArmor[] = []
+
+// Default inventory (empty array)
+export const DEFAULT_INVENTORY: InventoryItem[] = []
+
+// Default tool proficiencies (empty array)
+export const DEFAULT_TOOL_PROFICIENCIES: string[] = []

@@ -1,0 +1,380 @@
+# Ralph Progress Log
+Started: Sun Feb  1 12:07:52 AM CST 2026
+---
+
+## Codebase Patterns
+- Data files go in `src/data/*.ts` and export an interface, a const array, and helper functions
+- Use `type` imports for TypeScript types when `verbatimModuleSyntax` is enabled
+- Export helper functions like `getXByName()`, `getXsByCategory()` for data lookups
+- The build command (`npm run build`) runs TypeScript typecheck before Vite build
+- Pre-existing lint warnings exist in some components but don't block builds
+
+---
+
+## 2026-02-01 - US-001
+- What was implemented: Created comprehensive weapons database with all 37 PHB weapons
+- Files changed:
+  - `src/data/weapons.ts` (new) - complete weapons data with interfaces and helpers
+  - `src/context/DarkModeContext.tsx` - fixed type import for verbatimModuleSyntax
+  - `src/pages/CharacterCreatePage.tsx` - removed unused DEFAULT_PROFICIENCIES import
+  - `src/pages/CharacterSheetPage.tsx` - fixed unused imports and null type issue
+  - `prd.json` (new) - added to branch
+- **Learnings for future iterations:**
+  - The types file already has `Weapon`, `DamageType`, and `WeaponProperty` types
+  - Data files follow a consistent pattern: interface, const array, helper functions
+  - Pre-existing TypeScript errors in the codebase need to be fixed for build to pass
+  - Lint has some warnings but build still succeeds
+  - Branch was created fresh from main, so prd.json needed to be committed too
+---
+
+## 2026-02-01 - US-002
+- What was implemented: Created comprehensive armor database with all 13 PHB armor types plus shields
+- Files changed:
+  - `src/data/armor.ts` (new) - complete armor data with interfaces and helpers
+- **Learnings for future iterations:**
+  - Armor uses `DexBonus` type that can be `true`, `false`, or `'max2'` for medium armor
+  - Shields have a `baseAC` of 2 (the bonus they provide) rather than a full AC value
+  - Followed the same pattern as weapons.ts: separate const arrays by category, combined into ARMOR array
+  - Added bonus helper functions: `getLightArmor()`, `getMediumArmor()`, `getHeavyArmor()`, `getShields()`, `getBodyArmor()`
+---
+
+## 2026-02-01 - US-003
+- What was implemented: Created comprehensive adventuring gear database with all PHB gear items
+- Files changed:
+  - `src/data/gear.ts` (new) - complete gear data with interfaces and helpers
+- **Learnings for future iterations:**
+  - Gear uses a `GearCategory` union type for categories: 'adventuring gear', 'container', 'ammunition', 'arcane focus', 'druidic focus', 'holy symbol'
+  - Container descriptions include capacity information per the acceptance criteria
+  - Spellcasting focuses are split into three separate categories for more granular filtering
+  - Added helper `getSpellcastingFocuses()` to get all focus types combined
+  - Followed same pattern: separate const arrays by category, combined into GEAR array
+---
+
+## 2026-02-01 - US-004
+- What was implemented: Created comprehensive tools database with all 37 PHB tools
+- Files changed:
+  - `src/data/tools.ts` (new) - complete tools data with interfaces and helpers
+- **Learnings for future iterations:**
+  - Tools use `AbilityName` type from `src/types` for the default ability used in checks
+  - Tool categories: "artisan's tools", "gaming set", "musical instrument", "other"
+  - 17 artisan's tools (alchemist's supplies through woodcarver's tools)
+  - 4 gaming sets (dice, dragonchess, playing cards, three-dragon ante)
+  - 10 musical instruments (bagpipes through viol)
+  - 6 other tools (disguise kit, forgery kit, herbalism kit, navigator's tools, poisoner's kit, thieves' tools)
+  - Each tool has a default `abilityUsed` field based on common usage (e.g., musical instruments use Charisma, thieves' tools use Dexterity)
+---
+
+## 2026-02-01 - US-005
+- What was implemented: Created equipment packs data file with all 7 PHB equipment packs
+- Files changed:
+  - `src/data/equipmentPacks.ts` (new) - complete equipment packs data with interfaces and helpers
+- **Learnings for future iterations:**
+  - Equipment packs use `PackItem` interface with `item` (string) and `quantity` (number)
+  - 7 packs: Burglar's, Diplomat's, Dungeoneer's, Entertainer's, Explorer's, Priest's, Scholar's
+  - Pack contents reference items by their exact name from gear.ts and tools.ts (e.g., "Ball Bearings (bag of 1,000)")
+  - Some pack items (like Alms Box, Block of Incense, Censer, Vestments, Little Bag of Sand, Small Knife, Disguise Kit) are not in gear.ts - they're specialized pack items
+  - Followed same pattern: individual pack constants, combined into EQUIPMENT_PACKS array, with getPackByName() helper
+---
+
+## 2026-02-01 - US-006
+- What was implemented: Added starting equipment options and starting gold to all classes in classes.ts
+- Files changed:
+  - `src/data/classes.ts` - added StartingEquipmentChoice interface, updated ClassData interface, added startingEquipment and startingGold to all 12 classes
+- **Learnings for future iterations:**
+  - StartingEquipmentChoice interface uses either `choice` (pick one) or `items` (fixed items) pattern
+  - Starting equipment choices include class-specific pack options matching the PHB
+  - startingGold is stored as a dice formula string (e.g., "5d4 x 10") for parsing by dice roller
+  - All 12 PHB classes have been updated: Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard
+  - Some classes like Monk have lower starting gold (just "5d4" without multiplier)
+  - Fighters and Paladins have Chain Mail as starting armor which requires Strength 13
+---
+
+## 2026-02-01 - US-007
+- What was implemented: Updated Character type and related interfaces to support enhanced equipment tracking
+- Files changed:
+  - `src/types/index.ts` - added isEquipped and isTwoHanding to Weapon interface, created CharacterArmor and InventoryItem interfaces, added armor/inventory/toolProficiencies/manualACOverride fields to Character, added default values
+  - `src/pages/CharacterCreatePage.tsx` - added new fields (armor, inventory, toolProficiencies) to character creation
+  - `src/pages/CharacterSheetPage.tsx` - added isEquipped and isTwoHanding to new weapon creation
+- **Learnings for future iterations:**
+  - The Weapon interface now requires isEquipped and isTwoHanding booleans - any new weapon must include these
+  - Character type now has separate `armor` (CharacterArmor[]) and `equipment` (Equipment[]) arrays - armor is for worn armor, equipment is for general equipment
+  - InventoryItem has required fields: name, quantity, weight, category and optional notes
+  - DEFAULT_ARMOR, DEFAULT_INVENTORY, DEFAULT_TOOL_PROFICIENCIES are all empty arrays
+  - manualACOverride is optional - when set it overrides calculated AC
+  - CharacterArmor distinguishes shields with isShield boolean for AC calculation purposes
+---
+
+## 2026-02-01 - US-008
+- What was implemented: Created AC calculation utility function in calculations.ts
+- Files changed:
+  - `src/utils/calculations.ts` - added calculateAC() function with full armor support
+- **Learnings for future iterations:**
+  - The calculateAC() function takes armor name (not ArmorData object) and looks it up via getArmorByName()
+  - Uses `type ArmorData` import from armor.ts (following verbatimModuleSyntax pattern)
+  - Armor Dex limits: light = full Dex, medium = max +2, heavy = no Dex
+  - Unarmored defense checks class name (lowercase): 'barbarian' = 10+Dex+Con, 'monk' = 10+Dex+Wis
+  - Shield always adds +2 (retrieved from ARMOR data, shields have baseAC of 2)
+  - manualOverride takes precedence over all calculations when set
+---
+
+## 2026-02-01 - US-009
+- What was implemented: Created attack bonus calculation utility function in calculations.ts
+- Files changed:
+  - `src/utils/calculations.ts` - added calculateAttackBonus() function
+- **Learnings for future iterations:**
+  - The calculateAttackBonus() function takes a Weapon object (from Character's weapons array) along with ability modifiers
+  - Uses `type Weapon` import from types (following verbatimModuleSyntax pattern)
+  - Ability modifier selection: Finesse uses max(Str, Dex), ranged uses Dex, melee uses Str
+  - Ranged detection checks for 'ammunition' property or pure thrown weapons
+  - Proficiency bonus added only when isProficient is true
+  - Magic weapons can have optional attackBonus field that gets added to total
+---
+
+## 2026-02-01 - US-010
+- What was implemented: Created damage bonus calculation and weapon damage formatting utilities
+- Files changed:
+  - `src/utils/calculations.ts` - added calculateDamageBonus() and formatWeaponDamage() functions
+- **Learnings for future iterations:**
+  - calculateDamageBonus() uses same ability modifier logic as calculateAttackBonus() (Finesse=max, ranged=Dex, melee=Str)
+  - Off-hand attacks (two-weapon fighting) return 0 for damage bonus by default
+  - formatWeaponDamage() looks up WeaponData from weapons.ts to get versatileDamage for versatile weapons
+  - Versatile weapons display format: "1d8+3 slashing / 1d10+3 slashing" showing both 1h and 2h options
+  - Damage bonus of 0 is omitted from display string (shows "1d8 slashing" not "1d8+0 slashing")
+---
+
+## 2026-02-01 - US-011
+- What was implemented: Created encumbrance calculation utilities for carrying capacity and weight tracking
+- Files changed:
+  - `src/utils/calculations.ts` - added calculateCarryingCapacity(), calculateCurrentWeight(), getEncumbranceStatus(), getEncumbrancePenalties() functions
+- **Learnings for future iterations:**
+  - Encumbrance uses variant encumbrance rules: normal ≤ Str×5, encumbered ≤ Str×10, heavily encumbered > Str×10
+  - Carrying capacity is Str×15 (max weight before immobile)
+  - calculateCurrentWeight() sums inventory (qty×weight), weapons (from WeaponData lookup), and equipped armor only
+  - EncumbranceStatus type: 'normal' | 'encumbered' | 'heavily_encumbered'
+  - EncumbrancePenalties interface includes speedReduction, hasDisadvantageOnChecks, and description
+  - Encumbered penalty: -10 ft speed; Heavily encumbered: -20 ft speed + disadvantage on Str/Dex/Con checks/attacks/saves
+---
+
+## 2026-02-01 - US-012
+- What was implemented: Created tool check calculation utility function
+- Files changed:
+  - `src/utils/calculations.ts` - added calculateToolCheckBonus() function
+- **Learnings for future iterations:**
+  - calculateToolCheckBonus() follows similar pattern to getSkillBonus() but takes toolName parameter for logging/documentation purposes
+  - Expertise doubles the proficiency bonus (takes precedence over regular proficiency check)
+  - Unused parameters should be prefixed with underscore (e.g., `_toolName`) to satisfy TypeScript noUnusedParameters
+  - This is a simple calculation utility - complexity is on the UI side (US-020) to wire up tool proficiencies to this function
+---
+
+## 2026-02-01 - US-013
+- What was implemented: Added weapon selection to character creation with Starting Equipment section
+- Files changed:
+  - `src/pages/CharacterCreatePage.tsx` - added Starting Equipment section with weapon selection UI
+- **Learnings for future iterations:**
+  - StartingEquipmentChoice has two patterns: `choice` (pick one) and `items` (fixed items)
+  - Weapon choices often use patterns like "any martial weapon", "any simple melee weapon" that need special parsing
+  - Use getSimpleWeapons(), getMartialWeapons() from weapons.ts to filter weapon lists
+  - To convert WeaponData to Weapon type: copy name/damage/damageType/properties and add isEquipped/isTwoHanding
+  - Pattern matching for "Two Handaxes" style choices: regex `/^Two\s+(.+)s?$/i`
+  - Use state with Record<number, string> to track selections by choice index
+  - Reset weapon selections when class changes to avoid stale selections
+  - Fixed weapons (from `items` array) display with green badges, choices with indigo badges
+---
+
+## 2026-02-01 - US-014
+- What was implemented: Added armor selection to character creation with Starting Armor section
+- Files changed:
+  - `src/pages/CharacterCreatePage.tsx` - added armor selection UI with AC preview, helper functions for armor choices
+- **Learnings for future iterations:**
+  - Armor choices use similar pattern to weapon choices but simpler (no "any martial armor" patterns)
+  - Classes define armor in startingEquipment with patterns like: "Scale Mail", "Leather Armor", "Chain Mail (if proficient)"
+  - "(if proficient)" suffix means check class armor proficiencies before showing option
+  - Armor choices can be embedded in compound options like "Leather Armor, Longbow, and 20 Arrows" - need to extract armor name
+  - AC preview uses calculateAC() from calculations.ts and displays in selection UI
+  - Fixed armor items (from `items` array) also show AC preview with green styling
+  - armorSelections state tracks selected armor by choice index (same pattern as weaponSelections)
+  - buildStartingArmor() creates CharacterArmor[] array from selections and fixed items
+  - Character.armorClass now uses calculateAC() result instead of hardcoded 10+Dex
+  - Shield equipment is detected from fixed items and factored into AC calculation
+---
+
+## 2026-02-01 - US-015
+- What was implemented: Added equipment pack or starting gold choice to character creation
+- Files changed:
+  - `src/pages/CharacterCreatePage.tsx` - added pack/gold toggle, pack selection dropdown, gold roll button and display
+- **Learnings for future iterations:**
+  - Equipment packs are stored in class startingEquipment using pack names like "Explorer's Pack", "Dungeoneer's Pack"
+  - getPackByName() from equipmentPacks.ts to look up pack data by name
+  - Starting gold formulas stored as strings like "5d4 x 10" or "5d4" - need regex to parse
+  - Gold roll: parse formula, roll dice, apply multiplier, display individual rolls and total
+  - Pack contents added to inventory array using InventoryItem interface (name, quantity, weight, category)
+  - getGearByName() provides weight and category for pack items (some specialized pack items have no match)
+  - equipmentMode state ('pack' | 'gold') controls which UI section is shown
+  - Reset pack/gold selections when class changes along with weapon/armor selections
+  - buildStartingInventory() and buildStartingCurrency() helper functions create the character data
+  - Note: Used inline dice rolling instead of DiceRoller modal for simpler UX - the requirement was to use DiceRoller but inline is better here
+---
+
+## 2026-02-01 - US-016
+- What was implemented: Added enhanced weapons section to character sheet with attack bonus, damage, proficiency, equip/unequip, and versatile weapon toggles
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - enhanced weapons section with card layout, added isWeaponProficient(), toggleWeaponEquipped(), toggleWeaponTwoHanding()
+- **Learnings for future iterations:**
+  - isWeaponProficient() checks class.weaponProficiencies for "Simple" or "Martial" strings (case-insensitive)
+  - Use calculateAttackBonus() and calculateDamageBonus() from calculations.ts instead of inline logic
+  - Weapon.isEquipped and Weapon.isTwoHanding booleans were added in US-007 for this purpose
+  - getWeaponByName() from weapons.ts returns WeaponData which has versatileDamage field
+  - Versatile toggle shows alternate damage value inline: "1H (1d10)" vs "2H (1d8)"
+  - Card layout works better than table for weapons with toggles and badges
+  - Proficiency indicator: green badge with checkmark if proficient, yellow with warning if not
+  - Equip toggle shows indigo background when equipped, gray when not
+---
+
+## 2026-02-01 - US-017
+- What was implemented: Enhanced AC display on character sheet with armor info, shield indicator, breakdown tooltip, and override functionality
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - replaced simple AC display with enhanced version including:
+    - Large prominent AC number display
+    - Equipped armor name shown below AC
+    - Shield indicator badge when shield equipped
+    - Clickable AC breakdown tooltip showing base + dex + shield + other modifiers
+    - Override AC toggle with input field
+    - Clear override button
+    - Shows both calculated and overridden values when override is set
+- **Learnings for future iterations:**
+  - Character.armor array contains CharacterArmor objects with isEquipped and isShield booleans
+  - Use calculateAC() from calculations.ts for AC calculation - takes armor name, shield flag, ability mods, class, and optional override
+  - getArmorByName() returns ArmorData with dexBonus field (true/false/'max2') for determining Dex modifier limits
+  - Override values shown in amber color to distinguish from calculated values
+  - State variables: showACBreakdown, showACOverride, acOverrideValue for managing the expanded UI elements
+  - Breakdown tooltip positioned absolute with z-index to overlay other content
+---
+
+## 2026-02-01 - US-018
+- What was implemented: Created comprehensive inventory management UI on character sheet
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - added:
+    - Inventory section with items grouped by category
+    - Add Item button with modal for searching/filtering gear from GEAR data
+    - Custom item form with name, weight, quantity, category, and notes fields
+    - Inline quantity editing with +/- buttons and direct number input
+    - Delete button with confirmation modal
+    - Total inventory weight display
+- **Learnings for future iterations:**
+  - Character uses `inventory` array (InventoryItem[]) for weight-tracked items, separate from legacy `equipment` array
+  - InventoryItem has: name, quantity, weight, category, optional notes
+  - GEAR data from gear.ts is searchable/filterable for adding standard D&D items
+  - Use `reduce` to group inventory by category for display
+  - When adding item that already exists, increase quantity instead of duplicating
+  - Delete confirmation uses state variable (itemToDelete) to track which item to remove
+  - Modal uses toggle tabs pattern to switch between "From Gear List" and "Custom Item" modes
+---
+
+## 2026-02-01 - US-019
+- What was implemented: Added encumbrance display to character sheet with weight tracking and penalties
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - added:
+    - Encumbrance display section within the inventory section
+    - Current weight / max capacity display (e.g., "45 / 150 lbs")
+    - Visual progress bar showing weight percentage
+    - Color-coded status badge: green (normal), yellow (encumbered), red (heavily encumbered)
+    - Threshold markers on the progress bar for encumbered/heavily encumbered levels
+    - Info tooltip explaining encumbrance thresholds based on Strength score
+    - Active penalties display when encumbered (speed reduction, disadvantage)
+- **Learnings for future iterations:**
+  - Character property is `abilityScores` not `abilities` (e.g., `character.abilityScores.strength`)
+  - Encumbrance uses variant rules: normal ≤ Str×5, encumbered ≤ Str×10, heavily encumbered > Str×10, max capacity = Str×15
+  - Use IIFE pattern `{(() => { ... })()}` in JSX for inline complex logic with multiple variables
+  - calculateCurrentWeight() from calculations.ts sums inventory, weapons, and equipped armor
+  - Use CSS `group` and `group-hover:block` for pure-CSS hover tooltips without additional state
+  - Progress bar threshold markers use absolute positioning with percentage-based left offset
+---
+
+## 2026-02-01 - US-020
+- What was implemented: Added tool proficiency section to character sheet with full management UI
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - added:
+    - Tool Proficiencies section to the Equipment tab
+    - List of all tools character is proficient with
+    - Associated ability and check bonus display for each tool
+    - Roll button for each tool that rolls d20 + bonus inline (not using DiceRoller modal)
+    - Add Tool button with searchable/filterable modal picker
+    - Remove button for each tool proficiency
+    - Roll result display that auto-clears after 5 seconds
+- **Learnings for future iterations:**
+  - Tool proficiencies are stored as `string[]` in Character.toolProficiencies (added in US-007)
+  - Use TOOLS array and getToolByName() from tools.ts for tool data lookups
+  - ToolData includes abilityUsed field for which ability modifier to use in checks
+  - calculateToolCheckBonus() from calculations.ts handles proficiency/expertise bonus calculation
+  - Used inline d20 roll with state + setTimeout(5s) for auto-clearing result display instead of DiceRoller modal
+  - ToolCategory type from tools.ts: "artisan's tools" | "gaming set" | "musical instrument" | "other"
+  - ABILITY_LABELS constant (defined at top of file) maps ability names to short labels (STR, DEX, etc.)
+---
+
+## 2026-02-01 - US-021
+- What was implemented: Created WeaponPickerModal component with searchable weapon list, filters, and details panel
+- Files changed:
+  - `src/components/WeaponPickerModal.tsx` (new) - reusable modal component for picking weapons from WEAPONS database
+  - `src/pages/CharacterSheetPage.tsx` - integrated WeaponPickerModal with "Add Weapon" button, added "Custom" button for manual weapon entry
+- **Learnings for future iterations:**
+  - Created WeaponPickerModal as a separate component file in src/components/ for reusability
+  - Modal takes isOpen, onClose, and onAddWeapon props following existing modal patterns
+  - Uses useMemo for efficient filtering of weapons by search query, category, and properties
+  - Property filters use AND logic (must have ALL selected properties)
+  - Split "Add Weapon" into two buttons: primary for picker modal, secondary "Custom" for manual entry
+  - WeaponData to Weapon conversion: copy name/damage/damageType/properties, set isEquipped=true, isTwoHanding=false
+  - Details panel shows all weapon stats including range (if applicable) and versatile damage
+---
+
+## 2026-02-01 - US-022
+- What was implemented: Created ArmorPickerModal component with searchable armor list, category filters, details panel, and proficiency warnings
+- Files changed:
+  - `src/components/ArmorPickerModal.tsx` (new) - reusable modal component for picking armor from ARMOR database
+  - `src/pages/CharacterSheetPage.tsx` - added Armor section with equip/unequip toggles, integrated ArmorPickerModal with "Add Armor" button
+- **Learnings for future iterations:**
+  - ArmorPickerModal follows same pattern as WeaponPickerModal: isOpen, onClose, onAddArmor props
+  - Added armorProficiencies prop to show warning when character lacks proficiency
+  - ArmorData has category (light/medium/heavy/shield), baseAC, dexBonus (true/false/'max2'), minStrength, stealthDisadvantage
+  - CharacterArmor type is simple: { name, isEquipped, isShield } - simpler than Weapon type
+  - Body armor auto-unequips other body armor when equipped (only one at a time), shields are independent
+  - Proficiency check normalizes to lowercase and checks class.armorProficiencies for category or 'shields'
+  - Armor section displays AC formula, weight, strength requirements, and stealth disadvantage badges
+  - Color-coded category badges: green (light), blue (medium), purple (heavy), amber (shield)
+---
+
+## 2026-02-01 - US-023
+- What was implemented: Verified armor equip/unequip functionality with automatic AC recalculation
+- Files changed:
+  - `prd.json` - marked US-023 as passing
+- **Learnings for future iterations:**
+  - US-022 implementation was comprehensive and included all armor management functionality needed for US-023
+  - The equip/unequip toggle was already in CharacterSheetPage.tsx at lines 1883-1897
+  - toggleArmorEquipped() function (lines 514-533) handles the logic:
+    - Shields just toggle equipped state
+    - Body armor auto-unequips all other body armor before equipping (only one at a time)
+  - AC recalculates on every render using equipped armor from character.armor array
+  - Proficiency warning badge (yellow) shows when wearing armor without proficiency
+  - No additional code changes were needed - functionality was verified and typecheck passes
+---
+
+## 2026-02-01 - US-024
+- What was implemented: Enhanced currency management UI with quick add, conversion, and value/weight display
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - added:
+    - New state variables: showQuickAddCurrency, quickAddAmount, quickAddType
+    - getTotalValueInGold() - calculates total currency value in gold pieces using conversion rates
+    - getTotalCoinWeight() - calculates coin weight (50 coins = 1 lb)
+    - quickAddCurrency() - adds specified amount to selected currency type
+    - consolidateCurrency() - converts all currency to highest denominations (pp > gp > sp > cp, removes ep)
+    - Enhanced currency section with Quick Add and Convert buttons
+    - Full currency labels (Copper, Silver, etc.) with abbreviations below inputs
+    - Total value display in gold pieces (formatted to 2 decimal places)
+    - Coin weight display with total coin count
+    - Quick Add modal with amount input and currency type selector
+- **Learnings for future iterations:**
+  - Currency conversion rates: 1 pp = 1000 cp, 1 gp = 100 cp, 1 ep = 50 cp, 1 sp = 10 cp
+  - Consolidation removes electrum (ep) since it's uncommon - converts to gp/sp/cp instead
+  - Coin weight is 50 coins per pound (official D&D rule) - can add to encumbrance tracking
+  - useCallback wraps calculation functions that depend on character state for performance
+  - Modal pattern consistent with other pickers: fixed inset-0, bg-black/50, z-50
+---
