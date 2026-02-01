@@ -1,68 +1,51 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { Character } from '../types'
-import { loadCharacters, saveCharacter, importCharacterFromJson, deleteCharacter } from '../utils/storage'
+import { listCharacters, deleteCharacter as deleteCharacterApi, type CharacterSummary } from '../utils/api'
 import { useDarkModeContext } from '../context/DarkModeContext'
 
 export default function HomePage() {
-  const [characters, setCharacters] = useState<Character[]>([])
-  const [importError, setImportError] = useState<string | null>(null)
-  const [deleteConfirm, setDeleteConfirm] = useState<Character | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [characters, setCharacters] = useState<CharacterSummary[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<CharacterSummary | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
+  const fetchCharacters = async () => {
+    setIsLoading(true)
+    setLoadError(null)
+    try {
+      const data = await listCharacters()
+      setCharacters(data)
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load characters')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
-    setCharacters(loadCharacters())
+    fetchCharacters()
   }, [])
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setImportError(null)
-
-    try {
-      const text = await file.text()
-      const character = importCharacterFromJson(text)
-
-      if (!character) {
-        setImportError('Invalid character file. Please select a valid JSON file.')
-        return
-      }
-
-      // Generate new ID to avoid duplicates
-      const importedCharacter = {
-        ...character,
-        id: crypto.randomUUID(),
-      }
-
-      saveCharacter(importedCharacter)
-      setCharacters(loadCharacters())
-    } catch {
-      setImportError('Failed to read file. Please try again.')
-    }
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
-  const handleDeleteClick = (e: React.MouseEvent, character: Character) => {
+  const handleDeleteClick = (e: React.MouseEvent, character: CharacterSummary) => {
     e.preventDefault()
     e.stopPropagation()
     setDeleteConfirm(character)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteConfirm) return
-    deleteCharacter(deleteConfirm.id)
-    setCharacters(loadCharacters())
-    setDeleteConfirm(null)
+    setIsDeleting(true)
+    try {
+      await deleteCharacterApi(deleteConfirm.id)
+      setCharacters(characters.filter(c => c.id !== deleteConfirm.id))
+      setDeleteConfirm(null)
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to delete character')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -88,19 +71,6 @@ export default function HomePage() {
                 </svg>
               )}
             </button>
-            <button
-              onClick={handleImportClick}
-              className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold py-2 px-4 rounded-lg transition-colors"
-            >
-              Import Character
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept=".json"
-              className="hidden"
-            />
             <Link
               to="/character/new"
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
@@ -110,19 +80,23 @@ export default function HomePage() {
           </div>
         </header>
 
-        {importError && (
-          <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 rounded-lg text-red-700 dark:text-red-400">
-            {importError}
+        {loadError && (
+          <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-600 rounded-lg text-red-700 dark:text-red-400 flex items-center justify-between">
+            <span>{loadError}</span>
             <button
-              onClick={() => setImportError(null)}
-              className="ml-4 text-red-500 hover:text-red-700 dark:hover:text-red-300"
+              onClick={fetchCharacters}
+              className="ml-4 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
             >
-              Dismiss
+              Retry
             </button>
           </div>
         )}
 
-        {characters.length === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div>
+          </div>
+        ) : characters.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-gray-400 dark:text-gray-500 text-6xl mb-4">
               &#x2694;
@@ -133,20 +107,12 @@ export default function HomePage() {
             <p className="text-gray-500 dark:text-gray-400 mb-6">
               Create your first character to begin your adventure!
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/character/new"
-                className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-              >
-                Create Your First Character
-              </Link>
-              <button
-                onClick={handleImportClick}
-                className="inline-block bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold py-3 px-6 rounded-lg transition-colors"
-              >
-                Import from JSON
-              </button>
-            </div>
+            <Link
+              to="/character/new"
+              className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            >
+              Create Your First Character
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -165,11 +131,6 @@ export default function HomePage() {
                   <p className="text-gray-600 dark:text-gray-400">
                     Level {character.level} {character.species} {character.class}
                   </p>
-                  {character.subclass && (
-                    <p className="text-sm text-gray-500 dark:text-gray-500">
-                      {character.subclass}
-                    </p>
-                  )}
                 </Link>
                 <button
                   onClick={(e) => handleDeleteClick(e, character)}
@@ -199,15 +160,17 @@ export default function HomePage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setDeleteConfirm(null)}
-                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
               >
-                Delete
+                {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>
