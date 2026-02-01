@@ -1,4 +1,73 @@
-# React + TypeScript + Vite
+# D&D Character Sheet
+
+A web application for creating and managing D&D character sheets, built with React, TypeScript, and Vite for the frontend, and Express with SQLite for the backend.
+
+## Local Development
+
+### Frontend
+
+```bash
+npm install
+npm run dev
+```
+
+### Backend
+
+```bash
+cd server
+npm install
+npm run dev
+```
+
+## Docker
+
+Build and run locally with Docker:
+
+```bash
+docker build -t dnd-app .
+docker run -p 3000:3000 -v dnd_data:/data dnd-app
+```
+
+## Deployment to Fly.io
+
+### Prerequisites
+
+1. Install the Fly CLI: https://fly.io/docs/hands-on/install-flyctl/
+2. Sign up / log in: `fly auth login`
+
+### First-time Setup
+
+1. Create the app (will use the `fly.toml` configuration):
+   ```bash
+   fly launch --no-deploy
+   ```
+
+2. Create a persistent volume for SQLite data:
+   ```bash
+   fly volumes create dnd_data --region ord --size 1
+   ```
+
+3. Deploy the application:
+   ```bash
+   fly deploy
+   ```
+
+### Subsequent Deployments
+
+```bash
+fly deploy
+```
+
+### Useful Commands
+
+- View logs: `fly logs`
+- SSH into machine: `fly ssh console`
+- Check app status: `fly status`
+- Open app in browser: `fly open`
+
+---
+
+## Vite Template Info
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
