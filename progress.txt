@@ -325,3 +325,34 @@ Started: Sun Feb  1 12:07:52 AM CST 2026
   - WeaponData to Weapon conversion: copy name/damage/damageType/properties, set isEquipped=true, isTwoHanding=false
   - Details panel shows all weapon stats including range (if applicable) and versatile damage
 ---
+
+## 2026-02-01 - US-022
+- What was implemented: Created ArmorPickerModal component with searchable armor list, category filters, details panel, and proficiency warnings
+- Files changed:
+  - `src/components/ArmorPickerModal.tsx` (new) - reusable modal component for picking armor from ARMOR database
+  - `src/pages/CharacterSheetPage.tsx` - added Armor section with equip/unequip toggles, integrated ArmorPickerModal with "Add Armor" button
+- **Learnings for future iterations:**
+  - ArmorPickerModal follows same pattern as WeaponPickerModal: isOpen, onClose, onAddArmor props
+  - Added armorProficiencies prop to show warning when character lacks proficiency
+  - ArmorData has category (light/medium/heavy/shield), baseAC, dexBonus (true/false/'max2'), minStrength, stealthDisadvantage
+  - CharacterArmor type is simple: { name, isEquipped, isShield } - simpler than Weapon type
+  - Body armor auto-unequips other body armor when equipped (only one at a time), shields are independent
+  - Proficiency check normalizes to lowercase and checks class.armorProficiencies for category or 'shields'
+  - Armor section displays AC formula, weight, strength requirements, and stealth disadvantage badges
+  - Color-coded category badges: green (light), blue (medium), purple (heavy), amber (shield)
+---
+
+## 2026-02-01 - US-023
+- What was implemented: Verified armor equip/unequip functionality with automatic AC recalculation
+- Files changed:
+  - `prd.json` - marked US-023 as passing
+- **Learnings for future iterations:**
+  - US-022 implementation was comprehensive and included all armor management functionality needed for US-023
+  - The equip/unequip toggle was already in CharacterSheetPage.tsx at lines 1883-1897
+  - toggleArmorEquipped() function (lines 514-533) handles the logic:
+    - Shields just toggle equipped state
+    - Body armor auto-unequips all other body armor before equipping (only one at a time)
+  - AC recalculates on every render using equipped armor from character.armor array
+  - Proficiency warning badge (yellow) shows when wearing armor without proficiency
+  - No additional code changes were needed - functionality was verified and typecheck passes
+---
