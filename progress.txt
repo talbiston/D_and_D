@@ -82,3 +82,16 @@ Started: Sun Feb  1 05:14:48 PM CST 2026
   - Icon only renders when characterClass is selected (truthy check)
   - Manual browser verification needed (no browser tools available)
 ---
+
+## 2026-02-01 18:15 - US-008
+- **What was implemented:** Added class icons to spell picker modal
+- **Files changed:**
+  - src/pages/CharacterSheetPage.tsx - Added ClassIcon for each class in spell.classes array in spell picker list
+- **Learnings for future iterations:**
+  - Spell data has a `classes: string[]` property containing class names that can cast the spell
+  - Spell picker is around line 3537-3560 in CharacterSheetPage.tsx
+  - Placed icons on the info line (school/casting time) to keep the UI clean and not clutter the spell name
+  - Used gap-0.5 for tight icon spacing in the class icons row
+  - ClassIcon was already imported from US-005
+  - Manual browser verification needed (no browser tools available)
+---

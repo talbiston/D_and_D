@@ -128,7 +128,7 @@
         "Verify in browser: class icons appear for each spell"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": ""
     }
   ]
