@@ -17,6 +17,7 @@ import type { AbilityName, SkillName, DamageType, WeaponProperty, Weapon, Alignm
 import { SKILL_ABILITIES } from '../types'
 import { useDarkModeContext } from '../context/DarkModeContext'
 import DiceRoller from '../components/DiceRoller'
+import WeaponPickerModal from '../components/WeaponPickerModal'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -80,6 +81,7 @@ export default function CharacterSheetPage() {
   const [newEquipmentName, setNewEquipmentName] = useState('')
   const [newEquipmentQuantity, setNewEquipmentQuantity] = useState(1)
   const [showAddWeapon, setShowAddWeapon] = useState(false)
+  const [showWeaponPicker, setShowWeaponPicker] = useState(false)
   const [newWeaponName, setNewWeaponName] = useState('')
   const [newWeaponDamage, setNewWeaponDamage] = useState('1d6')
   const [newWeaponDamageType, setNewWeaponDamageType] = useState<DamageType>('slashing')
@@ -473,6 +475,14 @@ export default function CharacterSheetPage() {
     setNewWeaponDamageType('slashing')
     setNewWeaponProperties([])
     setShowAddWeapon(false)
+  }
+
+  // Add weapon from weapon picker modal
+  const addWeaponFromPicker = (weapon: Weapon) => {
+    if (!character) return
+    updateCharacter({
+      weapons: [...character.weapons, weapon]
+    })
   }
 
   const removeWeapon = (index: number) => {
@@ -1619,12 +1629,20 @@ export default function CharacterSheetPage() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Weapons
             </h2>
-            <button
-              onClick={() => setShowAddWeapon(true)}
-              className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
-            >
-              Add Weapon
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowWeaponPicker(true)}
+                className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+              >
+                Add Weapon
+              </button>
+              <button
+                onClick={() => setShowAddWeapon(true)}
+                className="text-sm px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors"
+              >
+                Custom
+              </button>
+            </div>
           </div>
 
           {character.weapons.length === 0 ? (
@@ -2489,12 +2507,19 @@ export default function CharacterSheetPage() {
         </div>
       )}
 
-      {/* Add Weapon Modal */}
+      {/* Weapon Picker Modal */}
+      <WeaponPickerModal
+        isOpen={showWeaponPicker}
+        onClose={() => setShowWeaponPicker(false)}
+        onAddWeapon={addWeaponFromPicker}
+      />
+
+      {/* Add Custom Weapon Modal */}
       {showAddWeapon && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Add Weapon
+              Add Custom Weapon
             </h3>
             <div className="space-y-4">
               <div>
