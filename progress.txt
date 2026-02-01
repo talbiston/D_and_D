@@ -48,3 +48,43 @@ Started: Sun Feb  1 03:09:55 AM CST 2026
   - Gotchas encountered: Validate request body exists and is a non-empty object before processing
   - Useful context: POST returns 201 with { id, ...characterData }, 400 if body invalid
 ---
+
+## 2026-02-01 - US-004
+- What was implemented: GET /api/characters/:id endpoint for retrieving characters by ID
+- Files changed:
+  - server/index.ts (modified) - added GET /api/characters/:id route
+- **Learnings for future iterations:**
+  - Patterns discovered: Use type assertion for better-sqlite3 query results (e.g., `as { id: string; data: string } | undefined`)
+  - Gotchas encountered: Remember to parse JSON.parse(row.data) since data is stored as stringified JSON
+  - Useful context: GET returns 200 with { id, ...characterData }, 404 if not found
+---
+
+## 2026-02-01 - US-005
+- What was implemented: PUT /api/characters/:id endpoint for updating existing characters
+- Files changed:
+  - server/index.ts (modified) - added PUT /api/characters/:id route
+- **Learnings for future iterations:**
+  - Patterns discovered: Check if record exists before UPDATE to return proper 404 vs success
+  - Gotchas encountered: Use separate prepare statements for SELECT (existence check) and UPDATE operations
+  - Useful context: PUT returns 200 with { id, ...characterData }, 404 if not found, updates updated_at timestamp
+---
+
+## 2026-02-01 - US-006
+- What was implemented: DELETE /api/characters/:id endpoint for removing characters
+- Files changed:
+  - server/index.ts (modified) - added DELETE /api/characters/:id route
+- **Learnings for future iterations:**
+  - Patterns discovered: DELETE follows same pattern as other endpoints - check existence first, then perform operation
+  - Gotchas encountered: None - straightforward implementation following established patterns
+  - Useful context: DELETE returns 200 with { success: true }, 404 if not found
+---
+
+## 2026-02-01 - US-007
+- What was implemented: GET /api/characters endpoint for listing all characters
+- Files changed:
+  - server/index.ts (modified) - added GET /api/characters route
+- **Learnings for future iterations:**
+  - Patterns discovered: Use stmt.all() instead of stmt.get() for queries that return multiple rows
+  - Gotchas encountered: Place the list route BEFORE the :id route so Express matches it correctly
+  - Useful context: GET /api/characters returns array of summaries with id, name, class, level, species, updated_at sorted by updated_at DESC
+---

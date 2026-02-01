@@ -38,6 +38,29 @@ app.post('/api/characters', (req, res) => {
   res.status(201).json({ id, ...characterData });
 });
 
+// List all characters endpoint
+app.get('/api/characters', (_req, res) => {
+  const db = getDatabase();
+  const stmt = db.prepare(
+    'SELECT id, name, data, updated_at FROM characters ORDER BY updated_at DESC'
+  );
+  const rows = stmt.all() as Array<{ id: string; name: string; data: string; updated_at: string }>;
+
+  const summaries = rows.map((row) => {
+    const characterData = JSON.parse(row.data);
+    return {
+      id: row.id,
+      name: row.name,
+      class: characterData.class || null,
+      level: characterData.level || null,
+      species: characterData.species || null,
+      updated_at: row.updated_at,
+    };
+  });
+
+  res.json(summaries);
+});
+
 // Get character by ID endpoint
 app.get('/api/characters/:id', (req, res) => {
   const { id } = req.params;
