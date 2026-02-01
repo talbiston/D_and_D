@@ -269,3 +269,23 @@ Started: Sun Feb  1 12:07:52 AM CST 2026
   - Delete confirmation uses state variable (itemToDelete) to track which item to remove
   - Modal uses toggle tabs pattern to switch between "From Gear List" and "Custom Item" modes
 ---
+
+## 2026-02-01 - US-019
+- What was implemented: Added encumbrance display to character sheet with weight tracking and penalties
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - added:
+    - Encumbrance display section within the inventory section
+    - Current weight / max capacity display (e.g., "45 / 150 lbs")
+    - Visual progress bar showing weight percentage
+    - Color-coded status badge: green (normal), yellow (encumbered), red (heavily encumbered)
+    - Threshold markers on the progress bar for encumbered/heavily encumbered levels
+    - Info tooltip explaining encumbrance thresholds based on Strength score
+    - Active penalties display when encumbered (speed reduction, disadvantage)
+- **Learnings for future iterations:**
+  - Character property is `abilityScores` not `abilities` (e.g., `character.abilityScores.strength`)
+  - Encumbrance uses variant rules: normal ≤ Str×5, encumbered ≤ Str×10, heavily encumbered > Str×10, max capacity = Str×15
+  - Use IIFE pattern `{(() => { ... })()}` in JSX for inline complex logic with multiple variables
+  - calculateCurrentWeight() from calculations.ts sums inventory, weapons, and equipped armor
+  - Use CSS `group` and `group-hover:block` for pure-CSS hover tooltips without additional state
+  - Progress bar threshold markers use absolute positioning with percentage-based left offset
+---
