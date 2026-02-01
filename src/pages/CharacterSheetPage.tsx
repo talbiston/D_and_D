@@ -1163,7 +1163,9 @@ export default function CharacterSheetPage() {
                     </span>
                   </button>
                 )}
-                {' '}{character.species} {character.class}
+                {' '}{character.species}
+                {character.speciesAncestry && ` (${character.speciesAncestry.selectedOption})`}
+                {' '}{character.class}
                 {character.subclass && ` (${character.subclass})`}
               </p>
               {character.background && (
@@ -2079,6 +2081,57 @@ export default function CharacterSheetPage() {
                 No metamagic selected. Click "Manage Metamagic" to choose your Metamagic options.
               </p>
             )}
+          </div>
+        )}
+
+        {/* Damage Resistances & Breath Weapon */}
+        {(character.damageResistances?.length || character.breathWeapon) && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Ancestry Abilities
+            </h2>
+            <div className="space-y-3">
+              {/* Damage Resistances */}
+              {character.damageResistances && character.damageResistances.length > 0 && (
+                <div className="bg-green-50 dark:bg-green-900/30 rounded-lg p-3">
+                  <h3 className="text-sm font-medium text-green-800 dark:text-green-300 mb-2">
+                    Damage Resistances
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {character.damageResistances.map((resistance) => (
+                      <span
+                        key={resistance}
+                        className="px-3 py-1 bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-200 rounded-full text-sm font-medium capitalize"
+                      >
+                        {resistance}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Breath Weapon (Dragonborn) */}
+              {character.breathWeapon && (
+                <div className="bg-red-50 dark:bg-red-900/30 rounded-lg p-3">
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-300 mb-2">
+                    Breath Weapon
+                  </h3>
+                  <div className="flex flex-wrap gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-red-700 dark:text-red-400">Damage Type:</span>
+                      <span className="px-2 py-1 bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200 rounded text-sm font-medium capitalize">
+                        {character.breathWeapon.damageType}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-red-700 dark:text-red-400">Shape:</span>
+                      <span className="px-2 py-1 bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200 rounded text-sm font-medium">
+                        {character.breathWeapon.shape}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
