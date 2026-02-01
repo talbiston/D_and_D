@@ -2,6 +2,8 @@
  * D&D 5e calculation utilities
  */
 
+import { getArmorByName, type ArmorData } from '../data/armor'
+
 /**
  * Calculate ability modifier from ability score
  * Formula: floor((score - 10) / 2)
@@ -143,4 +145,76 @@ export function getLevelFromXP(xp: number): number {
 export function getXPForNextLevel(currentLevel: number): number {
   if (currentLevel >= 20) return XP_THRESHOLDS[20]
   return XP_THRESHOLDS[currentLevel + 1]
+}
+
+/**
+ * Calculate Armor Class (AC) based on equipped armor, modifiers, and class features
+ *
+ * @param equippedArmorName - The name of equipped body armor (null if none)
+ * @param hasShield - Whether a shield is equipped
+ * @param dexMod - Dexterity modifier
+ * @param conMod - Constitution modifier (for Barbarian unarmored defense)
+ * @param wisMod - Wisdom modifier (for Monk unarmored defense)
+ * @param characterClass - The character's class name (for unarmored defense calculations)
+ * @param manualOverride - Optional manual AC override
+ * @returns The calculated AC
+ */
+export function calculateAC(
+  equippedArmorName: string | null,
+  hasShield: boolean,
+  dexMod: number,
+  conMod: number,
+  wisMod: number,
+  characterClass: string,
+  manualOverride?: number
+): number {
+  // If manual override is set, use it
+  if (manualOverride !== undefined) {
+    return manualOverride
+  }
+
+  let baseAC: number
+
+  if (equippedArmorName) {
+    // Wearing armor
+    const armor: ArmorData | undefined = getArmorByName(equippedArmorName)
+
+    if (armor) {
+      baseAC = armor.baseAC
+
+      // Apply Dex modifier based on armor type
+      if (armor.dexBonus === true) {
+        // Light armor: full Dex bonus
+        baseAC += dexMod
+      } else if (armor.dexBonus === 'max2') {
+        // Medium armor: Dex bonus capped at +2
+        baseAC += Math.min(dexMod, 2)
+      }
+      // Heavy armor (dexBonus === false): no Dex bonus added
+    } else {
+      // Armor not found in database, fall back to unarmored
+      baseAC = 10 + dexMod
+    }
+  } else {
+    // No armor equipped - check for unarmored defense class features
+    const className = characterClass.toLowerCase()
+
+    if (className === 'barbarian') {
+      // Barbarian Unarmored Defense: 10 + Dex + Con
+      baseAC = 10 + dexMod + conMod
+    } else if (className === 'monk') {
+      // Monk Unarmored Defense: 10 + Dex + Wis
+      baseAC = 10 + dexMod + wisMod
+    } else {
+      // Standard unarmored: 10 + Dex
+      baseAC = 10 + dexMod
+    }
+  }
+
+  // Add shield bonus if equipped
+  if (hasShield) {
+    baseAC += 2
+  }
+
+  return baseAC
 }
