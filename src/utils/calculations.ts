@@ -363,6 +363,37 @@ export function formatWeaponDamage(
   return formatDamage(weapon.damage, damageType)
 }
 
+/**
+ * Calculate tool check bonus based on proficiency and expertise
+ *
+ * @param toolName - The name of the tool (unused in calculation, for documentation/logging)
+ * @param abilityMod - The ability modifier for the check
+ * @param proficiencyBonus - The character's proficiency bonus
+ * @param hasProficiency - Whether the character is proficient with the tool
+ * @param hasExpertise - Whether the character has expertise with the tool
+ * @returns The total tool check bonus
+ */
+export function calculateToolCheckBonus(
+  _toolName: string,
+  abilityMod: number,
+  proficiencyBonus: number,
+  hasProficiency: boolean,
+  hasExpertise: boolean
+): number {
+  // Expertise doubles the proficiency bonus (takes precedence over regular proficiency)
+  if (hasExpertise) {
+    return abilityMod + proficiencyBonus * 2
+  }
+
+  // Proficiency adds the proficiency bonus once
+  if (hasProficiency) {
+    return abilityMod + proficiencyBonus
+  }
+
+  // No proficiency: just the ability modifier
+  return abilityMod
+}
+
 // Encumbrance status types
 export type EncumbranceStatus = 'normal' | 'encumbered' | 'heavily_encumbered'
 
