@@ -626,6 +626,59 @@ export function levelUp(character: Character): LevelUpResult {
 }
 
 // =============================================================================
+// CANTRIPS KNOWN
+// =============================================================================
+
+/**
+ * Cantrips known per level for each spellcasting class
+ * Index is character level (1-20), value is number of cantrips known
+ * Non-caster classes and classes that don't learn cantrips (Paladin, Ranger) are not included
+ */
+export const CANTRIPS_KNOWN: Record<string, Record<number, number>> = {
+  // Full casters with cantrips
+  Bard: {
+    1: 2, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3, 10: 4,
+    11: 4, 12: 4, 13: 4, 14: 4, 15: 4, 16: 4, 17: 4, 18: 4, 19: 4, 20: 4
+  },
+  Cleric: {
+    1: 3, 2: 3, 3: 3, 4: 4, 5: 4, 6: 4, 7: 4, 8: 4, 9: 4, 10: 5,
+    11: 5, 12: 5, 13: 5, 14: 5, 15: 5, 16: 5, 17: 5, 18: 5, 19: 5, 20: 5
+  },
+  Druid: {
+    1: 2, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3, 10: 4,
+    11: 4, 12: 4, 13: 4, 14: 4, 15: 4, 16: 4, 17: 4, 18: 4, 19: 4, 20: 4
+  },
+  Sorcerer: {
+    1: 4, 2: 4, 3: 4, 4: 5, 5: 5, 6: 5, 7: 5, 8: 5, 9: 5, 10: 6,
+    11: 6, 12: 6, 13: 6, 14: 6, 15: 6, 16: 6, 17: 6, 18: 6, 19: 6, 20: 6
+  },
+  Warlock: {
+    1: 2, 2: 2, 3: 2, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3, 10: 4,
+    11: 4, 12: 4, 13: 4, 14: 4, 15: 4, 16: 4, 17: 4, 18: 4, 19: 4, 20: 4
+  },
+  Wizard: {
+    1: 3, 2: 3, 3: 3, 4: 4, 5: 4, 6: 4, 7: 4, 8: 4, 9: 4, 10: 5,
+    11: 5, 12: 5, 13: 5, 14: 5, 15: 5, 16: 5, 17: 5, 18: 5, 19: 5, 20: 5
+  }
+} as const
+
+/**
+ * Get the number of cantrips known for a spellcasting class at a given level
+ *
+ * @param className - The class name
+ * @param level - The character level (1-20)
+ * @returns The number of cantrips known, or 0 if the class doesn't have cantrips
+ */
+export function getCantripsKnown(className: string, level: number): number {
+  const clampedLevel = Math.max(1, Math.min(20, level))
+  const classCantrips = CANTRIPS_KNOWN[className]
+  if (!classCantrips) {
+    return 0
+  }
+  return classCantrips[clampedLevel] ?? 0
+}
+
+// =============================================================================
 // FEATURE DISPLAY WITH SCALING VALUES
 // =============================================================================
 

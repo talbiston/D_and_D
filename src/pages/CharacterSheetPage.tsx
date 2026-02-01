@@ -17,7 +17,7 @@ import DiceRoller from '../components/DiceRoller'
 import LevelUpHPModal from '../components/LevelUpHPModal'
 import ASIModal, { type ASIChoice } from '../components/ASIModal'
 import LevelUpSummaryModal from '../components/LevelUpSummaryModal'
-import { levelUp, type LevelUpResult, getFeatureDisplayName } from '../utils/calculations'
+import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown } from '../utils/calculations'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -1174,6 +1174,9 @@ export default function CharacterSheetPage() {
               const spellSaveDC = getSpellSaveDC(profBonus, abilityMod)
               const spellAttack = getSpellAttackBonus(profBonus, abilityMod)
 
+              const maxCantrips = getCantripsKnown(character.class, character.level)
+              const currentCantrips = character.spells.filter(s => s.level === 0).length
+
               return (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
@@ -1192,6 +1195,14 @@ export default function CharacterSheetPage() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Spell Attack</p>
                     <p className="font-semibold text-gray-900 dark:text-white">{formatModifier(spellAttack)}</p>
                   </div>
+                  {maxCantrips > 0 && (
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center col-span-2 md:col-span-4">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Cantrips Known</p>
+                      <p className={`font-semibold ${currentCantrips > maxCantrips ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                        {currentCantrips} / {maxCantrips}
+                      </p>
+                    </div>
+                  )}
                 </div>
               )
             })()}
