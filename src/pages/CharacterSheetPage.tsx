@@ -3549,9 +3549,16 @@ export default function CharacterSheetPage() {
                         {spell.concentration && <span className="text-xs text-gray-500">(C)</span>}
                         {spell.ritual && <span className="text-xs text-gray-500">(R)</span>}
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {spell.school} • {spell.castingTime}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {spell.school} • {spell.castingTime}
+                        </p>
+                        <div className="flex items-center gap-0.5">
+                          {spell.classes.map((cls) => (
+                            <ClassIcon key={cls} className={cls} size={16} />
+                          ))}
+                        </div>
+                      </div>
                     </div>
                     <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
