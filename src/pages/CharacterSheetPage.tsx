@@ -14,6 +14,7 @@ import type { AbilityName, SkillName, DamageType, WeaponProperty, Weapon, Alignm
 import { SKILL_ABILITIES } from '../types'
 import { useDarkModeContext } from '../context/DarkModeContext'
 import DiceRoller from '../components/DiceRoller'
+import LevelUpHPModal from '../components/LevelUpHPModal'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -89,6 +90,7 @@ export default function CharacterSheetPage() {
   const [editXp, setEditXp] = useState(0)
   const [showFeatPicker, setShowFeatPicker] = useState(false)
   const [featSearchQuery, setFeatSearchQuery] = useState('')
+  const [showLevelUpHPModal, setShowLevelUpHPModal] = useState(false)
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
   useEffect(() => {
@@ -408,6 +410,25 @@ export default function CharacterSheetPage() {
     setShowLevelModal(false)
   }
 
+  const startLevelUp = () => {
+    if (!character || character.level >= 20) return
+    setShowLevelUpHPModal(true)
+  }
+
+  const handleLevelUpHPConfirm = (hpGain: number) => {
+    if (!character) return
+    const newLevel = character.level + 1
+    const newMaxHp = character.maxHp + hpGain
+
+    updateCharacter({
+      level: newLevel,
+      maxHp: newMaxHp,
+      currentHp: Math.min(character.currentHp + hpGain, newMaxHp),
+      hitDice: { ...character.hitDice, total: newLevel }
+    })
+    setShowLevelUpHPModal(false)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
@@ -465,7 +486,7 @@ export default function CharacterSheetPage() {
                 </button>
                 {character.level < 20 && (
                   <button
-                    onClick={openLevelModal}
+                    onClick={startLevelUp}
                     className="ml-2 px-2 py-0.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors no-print"
                     title="Level up your character"
                   >
@@ -1975,6 +1996,18 @@ export default function CharacterSheetPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Level Up HP Modal */}
+      {showLevelUpHPModal && character && (
+        <LevelUpHPModal
+          hitDie={getClassByName(character.class)?.hitDie || 8}
+          conModifier={getAbilityModifier(character.abilityScores.constitution)}
+          currentMaxHp={character.maxHp}
+          newLevel={character.level + 1}
+          onConfirm={handleLevelUpHPConfirm}
+          onCancel={() => setShowLevelUpHPModal(false)}
+        />
       )}
     </div>
   )
