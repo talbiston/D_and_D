@@ -624,3 +624,105 @@ export function levelUp(character: Character): LevelUpResult {
     newSubclassFeatures
   }
 }
+
+// =============================================================================
+// FEATURE DISPLAY WITH SCALING VALUES
+// =============================================================================
+
+/**
+ * Feature names that have scaling values and should display current values
+ */
+const SCALING_FEATURE_NAMES = {
+  // Rogue
+  'Sneak Attack': 'sneakAttack',
+  // Bard
+  'Bardic Inspiration': 'bardicInspiration',
+  // Monk
+  'Martial Arts': 'martialArts',
+  'Focus Points': 'focusPoints',
+  // Barbarian
+  'Rage': 'rage',
+  // Sorcerer
+  'Sorcery Points': 'sorceryPoints',
+  'Font of Magic': 'sorceryPoints', // Sorcery Points are granted by Font of Magic at level 2
+  // Cleric
+  'Channel Divinity': 'channelDivinity',
+  // Paladin
+  'Lay on Hands': 'layOnHands',
+} as const
+
+/**
+ * Get the display name for a feature with its current scaling value
+ *
+ * @param featureName - The base feature name
+ * @param className - The character's class
+ * @param level - The character's current level
+ * @returns The feature name with scaling value appended, or just the feature name if no scaling
+ */
+export function getFeatureDisplayName(featureName: string, className: string, level: number): string {
+  const scalingType = SCALING_FEATURE_NAMES[featureName as keyof typeof SCALING_FEATURE_NAMES]
+
+  if (!scalingType) {
+    return featureName
+  }
+
+  switch (scalingType) {
+    case 'sneakAttack':
+      if (className === 'Rogue') {
+        const dice = getSneakAttackDice(level)
+        return `Sneak Attack (${dice}d6)`
+      }
+      break
+    case 'bardicInspiration':
+      if (className === 'Bard') {
+        const die = getBardicInspirationDie(level)
+        return `Bardic Inspiration (${die})`
+      }
+      break
+    case 'martialArts':
+      if (className === 'Monk') {
+        const die = getMartialArtsDie(level)
+        return `Martial Arts (${die})`
+      }
+      break
+    case 'focusPoints':
+      if (className === 'Monk') {
+        const points = getFocusPoints(level)
+        return `Focus Points (${points})`
+      }
+      break
+    case 'rage':
+      if (className === 'Barbarian') {
+        const damage = getRageDamage(level)
+        const count = getRageCount(level)
+        const countStr = count === 'unlimited' ? '∞' : count
+        return `Rage (+${damage} damage, ${countStr}/day)`
+      }
+      break
+    case 'sorceryPoints':
+      if (className === 'Sorcerer') {
+        const points = getSorceryPoints(level)
+        // Only show points if character has them (level 2+)
+        if (points > 0) {
+          return featureName === 'Font of Magic'
+            ? `Font of Magic (${points} points)`
+            : `Sorcery Points (${points})`
+        }
+      }
+      break
+    case 'channelDivinity':
+      if (className === 'Cleric') {
+        const uses = getChannelDivinityUses(level)
+        return `Channel Divinity (${uses}/rest)`
+      }
+      break
+    case 'layOnHands':
+      if (className === 'Paladin') {
+        const pool = getLayOnHandsPool(level)
+        return `Lay on Hands (${pool} HP)`
+      }
+      break
+  }
+
+  return featureName
+}

@@ -17,7 +17,7 @@ import DiceRoller from '../components/DiceRoller'
 import LevelUpHPModal from '../components/LevelUpHPModal'
 import ASIModal, { type ASIChoice } from '../components/ASIModal'
 import LevelUpSummaryModal from '../components/LevelUpSummaryModal'
-import { levelUp, type LevelUpResult } from '../utils/calculations'
+import { levelUp, type LevelUpResult, getFeatureDisplayName } from '../utils/calculations'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -978,6 +978,7 @@ export default function CharacterSheetPage() {
               <div className="space-y-2">
                 {features.map((feature) => {
                   const isExpanded = expandedFeatures.has(feature.name)
+                  const displayName = getFeatureDisplayName(feature.name, character.class, character.level)
                   return (
                     <div
                       key={feature.name}
@@ -989,7 +990,7 @@ export default function CharacterSheetPage() {
                       >
                         <div>
                           <span className="font-medium text-gray-900 dark:text-white">
-                            {feature.name}
+                            {displayName}
                           </span>
                           <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
                             Level {feature.level}
