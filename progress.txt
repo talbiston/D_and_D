@@ -289,3 +289,24 @@ Started: Sun Feb  1 12:07:52 AM CST 2026
   - Use CSS `group` and `group-hover:block` for pure-CSS hover tooltips without additional state
   - Progress bar threshold markers use absolute positioning with percentage-based left offset
 ---
+
+## 2026-02-01 - US-020
+- What was implemented: Added tool proficiency section to character sheet with full management UI
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - added:
+    - Tool Proficiencies section to the Equipment tab
+    - List of all tools character is proficient with
+    - Associated ability and check bonus display for each tool
+    - Roll button for each tool that rolls d20 + bonus inline (not using DiceRoller modal)
+    - Add Tool button with searchable/filterable modal picker
+    - Remove button for each tool proficiency
+    - Roll result display that auto-clears after 5 seconds
+- **Learnings for future iterations:**
+  - Tool proficiencies are stored as `string[]` in Character.toolProficiencies (added in US-007)
+  - Use TOOLS array and getToolByName() from tools.ts for tool data lookups
+  - ToolData includes abilityUsed field for which ability modifier to use in checks
+  - calculateToolCheckBonus() from calculations.ts handles proficiency/expertise bonus calculation
+  - Used inline d20 roll with state + setTimeout(5s) for auto-clearing result display instead of DiceRoller modal
+  - ToolCategory type from tools.ts: "artisan's tools" | "gaming set" | "musical instrument" | "other"
+  - ABILITY_LABELS constant (defined at top of file) maps ability names to short labels (STR, DEX, etc.)
+---
