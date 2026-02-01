@@ -437,3 +437,61 @@ export function getLayOnHandsPool(paladinLevel: number): number {
   const clampedLevel = Math.max(1, Math.min(20, paladinLevel))
   return 5 * clampedLevel
 }
+
+// =============================================================================
+// ASI (ABILITY SCORE IMPROVEMENT) TRACKING
+// =============================================================================
+
+/**
+ * ASI levels for each class
+ * Standard classes get ASIs at levels 4, 8, 12, 16, 19
+ * Fighter gets extra ASIs at levels 6 and 14 (7 total)
+ * Rogue gets an extra ASI at level 10 (6 total)
+ */
+export const ASI_LEVELS: Record<string, readonly number[]> = {
+  // Standard ASI schedule (5 ASIs)
+  Barbarian: [4, 8, 12, 16, 19],
+  Bard: [4, 8, 12, 16, 19],
+  Cleric: [4, 8, 12, 16, 19],
+  Druid: [4, 8, 12, 16, 19],
+  Monk: [4, 8, 12, 16, 19],
+  Paladin: [4, 8, 12, 16, 19],
+  Ranger: [4, 8, 12, 16, 19],
+  Sorcerer: [4, 8, 12, 16, 19],
+  Warlock: [4, 8, 12, 16, 19],
+  Wizard: [4, 8, 12, 16, 19],
+  // Fighter gets 7 ASIs (extra at levels 6 and 14)
+  Fighter: [4, 6, 8, 12, 14, 16, 19],
+  // Rogue gets 6 ASIs (extra at level 10)
+  Rogue: [4, 8, 10, 12, 16, 19],
+} as const
+
+/**
+ * Default ASI levels for unknown classes
+ */
+const DEFAULT_ASI_LEVELS: readonly number[] = [4, 8, 12, 16, 19]
+
+/**
+ * Check if a given level is an ASI level for a class
+ *
+ * @param className - The class name
+ * @param level - The character level to check
+ * @returns True if the level grants an ASI
+ */
+export function isASILevel(className: string, level: number): boolean {
+  const asiLevels = ASI_LEVELS[className] ?? DEFAULT_ASI_LEVELS
+  return asiLevels.includes(level)
+}
+
+/**
+ * Get the total number of ASIs earned by a character at a given level
+ *
+ * @param className - The class name
+ * @param level - The character level
+ * @returns The number of ASIs earned (cumulative)
+ */
+export function getASICount(className: string, level: number): number {
+  const clampedLevel = Math.max(1, Math.min(20, level))
+  const asiLevels = ASI_LEVELS[className] ?? DEFAULT_ASI_LEVELS
+  return asiLevels.filter((asiLevel) => asiLevel <= clampedLevel).length
+}

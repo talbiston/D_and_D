@@ -105,6 +105,8 @@ export interface Character {
   // Backstory & proficiencies
   backstory: Backstory
   proficiencies: Proficiencies
+  // Level-up tracking
+  pendingASI: number // Number of unclaimed Ability Score Improvements
 }
 
 // Damage types
