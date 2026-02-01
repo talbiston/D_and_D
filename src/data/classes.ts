@@ -616,6 +616,54 @@ export const CLASSES: ClassData[] = [
       { name: 'Ability Score Improvement', level: 19, description: 'Increase one ability score by 2, or two ability scores by 1 each. Alternatively, choose a feat.' },
       { name: 'Foe Slayer', level: 20, description: 'You become an unparalleled hunter of your enemies. Once per turn when you hit the creature marked by your Hunter\'s Mark, you can deal extra damage equal to your Wisdom modifier to that creature. This damage is the same type as the weapon\'s damage.' },
     ],
+    subclassLevel: 3,
+    subclassName: 'Ranger Conclave',
+    subclasses: [
+      {
+        name: 'Beast Master',
+        description: 'A Beast Master forms a mystical bond with a primal beast, gaining a companion that fights alongside the ranger and shares an empathic link.',
+        features: [
+          { name: 'Primal Companion', level: 3, description: 'You magically summon a primal beast, which draws strength from your bond with nature. The beast is friendly to you and your companions and obeys your commands. Choose its stat block—Beast of the Land, Beast of the Sea, or Beast of the Sky. You determine the beast\'s appearance, but this choice doesn\'t affect its stat block. In combat, the beast acts during your turn. It can move and use its reaction on its own, but the only action it takes is the Dodge action unless you take a Bonus Action on your turn to command it to take an action in its stat block or some other action. You can also sacrifice one of your attacks when you take the Attack action to command the beast to take the Attack action. If you have the Incapacitated condition, the beast can take any action, not just Dodge. If the beast has died within the last hour, you can use your action to touch it and expend a spell slot. The beast returns to life with all its Hit Points restored. When you finish a Long Rest, you can summon a different primal beast, which appears in an unoccupied space within 5 feet of you.' },
+          { name: 'Exceptional Training', level: 7, description: 'When you command your Primal Companion beast to take the Attack action, you can also command it to take the Dash, Disengage, Dodge, or Help action as a Bonus Action. In addition, whenever you cast a spell that targets yourself, you can also affect your beast with the spell if the beast is within 30 feet of you.' },
+          { name: 'Bestial Fury', level: 11, description: 'When you command your Primal Companion to take the Attack action, the beast can make two attacks. In addition, the beast\'s attacks now count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.' },
+          { name: 'Share Spells', level: 15, description: 'When you cast a spell targeting yourself, you can also affect your Primal Companion with the spell if the beast is within 30 feet of you. If the spell requires Concentration, you can maintain Concentration on it for both yourself and the beast with a single instance of Concentration.' },
+        ],
+      },
+      {
+        name: 'Fey Wanderer',
+        description: 'A Fey Wanderer has forged a connection with the fey realms, gaining supernatural charm and the ability to call upon fey magic.',
+        features: [
+          { name: 'Dreadful Strikes', level: 3, description: 'You can augment your weapon strikes with mind-scarring magic. Once per turn when you hit a creature with a weapon, you can deal an extra 1d4 Psychic damage to the target, which can take this extra damage only once per turn. The extra damage increases to 1d6 at 11th level.' },
+          { name: 'Fey Wanderer Magic', level: 3, description: 'You have a mystical connection to the Feywild that grants you access to certain spells. You always have certain spells prepared: 3rd level—Charm Person; 5th level—Misty Step; 9th level—Dispel Magic; 13th level—Dimension Door; 17th level—Mislead.' },
+          { name: 'Otherworldly Glamour', level: 3, description: 'Your fey qualities give you a supernatural charm. You gain proficiency in one of the following skills of your choice: Deception, Performance, or Persuasion. In addition, whenever you make a Charisma check, you gain a bonus to the check equal to your Wisdom modifier (minimum +1).' },
+          { name: 'Beguiling Twist', level: 7, description: 'The magic of the Feywild guards your mind. You have Advantage on saving throws against the Charmed and Frightened conditions. In addition, whenever you or a creature you can see within 120 feet of you succeeds on a saving throw against being Charmed or Frightened, you can use your Reaction to force a different creature you can see within 120 feet of you to make a Wisdom saving throw against your spell save DC. If the save fails, the target is Charmed or Frightened by you (your choice) for 1 minute. The target can repeat the saving throw at the end of each of its turns, ending the effect on itself on a success.' },
+          { name: 'Fey Reinforcements', level: 11, description: 'You can call on the Feywild for aid. You always have Summon Fey prepared, and you can cast it without a Material component. You can also cast it once without expending a spell slot, and you regain the ability to do so when you finish a Long Rest. Whenever you start casting the spell, you can modify it so that it doesn\'t require Concentration. If you do so, the spell\'s duration becomes 1 minute for that casting.' },
+          { name: 'Misty Wanderer', level: 15, description: 'You can slip through the Feywild to move in the blink of an eye. You can cast Misty Step without expending a spell slot. You can do so a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest. In addition, whenever you cast Misty Step, you can bring along one willing creature you can see within 5 feet of you. That creature teleports to an unoccupied space of your choice within 5 feet of your destination space.' },
+        ],
+      },
+      {
+        name: 'Gloom Stalker',
+        description: 'Gloom Stalkers are at home in the darkest places, using shadow magic to strike fear into their foes and vanish from sight.',
+        features: [
+          { name: 'Dread Ambusher', level: 3, description: 'You have mastered the art of the ambush. You can add your Wisdom modifier to your Initiative rolls. At the start of your first turn of each combat, your Speed increases by 10 feet until the end of that turn, and if you take the Attack action on that turn, you can make one additional weapon attack as part of that action. If that attack hits, the target takes an extra 1d8 damage of the weapon\'s damage type.' },
+          { name: 'Gloom Stalker Magic', level: 3, description: 'You have access to certain spells. You always have certain spells prepared: 3rd level—Disguise Self; 5th level—Rope Trick; 9th level—Fear; 13th level—Greater Invisibility; 17th level—Seeming.' },
+          { name: 'Umbral Sight', level: 3, description: 'You gain Darkvision with a range of 60 feet. If you already have Darkvision, its range increases by 60 feet. You are also adept at evading creatures that rely on Darkvision. While in Darkness, you have the Invisible condition to any creature that relies on Darkvision to see you in that Darkness.' },
+          { name: 'Iron Mind', level: 7, description: 'You have honed your ability to resist the mind-altering powers of your prey. You gain proficiency in Wisdom saving throws. If you already have this proficiency, you instead gain proficiency in Intelligence or Charisma saving throws (your choice).' },
+          { name: 'Stalker\'s Flurry', level: 11, description: 'You have learned to attack with such unexpected speed that you can turn a miss into another strike. Once per turn when you miss with a weapon attack, you can make another weapon attack as part of the same action.' },
+          { name: 'Shadowy Dodge', level: 15, description: 'You can dodge in unforeseen ways, with wisps of supernatural shadow around you. When a creature makes an attack roll against you and doesn\'t have Advantage on the roll, you can use your Reaction to impose Disadvantage on it. You must use this feature before you know the outcome of the attack roll.' },
+        ],
+      },
+      {
+        name: 'Hunter',
+        description: 'Hunters hone their skills against the most dangerous prey, from rampaging ogres to towering giants and terrifying dragons.',
+        features: [
+          { name: 'Hunter\'s Prey', level: 3, description: 'You gain one of the following features of your choice. Colossus Slayer: Once per turn, when you hit a creature with a weapon attack, the creature takes an extra 1d8 damage if it\'s below its Hit Point maximum. Horde Breaker: Once per turn when you make a weapon attack, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target and within range of your weapon.' },
+          { name: 'Defensive Tactics', level: 7, description: 'You gain one of the following features of your choice. Escape the Horde: Opportunity Attacks against you have Disadvantage. Multiattack Defense: When a creature hits you with an attack, you gain a +4 bonus to AC against all subsequent attacks made by that creature for the rest of the turn. Steel Will: You have Advantage on saving throws against the Frightened condition.' },
+          { name: 'Superior Hunter\'s Prey', level: 11, description: 'You gain one of the following features of your choice. Volley: You can use your action to make a ranged attack against any number of creatures within 10 feet of a point you can see within your weapon\'s range. You must have ammunition for each target, as normal, and you make a separate attack roll for each target. Whirlwind Attack: You can use your action to make melee attacks against any number of creatures within 5 feet of you, with a separate attack roll for each target.' },
+          { name: 'Superior Hunter\'s Defense', level: 15, description: 'You gain one of the following features of your choice. Evasion: When you are subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you instead take no damage if you succeed on the save, and only half damage if you fail. Stand Against the Tide: When a hostile creature misses you with a melee attack, you can use your Reaction to force that creature to repeat the same attack against another creature (other than itself) of your choice. Uncanny Dodge: When an attacker that you can see hits you with an attack, you can use your Reaction to halve the attack\'s damage against you.' },
+        ],
+      },
+    ],
   },
   {
     name: 'Rogue',
