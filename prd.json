@@ -29,7 +29,7 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -45,7 +45,7 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Available classes: artificer, barbarian, bard, cleric, druid, fighter, monk, paladin, ranger, rogue, sorcerer, warlock, wizard"
     },
     {
@@ -62,7 +62,7 @@
         "Typecheck passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Available species: tiefling, forest-gnome, high-elf, drow, firbolg, triton, yuan-ti, air-genasi, earth-genasi, fire-genasi, water-genasi"
     },
     {
@@ -79,7 +79,7 @@
         "Verify in browser: icons appear next to class/species names"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -97,7 +97,7 @@
         "Verify in browser: icons appear on character cards"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {
@@ -112,7 +112,7 @@
         "Verify in browser: icon appears when class is selected"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": ""
     },
     {

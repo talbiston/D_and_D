@@ -26,6 +26,7 @@ import type { CharacterArmor } from '../types'
 import { EQUIPMENT_PACKS, getPackByName } from '../data/equipmentPacks'
 import type { EquipmentPack } from '../data/equipmentPacks'
 import { getGearByName } from '../data/gear'
+import ClassIcon from '../components/ClassIcon'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'Strength',
@@ -877,19 +878,22 @@ export default function CharacterCreatePage() {
               >
                 Class *
               </label>
-              <select
-                id="class"
-                value={characterClass}
-                onChange={(e) => handleClassChange(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="">Select a class</option>
-                {classOptions.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-3">
+                <select
+                  id="class"
+                  value={characterClass}
+                  onChange={(e) => handleClassChange(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="">Select a class</option>
+                  {classOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                {characterClass && <ClassIcon className={characterClass} size={32} />}
+              </div>
             </div>
 
             {/* Subclass */}
