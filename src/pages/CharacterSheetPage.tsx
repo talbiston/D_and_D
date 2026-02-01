@@ -463,6 +463,20 @@ export default function CharacterSheetPage() {
                 >
                   Level {character.level}
                 </button>
+                {character.level < 20 && (
+                  <button
+                    onClick={openLevelModal}
+                    className="ml-2 px-2 py-0.5 text-sm bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors no-print"
+                    title="Level up your character"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                      </svg>
+                      Level Up
+                    </span>
+                  </button>
+                )}
                 {' '}{character.species} {character.class}
                 {character.subclass && ` (${character.subclass})`}
               </p>
