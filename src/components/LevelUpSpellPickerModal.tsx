@@ -22,8 +22,8 @@ function getAvailableSpells(
   const knownSpellNames = new Set(currentSpells.map((s) => s.name))
 
   return SPELLS.filter((spell) => {
-    // Must be in the class's spell list
-    if (!spell.classes.includes(characterClass)) return false
+    // Must be in the class's spell list (case-insensitive)
+    if (!spell.classes.some(c => c.toLowerCase() === characterClass.toLowerCase())) return false
     // Must be a leveled spell (not cantrip - cantrips are learned separately)
     if (spell.level === 0) return false
     // Must be at or below max spell level
