@@ -20,6 +20,10 @@ import {
 import { useDarkModeContext } from '../context/DarkModeContext'
 import { getWeaponByName, getSimpleWeapons, getMartialWeapons } from '../data/weapons'
 import type { WeaponData } from '../data/weapons'
+import { getArmorByName, getLightArmor, getMediumArmor, getHeavyArmor } from '../data/armor'
+import type { ArmorData } from '../data/armor'
+import { calculateAC } from '../utils/calculations'
+import type { CharacterArmor } from '../types'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'Strength',
@@ -84,6 +88,9 @@ export default function CharacterCreatePage() {
 
   // Starting equipment weapon selections - track which weapon is selected for each choice index
   const [weaponSelections, setWeaponSelections] = useState<Record<number, string>>({})
+
+  // Starting equipment armor selections - track which armor is selected for each choice index
+  const [armorSelections, setArmorSelections] = useState<Record<number, string>>({})
 
   const backgroundOptions = getBackgroundNames()
 
@@ -190,16 +197,164 @@ export default function CharacterCreatePage() {
       .filter(({ choice }) => isWeaponChoice(choice))
   }
 
+  // Get armor options for a choice string
+  const getArmorOptionsForChoice = (choiceOption: string): ArmorData[] => {
+    const lowerChoice = choiceOption.toLowerCase()
+
+    // Handle specific armor by name
+    const armor = getArmorByName(choiceOption)
+    if (armor) {
+      return [armor]
+    }
+
+    // Handle "if proficient" clauses - extract armor name
+    const proficientMatch = choiceOption.match(/^(.+?)\s*\(if proficient\)$/i)
+    if (proficientMatch) {
+      const armorName = proficientMatch[1].trim()
+      const armor = getArmorByName(armorName)
+      if (armor) return [armor]
+    }
+
+    // Handle compound options like "Leather Armor, Longbow, and 20 Arrows"
+    // Extract armor name if it's a combo
+    if (lowerChoice.includes('leather armor')) {
+      return getLightArmor().filter(a => a.name === 'Leather')
+    }
+    if (lowerChoice.includes('scale mail')) {
+      return getMediumArmor().filter(a => a.name === 'Scale Mail')
+    }
+    if (lowerChoice.includes('chain mail')) {
+      return getHeavyArmor().filter(a => a.name === 'Chain Mail')
+    }
+
+    return []
+  }
+
+  // Check if character is proficient with an armor category
+  const isArmorProficient = (armorCategory: string): boolean => {
+    const classData = getClassByName(characterClass)
+    if (!classData) return false
+
+    // Map armor categories to proficiency strings
+    const categoryToProf: Record<string, string> = {
+      'light': 'Light',
+      'medium': 'Medium',
+      'heavy': 'Heavy',
+      'shield': 'Shields',
+    }
+
+    const profName = categoryToProf[armorCategory]
+    return profName ? classData.armorProficiencies.includes(profName) : false
+  }
+
+  // Check if a starting equipment choice is an armor choice
+  const isArmorChoice = (choice: StartingEquipmentChoice): boolean => {
+    if (choice.choice) {
+      return choice.choice.some(opt => {
+        // Check for armor-related options
+        if (getArmorByName(opt)) return true
+        if (opt.toLowerCase().includes('leather armor')) return true
+        if (opt.toLowerCase().includes('scale mail')) return true
+        if (opt.toLowerCase().includes('chain mail')) return true
+        // Check for "if proficient" armor options
+        const profMatch = opt.match(/^(.+?)\s*\(if proficient\)$/i)
+        if (profMatch && getArmorByName(profMatch[1].trim())) return true
+        return false
+      })
+    }
+    if (choice.items) {
+      return choice.items.some(item => {
+        const armor = getArmorByName(item.item)
+        return armor !== undefined && armor.category !== 'shield'
+      })
+    }
+    return false
+  }
+
+  // Get armor choices from class starting equipment
+  const getClassArmorChoices = (): { index: number; choice: StartingEquipmentChoice }[] => {
+    const classData = getClassByName(characterClass)
+    if (!classData?.startingEquipment) return []
+
+    return classData.startingEquipment
+      .map((choice, index) => ({ index, choice }))
+      .filter(({ choice }) => isArmorChoice(choice))
+  }
+
+  // Update armor selection for a choice
+  const handleArmorSelection = (choiceIndex: number, armorName: string) => {
+    setArmorSelections(prev => ({ ...prev, [choiceIndex]: armorName }))
+  }
+
+  // Calculate preview AC based on armor selection
+  const getACPreview = (armorName: string | null): number => {
+    const dexMod = getAbilityModifier(abilityScores.dexterity)
+    const conMod = getAbilityModifier(abilityScores.constitution)
+    const wisMod = getAbilityModifier(abilityScores.wisdom)
+
+    // Check if we have a shield from fixed equipment
+    const classData = getClassByName(characterClass)
+    let hasShield = false
+    if (classData?.startingEquipment) {
+      hasShield = classData.startingEquipment.some(choice =>
+        choice.items?.some(item => item.item === 'Shield')
+      )
+    }
+
+    return calculateAC(armorName, hasShield, dexMod, conMod, wisMod, characterClass)
+  }
+
+  // Build starting armor array from selections and fixed items
+  const buildStartingArmor = (): CharacterArmor[] => {
+    const armor: CharacterArmor[] = []
+    const classData = getClassByName(characterClass)
+    if (!classData?.startingEquipment) return armor
+
+    classData.startingEquipment.forEach((choice, index) => {
+      // Handle choices - use the selected armor
+      if (choice.choice && isArmorChoice(choice)) {
+        const selectedName = armorSelections[index]
+        if (selectedName) {
+          const armorData = getArmorByName(selectedName)
+          if (armorData && armorData.category !== 'shield') {
+            armor.push({
+              name: armorData.name,
+              isEquipped: true,
+              isShield: false,
+            })
+          }
+        }
+      }
+
+      // Handle fixed armor items
+      if (choice.items) {
+        choice.items.forEach(item => {
+          const armorData = getArmorByName(item.item)
+          if (armorData) {
+            armor.push({
+              name: armorData.name,
+              isEquipped: true,
+              isShield: armorData.category === 'shield',
+            })
+          }
+        })
+      }
+    })
+
+    return armor
+  }
+
   // Update weapon selection for a choice
   const handleWeaponSelection = (choiceIndex: number, weaponName: string) => {
     setWeaponSelections(prev => ({ ...prev, [choiceIndex]: weaponName }))
   }
 
-  // Reset weapon selections when class changes
+  // Reset weapon and armor selections when class changes
   const handleClassChange = (newClass: string) => {
     setCharacterClass(newClass)
     setSubclass('')
     setWeaponSelections({})
+    setArmorSelections({})
   }
 
   // Build weapons array from selections and fixed items
@@ -269,6 +424,23 @@ export default function CharacterCreatePage() {
     // Build starting weapons from selections and fixed items
     const startingWeapons = buildStartingWeapons()
 
+    // Build starting armor from selections and fixed items
+    const startingArmor = buildStartingArmor()
+
+    // Calculate initial AC based on equipped armor
+    const equippedBodyArmor = startingArmor.find(a => !a.isShield && a.isEquipped)
+    const hasShield = startingArmor.some(a => a.isShield && a.isEquipped)
+    const dexMod = getAbilityModifier(abilityScores.dexterity)
+    const wisMod = getAbilityModifier(abilityScores.wisdom)
+    const calculatedAC = calculateAC(
+      equippedBodyArmor?.name ?? null,
+      hasShield,
+      dexMod,
+      conMod,
+      wisMod,
+      characterClass
+    )
+
     // Build character object
     const character: Character = {
       id: crypto.randomUUID(),
@@ -284,7 +456,7 @@ export default function CharacterCreatePage() {
       maxHp,
       currentHp: maxHp,
       tempHp: 0,
-      armorClass: 10 + getAbilityModifier(abilityScores.dexterity),
+      armorClass: calculatedAC,
       speed: speciesData?.speed ?? 30,
       size: speciesData?.size ?? 'medium',
       weapons: startingWeapons,
@@ -304,7 +476,7 @@ export default function CharacterCreatePage() {
         weapons: classData?.weaponProficiencies ?? [],
         tools: [],
       },
-      armor: [],
+      armor: startingArmor,
       inventory: [],
       toolProficiencies: [],
     }
@@ -617,6 +789,207 @@ export default function CharacterCreatePage() {
                                   ))}
                                 </div>
                               )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  }
+
+                  return null
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Starting Equipment - Armor Selection */}
+          {characterClass && getClassArmorChoices().length > 0 && (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Starting Armor
+              </h2>
+              <div className="space-y-4">
+                {getClassArmorChoices().map(({ index, choice }) => {
+                  // Handle choices (pick one)
+                  if (choice.choice) {
+                    // Collect all available armor options for this choice
+                    const allArmorOptions: ArmorData[] = []
+
+                    choice.choice.forEach(opt => {
+                      // Check for "if proficient" options
+                      const profMatch = opt.match(/^(.+?)\s*\(if proficient\)$/i)
+                      if (profMatch) {
+                        const armorName = profMatch[1].trim()
+                        const armor = getArmorByName(armorName)
+                        if (armor && isArmorProficient(armor.category)) {
+                          if (!allArmorOptions.find(a => a.name === armor.name)) {
+                            allArmorOptions.push(armor)
+                          }
+                        }
+                        return
+                      }
+
+                      const armors = getArmorOptionsForChoice(opt)
+                      armors.forEach(armor => {
+                        if (!allArmorOptions.find(a => a.name === armor.name)) {
+                          allArmorOptions.push(armor)
+                        }
+                      })
+                    })
+
+                    if (allArmorOptions.length === 0) return null
+
+                    const selectedArmorName = armorSelections[index] || ''
+                    const selectedArmor = selectedArmorName ? getArmorByName(selectedArmorName) : null
+
+                    return (
+                      <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Choose armor:
+                        </label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                          {choice.choice.join(' or ')}
+                        </p>
+                        <select
+                          value={selectedArmorName}
+                          onChange={(e) => handleArmorSelection(index, e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        >
+                          <option value="">Select armor</option>
+                          {allArmorOptions.map((armor) => (
+                            <option key={armor.name} value={armor.name}>
+                              {armor.name}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Display selected armor stats */}
+                        {selectedArmor && (
+                          <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="font-semibold text-gray-900 dark:text-white">
+                                  {selectedArmor.name}
+                                </span>
+                                <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                                  ({selectedArmor.category} armor)
+                                </span>
+                              </div>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                {selectedArmor.weight} lb
+                              </span>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <span className="px-2 py-1 text-sm bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
+                                Base AC: {selectedArmor.baseAC}
+                              </span>
+                              {selectedArmor.dexBonus === true && (
+                                <span className="px-2 py-1 text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">
+                                  + Dex modifier
+                                </span>
+                              )}
+                              {selectedArmor.dexBonus === 'max2' && (
+                                <span className="px-2 py-1 text-sm bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded">
+                                  + Dex (max 2)
+                                </span>
+                              )}
+                              {selectedArmor.dexBonus === false && selectedArmor.category !== 'shield' && (
+                                <span className="px-2 py-1 text-sm bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded">
+                                  No Dex bonus
+                                </span>
+                              )}
+                              {selectedArmor.stealthDisadvantage && (
+                                <span className="px-2 py-1 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded">
+                                  Stealth disadvantage
+                                </span>
+                              )}
+                              {selectedArmor.minStrength > 0 && (
+                                <span className="px-2 py-1 text-sm bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded">
+                                  Requires Str {selectedArmor.minStrength}
+                                </span>
+                              )}
+                            </div>
+                            {/* AC Preview */}
+                            <div className="mt-3 p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded border border-indigo-200 dark:border-indigo-700">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-indigo-700 dark:text-indigo-300">
+                                  Calculated AC:
+                                </span>
+                                <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+                                  {getACPreview(selectedArmor.name)}
+                                </span>
+                              </div>
+                              <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                                Based on your current Dex modifier ({formatModifier(getAbilityModifier(abilityScores.dexterity))})
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+
+                  // Handle fixed armor items (armor the character automatically gets)
+                  if (choice.items) {
+                    const armorItems = choice.items.filter(item => {
+                      const armor = getArmorByName(item.item)
+                      return armor !== undefined && armor.category !== 'shield'
+                    })
+                    if (armorItems.length === 0) return null
+
+                    return (
+                      <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          You will receive:
+                        </p>
+                        {armorItems.map((item) => {
+                          const armor = getArmorByName(item.item)!
+                          return (
+                            <div key={item.item} className="mt-2 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <span className="font-semibold text-gray-900 dark:text-white">
+                                    {armor.name}
+                                  </span>
+                                  <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                                    ({armor.category} armor)
+                                  </span>
+                                </div>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                  {armor.weight} lb
+                                </span>
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                <span className="px-2 py-1 text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">
+                                  Base AC: {armor.baseAC}
+                                </span>
+                                {armor.dexBonus === true && (
+                                  <span className="px-2 py-1 text-sm bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded">
+                                    + Dex modifier
+                                  </span>
+                                )}
+                                {armor.dexBonus === 'max2' && (
+                                  <span className="px-2 py-1 text-sm bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded">
+                                    + Dex (max 2)
+                                  </span>
+                                )}
+                                {armor.stealthDisadvantage && (
+                                  <span className="px-2 py-1 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded">
+                                    Stealth disadvantage
+                                  </span>
+                                )}
+                              </div>
+                              {/* AC Preview for fixed armor */}
+                              <div className="mt-3 p-2 bg-green-50 dark:bg-green-900/30 rounded border border-green-200 dark:border-green-700">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-green-700 dark:text-green-300">
+                                    Calculated AC:
+                                  </span>
+                                  <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                                    {getACPreview(armor.name)}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           )
                         })}
