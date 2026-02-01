@@ -103,3 +103,37 @@ Started: Sun Feb  1 04:01:39 PM CST 2026
   - Goliath Storm is a special case requiring manual handling of dual resistances (SpeciesAncestryOption only has single damageResistance field)
   - breathWeapon data structure stores both damageType and shape for Dragonborn breath weapon display
 ---
+
+## 2026-02-01 - US-006
+- What was implemented: Display Ancestry on Character Sheet
+  - Updated header to show ancestry in parentheses after species (e.g., "Dragonborn (Gold)")
+  - Added "Ancestry Abilities" section before Species Traits with:
+    - Damage Resistances display with green badges
+    - Breath Weapon display for Dragonborn with damage type and shape
+  - Section only appears if character has resistances or breath weapon
+- Files changed:
+  - src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Character sheet uses conditional rendering to only show relevant sections
+  - Use colored backgrounds (green for resistances, red for breath weapon) for visual differentiation
+---
+
+## 2026-02-01 - US-007 & US-008
+- What was implemented: Divine Order and Primal Order Class Choices
+  - Added ClassOrder interface and classOrders field to ClassData interface
+  - Added classOrderName field for display label customization
+  - Added Divine Order options to Cleric: Protector, Thaumaturge
+  - Added Primal Order options to Druid: Magician, Warden
+  - Added classOrder field to Character interface in types
+  - Added classOrder state and UI in CharacterCreatePage
+  - Class order selection required when class has orders
+  - Class order saved to character data
+- Files changed:
+  - src/types/index.ts
+  - src/data/classes.ts
+  - src/pages/CharacterCreatePage.tsx
+- **Learnings for future iterations:**
+  - Use classOrderName to customize the dropdown label per class
+  - Class orders follow similar pattern to species ancestry
+  - handleClassChange resets classOrder along with other class-specific state
+---

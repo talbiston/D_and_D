@@ -620,12 +620,20 @@ export default function CharacterCreatePage() {
     // Build feats array with origin feat if background selected
     const feats = bgData ? [bgData.originFeat] : []
 
-    // Apply background skill proficiencies
+    // Determine class order skill proficiency
+    // Cleric Thaumaturge grants Religion, Druid Magician grants Arcana
+    const classOrderSkill: string | null =
+      (characterClass === 'Cleric' && classOrder === 'Thaumaturge') ? 'religion'
+      : (characterClass === 'Druid' && classOrder === 'Magician') ? 'arcana'
+      : null
+
+    // Apply background and class order skill proficiencies
     const finalSkills = skills.map((skill) => {
       const hasBackgroundProficiency = bgData?.skillProficiencies.includes(skill.name)
+      const hasClassOrderProficiency = classOrderSkill === skill.name
       return {
         ...skill,
-        proficient: skill.proficient || hasBackgroundProficiency || false,
+        proficient: skill.proficient || hasBackgroundProficiency || hasClassOrderProficiency || false,
       }
     })
 
@@ -717,8 +725,25 @@ export default function CharacterCreatePage() {
       hitDice: { total: level, spent: 0 },
       backstory: { ...DEFAULT_BACKSTORY },
       proficiencies: {
-        armor: classData?.armorProficiencies ?? [],
-        weapons: classData?.weaponProficiencies ?? [],
+        armor: (() => {
+          const baseArmor = classData?.armorProficiencies ?? []
+          // Cleric Protector grants Heavy armor training
+          if (characterClass === 'Cleric' && classOrder === 'Protector' && !baseArmor.includes('Heavy')) {
+            return [...baseArmor, 'Heavy']
+          }
+          return baseArmor
+        })(),
+        weapons: (() => {
+          const baseWeapons = classData?.weaponProficiencies ?? []
+          // Cleric Protector and Druid Warden grant Martial weapon proficiency
+          if ((characterClass === 'Cleric' && classOrder === 'Protector') ||
+              (characterClass === 'Druid' && classOrder === 'Warden')) {
+            if (!baseWeapons.includes('Martial')) {
+              return [...baseWeapons, 'Martial']
+            }
+          }
+          return baseWeapons
+        })(),
         tools: bgData ? [bgData.toolProficiency] : [],
       },
       pendingASI: 0,

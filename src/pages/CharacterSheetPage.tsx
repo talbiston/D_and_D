@@ -1168,6 +1168,11 @@ export default function CharacterSheetPage() {
                 {' '}{character.class}
                 {character.subclass && ` (${character.subclass})`}
               </p>
+              {character.classOrder && (
+                <p className="text-sm text-gray-500 dark:text-gray-500">
+                  {character.classOrder.name}
+                </p>
+              )}
               {character.background && (
                 <p className="text-sm text-gray-500 dark:text-gray-500">
                   {character.background} Background
