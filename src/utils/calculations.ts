@@ -4,7 +4,7 @@
 
 import { getArmorByName, type ArmorData } from '../data/armor'
 import { getWeaponByName, type WeaponData } from '../data/weapons'
-import type { Weapon, DamageType } from '../types'
+import type { Weapon, DamageType, CharacterArmor, InventoryItem } from '../types'
 
 /**
  * Calculate ability modifier from ability score
@@ -361,4 +361,130 @@ export function formatWeaponDamage(
   }
 
   return formatDamage(weapon.damage, damageType)
+}
+
+// Encumbrance status types
+export type EncumbranceStatus = 'normal' | 'encumbered' | 'heavily_encumbered'
+
+// Encumbrance penalties type
+export interface EncumbrancePenalties {
+  speedReduction: number
+  hasDisadvantageOnChecks: boolean
+  description: string
+}
+
+/**
+ * Calculate carrying capacity based on Strength score
+ * Formula: Strength score × 15
+ *
+ * @param strengthScore - The character's Strength score
+ * @returns Maximum carrying capacity in pounds
+ */
+export function calculateCarryingCapacity(strengthScore: number): number {
+  return strengthScore * 15
+}
+
+/**
+ * Calculate current weight being carried
+ * Sums up: inventory items, equipped weapons, and equipped armor
+ *
+ * @param inventory - Array of inventory items
+ * @param weapons - Array of character weapons
+ * @param armor - Array of character armor
+ * @returns Total weight in pounds
+ */
+export function calculateCurrentWeight(
+  inventory: InventoryItem[],
+  weapons: Weapon[],
+  armor: CharacterArmor[]
+): number {
+  let totalWeight = 0
+
+  // Sum inventory items (quantity × weight per item)
+  for (const item of inventory) {
+    totalWeight += item.quantity * item.weight
+  }
+
+  // Sum equipped weapons
+  for (const weapon of weapons) {
+    const weaponData = getWeaponByName(weapon.name)
+    if (weaponData) {
+      totalWeight += weaponData.weight
+    }
+  }
+
+  // Sum equipped armor
+  for (const armorPiece of armor) {
+    if (armorPiece.isEquipped) {
+      const armorData = getArmorByName(armorPiece.name)
+      if (armorData) {
+        totalWeight += armorData.weight
+      }
+    }
+  }
+
+  return totalWeight
+}
+
+/**
+ * Get encumbrance status based on current weight and Strength score
+ *
+ * Thresholds (variant encumbrance rules):
+ * - Normal: weight ≤ Strength × 5
+ * - Encumbered: weight > Strength × 5 and ≤ Strength × 10
+ * - Heavily encumbered: weight > Strength × 10
+ *
+ * @param currentWeight - Current weight being carried
+ * @param strengthScore - The character's Strength score
+ * @returns Encumbrance status
+ */
+export function getEncumbranceStatus(
+  currentWeight: number,
+  strengthScore: number
+): EncumbranceStatus {
+  const encumberedThreshold = strengthScore * 5
+  const heavilyEncumberedThreshold = strengthScore * 10
+
+  if (currentWeight > heavilyEncumberedThreshold) {
+    return 'heavily_encumbered'
+  } else if (currentWeight > encumberedThreshold) {
+    return 'encumbered'
+  }
+
+  return 'normal'
+}
+
+/**
+ * Get encumbrance penalties based on encumbrance status
+ *
+ * Penalties:
+ * - Normal: No penalties
+ * - Encumbered: Speed -10 ft
+ * - Heavily Encumbered: Speed -20 ft, disadvantage on ability checks, attack rolls, and saving throws that use Str, Dex, or Con
+ *
+ * @param status - The encumbrance status
+ * @returns Object containing speed reduction and other penalties
+ */
+export function getEncumbrancePenalties(status: EncumbranceStatus): EncumbrancePenalties {
+  switch (status) {
+    case 'encumbered':
+      return {
+        speedReduction: 10,
+        hasDisadvantageOnChecks: false,
+        description: 'Speed reduced by 10 feet',
+      }
+    case 'heavily_encumbered':
+      return {
+        speedReduction: 20,
+        hasDisadvantageOnChecks: true,
+        description:
+          'Speed reduced by 20 feet. Disadvantage on ability checks, attack rolls, and saving throws that use Strength, Dexterity, or Constitution.',
+      }
+    default:
+      return {
+        speedReduction: 0,
+        hasDisadvantageOnChecks: false,
+        description: 'No encumbrance penalties',
+      }
+  }
 }
