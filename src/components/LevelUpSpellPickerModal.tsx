@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import type { Spell } from '../types'
 import { SPELLS } from '../data/spells'
 

@@ -28,6 +28,11 @@ export const FEATS: FeatData[] = [
     category: 'general',
   },
   {
+    name: 'Crafter',
+    description: 'You gain proficiency with three Artisan\'s Tools of your choice. When you craft an item using a tool with which you have proficiency, the required crafting time is reduced by 20%. When you craft an item, you can make it for 10% less than the normal cost.',
+    category: 'origin',
+  },
+  {
     name: 'Chef',
     description: 'Your Constitution or Wisdom score increases by 1 (max 20). During short rests, you can cook special food that grants extra hit points equal to 1d8 plus your proficiency bonus. You can prepare treats that provide temporary hit points.',
     category: 'general',
@@ -169,6 +174,11 @@ export const FEATS: FeatData[] = [
     name: 'Mobile',
     description: 'Your speed increases by 10 feet. When you use the Dash action, difficult terrain does not cost extra movement. When you make a melee attack against a creature, you do not provoke opportunity attacks from that creature for the rest of the turn.',
     category: 'general',
+  },
+  {
+    name: 'Musician',
+    description: 'You gain proficiency with three Musical Instruments of your choice. After you finish a Short or Long Rest, you can play a song on a Musical Instrument with which you have proficiency and give Heroic Inspiration to allies who hear the song. The number of allies you can affect equals your Proficiency Bonus.',
+    category: 'origin',
   },
   {
     name: 'Mounted Combatant',
