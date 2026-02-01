@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import type { Character } from '../types'
-import { getCharacterById, saveCharacter, exportCharacterAsJson } from '../utils/storage'
+import { saveCharacter, exportCharacterAsJson } from '../utils/storage'
+import { getCharacter, ApiError } from '../utils/api'
 import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties, calculateToolCheckBonus } from '../utils/calculations'
 import { getWeaponByName } from '../data/weapons'
 import { getArmorByName } from '../data/armor'
@@ -90,6 +91,8 @@ export default function CharacterSheetPage() {
   const { id } = useParams<{ id: string }>()
   const [character, setCharacter] = useState<Character | null>(null)
   const [loading, setLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [showHpModal, setShowHpModal] = useState(false)
   const [hpChangeAmount, setHpChangeAmount] = useState('')
   const [expandedFeatures, setExpandedFeatures] = useState<Set<string>>(new Set())
@@ -158,11 +161,31 @@ export default function CharacterSheetPage() {
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
   useEffect(() => {
-    if (id) {
-      const loaded = getCharacterById(id)
-      setCharacter(loaded)
+    async function loadCharacter() {
+      if (!id) {
+        setLoading(false)
+        return
+      }
+
+      setLoading(true)
+      setNotFound(false)
+      setLoadError(null)
+
+      try {
+        const loaded = await getCharacter(id)
+        setCharacter(loaded)
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) {
+          setNotFound(true)
+        } else {
+          setLoadError(error instanceof Error ? error.message : 'Failed to load character')
+        }
+      } finally {
+        setLoading(false)
+      }
     }
-    setLoading(false)
+
+    loadCharacter()
   }, [id])
 
   const updateCharacter = useCallback((updates: Partial<Character>) => {
@@ -939,7 +962,60 @@ export default function CharacterSheetPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 dark:text-gray-400">Loading character...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (notFound) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            Character Not Found
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            The character you're looking for doesn't exist or has been deleted.
+          </p>
+          <Link
+            to="/"
+            className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+          >
+            Back to Characters
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            Failed to Load Character
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            {loadError}
+          </p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            >
+              Try Again
+            </button>
+            <Link
+              to="/"
+              className="inline-block bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            >
+              Back to Characters
+            </Link>
+          </div>
+        </div>
       </div>
     )
   }

@@ -10,7 +10,6 @@ import { getClassByName, getClassFeaturesForLevel, getSubclassNames } from '../d
 import type { StartingEquipmentChoice } from '../data/classes'
 import { getBackgroundNames, getBackgroundByName } from '../data/backgrounds'
 import { getSpeciesByName } from '../data/species'
-import type { Character } from '../types'
 import {
   DEFAULT_SPELL_SLOTS,
   DEFAULT_CURRENCY,
