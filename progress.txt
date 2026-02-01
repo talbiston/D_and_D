@@ -310,3 +310,18 @@ Started: Sun Feb  1 12:07:52 AM CST 2026
   - ToolCategory type from tools.ts: "artisan's tools" | "gaming set" | "musical instrument" | "other"
   - ABILITY_LABELS constant (defined at top of file) maps ability names to short labels (STR, DEX, etc.)
 ---
+
+## 2026-02-01 - US-021
+- What was implemented: Created WeaponPickerModal component with searchable weapon list, filters, and details panel
+- Files changed:
+  - `src/components/WeaponPickerModal.tsx` (new) - reusable modal component for picking weapons from WEAPONS database
+  - `src/pages/CharacterSheetPage.tsx` - integrated WeaponPickerModal with "Add Weapon" button, added "Custom" button for manual weapon entry
+- **Learnings for future iterations:**
+  - Created WeaponPickerModal as a separate component file in src/components/ for reusability
+  - Modal takes isOpen, onClose, and onAddWeapon props following existing modal patterns
+  - Uses useMemo for efficient filtering of weapons by search query, category, and properties
+  - Property filters use AND logic (must have ALL selected properties)
+  - Split "Add Weapon" into two buttons: primary for picker modal, secondary "Custom" for manual entry
+  - WeaponData to Weapon conversion: copy name/damage/damageType/properties, set isEquipped=true, isTwoHanding=false
+  - Details panel shows all weapon stats including range (if applicable) and versatile damage
+---
