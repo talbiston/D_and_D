@@ -69,6 +69,23 @@ export interface Skill {
 // Character sizes
 export type Size = 'tiny' | 'small' | 'medium' | 'large' | 'huge' | 'gargantuan'
 
+// Species ancestry option (e.g., Gold Dragon for Dragonborn)
+export interface SpeciesAncestryOption {
+  name: string
+  description: string
+  damageResistance?: string
+  damageType?: string
+  breathWeaponShape?: string
+  spells?: string[]
+  abilities?: string[]
+}
+
+// Species ancestry data (the choice and its options)
+export interface SpeciesAncestryData {
+  choiceName: string
+  options: SpeciesAncestryOption[]
+}
+
 // Main Character interface
 export interface Character {
   id: string
@@ -116,6 +133,10 @@ export interface Character {
   pendingASI: number // Number of unclaimed Ability Score Improvements
   // Equipment tracking
   toolProficiencies: string[]
+  // Species ancestry (e.g., Dragonborn draconic ancestry)
+  speciesAncestry?: { choiceName: string; selectedOption: string }
+  // Damage resistances from ancestry or other sources
+  damageResistances?: string[]
 }
 
 // Damage types

@@ -1,4 +1,4 @@
-import type { SpeciesTrait, Size } from '../types'
+import type { SpeciesTrait, Size, SpeciesAncestryData } from '../types'
 
 export interface Species {
   name: string
@@ -6,6 +6,7 @@ export interface Species {
   speed: number
   traits: SpeciesTrait[]
   languages: string[]
+  ancestry?: SpeciesAncestryData
 }
 
 export const SPECIES: Species[] = [
