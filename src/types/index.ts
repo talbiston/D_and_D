@@ -96,6 +96,7 @@ export interface Character {
   pactMagic?: PactMagic // Warlock Pact Magic slots (optional, only for Warlocks)
   eldritchInvocations?: string[] // Names of Eldritch Invocations known (Warlocks only)
   battleMasterManeuvers?: string[] // Names of Battle Master Maneuvers known (Battle Master Fighters only)
+  metamagicOptions?: string[] // Names of Metamagic options known (Sorcerers only)
   spellcastingAbility?: AbilityName
   // Features & traits
   classFeatures: ClassFeature[]

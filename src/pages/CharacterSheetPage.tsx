@@ -22,6 +22,9 @@ import ManeuverPickerModal from '../components/ManeuverPickerModal'
 import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel, getPactMagicSlots } from '../utils/calculations'
 import { INVOCATIONS, getInvocationsKnown } from '../data/invocations'
 import { MANEUVERS, getManeuversKnown, getSuperiorityDice } from '../data/maneuvers'
+import { METAMAGIC_OPTIONS, getMetamagicKnown } from '../data/metamagic'
+import MetamagicPickerModal from '../components/MetamagicPickerModal'
+import { getSorceryPoints } from '../utils/calculations'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -107,6 +110,7 @@ export default function CharacterSheetPage() {
   const [showASIModal, setShowASIModal] = useState(false)
   const [showInvocationPicker, setShowInvocationPicker] = useState(false)
   const [showManeuverPicker, setShowManeuverPicker] = useState(false)
+  const [showMetamagicPicker, setShowMetamagicPicker] = useState(false)
   const [pendingLevelUp, setPendingLevelUp] = useState<{ levelUpResult: LevelUpResult; hpGain: number } | null>(null)
   const [levelUpSummary, setLevelUpSummary] = useState<{
     newLevel: number
@@ -1244,6 +1248,86 @@ export default function CharacterSheetPage() {
             ) : (
               <p className="text-gray-500 dark:text-gray-400">
                 No maneuvers selected. Click "Manage Maneuvers" to choose your Combat Maneuvers.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Metamagic Options (Sorcerer only) */}
+        {character.class === 'Sorcerer' && character.level >= 2 && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Metamagic
+                <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                  ({(character.metamagicOptions?.length ?? 0)}/{getMetamagicKnown(character.level)} options)
+                </span>
+              </h2>
+              <button
+                onClick={() => setShowMetamagicPicker(true)}
+                className="text-sm px-3 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded transition-colors"
+              >
+                Manage Metamagic
+              </button>
+            </div>
+            {/* Sorcery Points Display */}
+            <div className="mb-4 p-3 bg-violet-50 dark:bg-violet-900/30 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-violet-800 dark:text-violet-200 font-medium">
+                  Sorcery Points
+                </span>
+                <span className="text-violet-700 dark:text-violet-300">
+                  {getSorceryPoints(character.level)}
+                </span>
+              </div>
+              <p className="text-xs text-violet-600 dark:text-violet-400 mt-1">
+                Recovered on Long Rest
+              </p>
+            </div>
+            {character.metamagicOptions && character.metamagicOptions.length > 0 ? (
+              <div className="space-y-2">
+                {character.metamagicOptions.map((metamagicName) => {
+                  const metamagic = METAMAGIC_OPTIONS.find(m => m.name === metamagicName)
+                  if (!metamagic) return null
+                  const isExpanded = expandedFeatures.has(`metamagic-${metamagicName}`)
+                  return (
+                    <div
+                      key={metamagicName}
+                      className="bg-violet-50 dark:bg-violet-900/30 rounded-lg overflow-hidden"
+                    >
+                      <button
+                        onClick={() => toggleFeatureExpanded(`metamagic-${metamagicName}`)}
+                        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-violet-100 dark:hover:bg-violet-900/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-violet-900 dark:text-violet-200">
+                            {metamagic.name}
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300">
+                            {metamagic.sorceryPointCost} SP
+                          </span>
+                        </div>
+                        <svg
+                          className={`w-5 h-5 text-violet-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {isExpanded && (
+                        <div className="px-4 pb-3 text-sm text-violet-700 dark:text-violet-300">
+                          {metamagic.description}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500 dark:text-gray-400">
+                No metamagic selected. Click "Manage Metamagic" to choose your Metamagic options.
               </p>
             )}
           </div>
@@ -2424,6 +2508,19 @@ export default function CharacterSheetPage() {
             setShowManeuverPicker(false)
           }}
           onCancel={() => setShowManeuverPicker(false)}
+        />
+      )}
+
+      {/* Metamagic Picker Modal */}
+      {showMetamagicPicker && character && character.class === 'Sorcerer' && (
+        <MetamagicPickerModal
+          sorcererLevel={character.level}
+          currentMetamagic={character.metamagicOptions ?? []}
+          onConfirm={(metamagic) => {
+            updateCharacter({ metamagicOptions: metamagic })
+            setShowMetamagicPicker(false)
+          }}
+          onCancel={() => setShowMetamagicPicker(false)}
         />
       )}
 
