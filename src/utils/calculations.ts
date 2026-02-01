@@ -3,7 +3,8 @@
  */
 
 import { getArmorByName, type ArmorData } from '../data/armor'
-import type { Weapon } from '../types'
+import { getWeaponByName, type WeaponData } from '../data/weapons'
+import type { Weapon, DamageType } from '../types'
 
 /**
  * Calculate ability modifier from ability score
@@ -271,4 +272,93 @@ export function calculateAttackBonus(
   }
 
   return attackBonus
+}
+
+/**
+ * Calculate weapon damage bonus based on weapon type and ability modifiers
+ *
+ * @param weapon - The weapon being used
+ * @param strMod - Strength modifier
+ * @param dexMod - Dexterity modifier
+ * @param isOffhand - Whether this is an off-hand attack (two-weapon fighting)
+ * @returns The damage bonus to add to damage rolls
+ */
+export function calculateDamageBonus(
+  weapon: Weapon,
+  strMod: number,
+  dexMod: number,
+  isOffhand: boolean = false
+): number {
+  // Off-hand attacks don't add ability modifier (unless feature grants it)
+  if (isOffhand) {
+    return 0
+  }
+
+  // Determine which ability modifier to use
+  const isFinesse = weapon.properties.includes('finesse')
+  const isRanged = weapon.properties.includes('ammunition') ||
+    (weapon.properties.includes('thrown') && !weapon.properties.some(p =>
+      p !== 'thrown' && p !== 'light' && p !== 'finesse'
+    ))
+
+  if (isFinesse) {
+    // Finesse: use higher of Str or Dex
+    return Math.max(strMod, dexMod)
+  } else if (isRanged || weapon.properties.includes('ammunition')) {
+    // Ranged weapons use Dex
+    return dexMod
+  } else {
+    // Melee weapons use Str by default
+    return strMod
+  }
+}
+
+/**
+ * Format weapon damage as a display string (e.g., "1d8+3 slashing")
+ *
+ * @param weapon - The weapon being used
+ * @param strMod - Strength modifier
+ * @param dexMod - Dexterity modifier
+ * @param isOffhand - Whether this is an off-hand attack
+ * @returns Formatted damage string, or versatile format for versatile weapons
+ */
+export function formatWeaponDamage(
+  weapon: Weapon,
+  strMod: number,
+  dexMod: number,
+  isOffhand: boolean = false
+): string {
+  const damageBonus = calculateDamageBonus(weapon, strMod, dexMod, isOffhand)
+  const damageType = weapon.damageType
+
+  // Check if weapon is versatile and get two-handed damage from weapon data
+  const isVersatile = weapon.properties.includes('versatile')
+  let versatileDamage: string | undefined
+
+  if (isVersatile) {
+    // Look up the weapon in the WEAPONS data to get versatileDamage
+    const weaponData: WeaponData | undefined = getWeaponByName(weapon.name)
+    versatileDamage = weaponData?.versatileDamage
+  }
+
+  // Format the damage bonus string
+  const formatBonus = (bonus: number): string => {
+    if (bonus === 0) return ''
+    return bonus > 0 ? `+${bonus}` : `${bonus}`
+  }
+
+  // Format a single damage string
+  const formatDamage = (baseDamage: string, damageType: DamageType): string => {
+    const bonusStr = formatBonus(damageBonus)
+    return `${baseDamage}${bonusStr} ${damageType}`
+  }
+
+  // If versatile weapon, show both 1h and 2h damage
+  if (isVersatile && versatileDamage) {
+    const oneHandedDamage = formatDamage(weapon.damage, damageType)
+    const twoHandedDamage = formatDamage(versatileDamage, damageType)
+    return `${oneHandedDamage} / ${twoHandedDamage}`
+  }
+
+  return formatDamage(weapon.damage, damageType)
 }
