@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import type { Character } from '../types'
 import { getCharacterById, saveCharacter, exportCharacterAsJson } from '../utils/storage'
-import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC } from '../utils/calculations'
+import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties } from '../utils/calculations'
 import { getWeaponByName } from '../data/weapons'
 import { getArmorByName } from '../data/armor'
 import { GEAR, type GearData, type GearCategory } from '../data/gear'
@@ -1841,6 +1841,141 @@ export default function CharacterSheetPage() {
               </div>
             </div>
           )}
+
+          {/* Encumbrance Display */}
+          {(() => {
+            const strScore = character.abilityScores.strength
+            const currentWeight = calculateCurrentWeight(character.inventory, character.weapons, character.armor)
+            const maxCapacity = calculateCarryingCapacity(strScore)
+            const status = getEncumbranceStatus(currentWeight, strScore)
+            const penalties = getEncumbrancePenalties(status)
+            const encumberedThreshold = strScore * 5
+            const heavilyEncumberedThreshold = strScore * 10
+            const weightPercentage = Math.min((currentWeight / maxCapacity) * 100, 100)
+
+            // Color coding based on status
+            const getProgressColor = () => {
+              switch (status) {
+                case 'heavily_encumbered':
+                  return 'bg-red-500'
+                case 'encumbered':
+                  return 'bg-yellow-500'
+                default:
+                  return 'bg-green-500'
+              }
+            }
+
+            const getStatusBadgeColor = () => {
+              switch (status) {
+                case 'heavily_encumbered':
+                  return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                case 'encumbered':
+                  return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                default:
+                  return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+              }
+            }
+
+            const formatStatus = () => {
+              switch (status) {
+                case 'heavily_encumbered':
+                  return 'Heavily Encumbered'
+                case 'encumbered':
+                  return 'Encumbered'
+                default:
+                  return 'Normal'
+              }
+            }
+
+            return (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Encumbrance</h3>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusBadgeColor()}`}>
+                      {formatStatus()}
+                    </span>
+                    {/* Info tooltip */}
+                    <div className="relative group">
+                      <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                      <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block z-10">
+                        <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 w-64 shadow-lg">
+                          <div className="font-semibold mb-1">Encumbrance Thresholds</div>
+                          <div className="space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-green-400">Normal:</span>
+                              <span>0 - {encumberedThreshold} lbs</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-yellow-400">Encumbered:</span>
+                              <span>{encumberedThreshold + 1} - {heavilyEncumberedThreshold} lbs</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-red-400">Heavily Encumbered:</span>
+                              <span>&gt; {heavilyEncumberedThreshold} lbs</span>
+                            </div>
+                            <div className="flex justify-between border-t border-gray-700 pt-1 mt-1">
+                              <span className="text-gray-400">Max Capacity:</span>
+                              <span>{maxCapacity} lbs</span>
+                            </div>
+                          </div>
+                          <div className="mt-2 text-gray-400 text-[10px]">
+                            Based on Strength score of {strScore}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                    {currentWeight.toFixed(1)} / {maxCapacity} lbs
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${getProgressColor()} transition-all duration-300`}
+                    style={{ width: `${weightPercentage}%` }}
+                  />
+                </div>
+
+                {/* Show encumbrance thresholds as markers on the bar */}
+                <div className="relative h-0">
+                  <div
+                    className="absolute top-[-8px] border-l-2 border-yellow-600 dark:border-yellow-400 h-2"
+                    style={{ left: `${(encumberedThreshold / maxCapacity) * 100}%` }}
+                    title={`Encumbered at ${encumberedThreshold} lbs`}
+                  />
+                  <div
+                    className="absolute top-[-8px] border-l-2 border-red-600 dark:border-red-400 h-2"
+                    style={{ left: `${(heavilyEncumberedThreshold / maxCapacity) * 100}%` }}
+                    title={`Heavily encumbered at ${heavilyEncumberedThreshold} lbs`}
+                  />
+                </div>
+
+                {/* Display penalties when encumbered */}
+                {status !== 'normal' && (
+                  <div className={`mt-3 p-2 rounded-lg text-sm ${
+                    status === 'heavily_encumbered'
+                      ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                      : 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300'
+                  }`}>
+                    <div className="font-medium mb-1">Active Penalties:</div>
+                    <ul className="list-disc list-inside space-y-0.5 text-xs">
+                      <li>Speed reduced by {penalties.speedReduction} ft</li>
+                      {penalties.hasDisadvantageOnChecks && (
+                        <li>Disadvantage on Str/Dex/Con ability checks, attack rolls, and saving throws</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </div>
           </>
         )}
