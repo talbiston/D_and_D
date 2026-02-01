@@ -18,6 +18,7 @@ import { SKILL_ABILITIES } from '../types'
 import { useDarkModeContext } from '../context/DarkModeContext'
 import DiceRoller from '../components/DiceRoller'
 import WeaponPickerModal from '../components/WeaponPickerModal'
+import ArmorPickerModal from '../components/ArmorPickerModal'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -113,6 +114,8 @@ export default function CharacterSheetPage() {
   const [toolSearchQuery, setToolSearchQuery] = useState('')
   const [toolCategoryFilter, setToolCategoryFilter] = useState<ToolCategory | 'all'>('all')
   const [toolRollResult, setToolRollResult] = useState<{ toolName: string; roll: number; bonus: number; total: number } | null>(null)
+  // Armor picker state
+  const [showArmorPicker, setShowArmorPicker] = useState(false)
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
   useEffect(() => {
@@ -490,6 +493,67 @@ export default function CharacterSheetPage() {
     const newWeapons = [...character.weapons]
     newWeapons.splice(index, 1)
     updateCharacter({ weapons: newWeapons })
+  }
+
+  // Armor management functions
+  const addArmorFromPicker = (armor: { name: string; isEquipped: boolean; isShield: boolean }) => {
+    if (!character) return
+    // Check if armor already exists
+    const existingIndex = character.armor.findIndex(a => a.name === armor.name)
+    if (existingIndex >= 0) {
+      // Already have this armor, just ensure it's equipped
+      const newArmor = [...character.armor]
+      newArmor[existingIndex] = { ...newArmor[existingIndex], isEquipped: armor.isEquipped }
+      updateCharacter({ armor: newArmor })
+    } else {
+      // Add new armor
+      updateCharacter({ armor: [...character.armor, armor] })
+    }
+  }
+
+  const toggleArmorEquipped = (index: number) => {
+    if (!character) return
+    const armor = character.armor[index]
+    const newArmor = [...character.armor]
+
+    if (armor.isShield) {
+      // For shields, just toggle equipped
+      newArmor[index] = { ...armor, isEquipped: !armor.isEquipped }
+    } else {
+      // For body armor, unequip all other body armor first (only one can be worn)
+      for (let i = 0; i < newArmor.length; i++) {
+        if (!newArmor[i].isShield && i !== index) {
+          newArmor[i] = { ...newArmor[i], isEquipped: false }
+        }
+      }
+      newArmor[index] = { ...armor, isEquipped: !armor.isEquipped }
+    }
+
+    updateCharacter({ armor: newArmor })
+  }
+
+  const removeArmor = (index: number) => {
+    if (!character) return
+    const newArmor = [...character.armor]
+    newArmor.splice(index, 1)
+    updateCharacter({ armor: newArmor })
+  }
+
+  const isArmorProficient = (armorName: string): boolean => {
+    if (!character) return false
+    const classData = getClassByName(character.class)
+    if (!classData) return false
+
+    const armorData = getArmorByName(armorName)
+    if (!armorData) return false
+
+    const normalizedProfs = classData.armorProficiencies.map(p => p.toLowerCase())
+
+    if (armorData.category === 'shield') {
+      return normalizedProfs.includes('shields') || normalizedProfs.includes('shield')
+    }
+
+    return normalizedProfs.includes(armorData.category) || normalizedProfs.includes('all')
   }
 
   const toggleWeaponProperty = (prop: WeaponProperty) => {
@@ -1781,6 +1845,146 @@ export default function CharacterSheetPage() {
           )}
         </div>
 
+        {/* Armor Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Armor
+            </h2>
+            <button
+              onClick={() => setShowArmorPicker(true)}
+              className="text-sm px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+            >
+              Add Armor
+            </button>
+          </div>
+
+          {(!character.armor || character.armor.length === 0) ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No armor yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {character.armor.map((armor, index) => {
+                const armorData = getArmorByName(armor.name)
+                const isProficient = isArmorProficient(armor.name)
+
+                return (
+                  <div
+                    key={index}
+                    className={`border rounded-lg p-4 ${
+                      armor.isEquipped
+                        ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50'
+                    }`}
+                  >
+                    {/* Armor Header Row */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {/* Equip Toggle */}
+                        <button
+                          onClick={() => toggleArmorEquipped(index)}
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                            armor.isEquipped
+                              ? 'bg-indigo-600 border-indigo-600 text-white'
+                              : 'border-gray-400 dark:border-gray-500 hover:border-indigo-500'
+                          }`}
+                          title={armor.isEquipped ? 'Unequip armor' : 'Equip armor'}
+                        >
+                          {armor.isEquipped && (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+
+                        {/* Armor Name */}
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {armor.name}
+                        </span>
+
+                        {/* Shield Badge */}
+                        {armor.isShield && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
+                            Shield
+                          </span>
+                        )}
+
+                        {/* Category Badge */}
+                        {armorData && !armor.isShield && (
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                            armorData.category === 'light'
+                              ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300'
+                              : armorData.category === 'medium'
+                              ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                              : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+                          }`}>
+                            {armorData.category}
+                          </span>
+                        )}
+
+                        {/* Proficiency Indicator */}
+                        {isProficient ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300" title="Proficient">
+                            <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Prof
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300" title="Not Proficient - Penalties Apply">
+                            <svg className="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            No Prof
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Remove Button */}
+                      <button
+                        onClick={() => removeArmor(index)}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                        title="Remove armor"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Armor Stats Row */}
+                    {armorData && (
+                      <div className="flex flex-wrap items-center gap-4 text-sm">
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">AC:</span>
+                          <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                            {armor.isShield ? `+${armorData.baseAC}` : armorData.baseAC}
+                            {armorData.dexBonus === true && ' + Dex'}
+                            {armorData.dexBonus === 'max2' && ' + Dex (max 2)'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">Weight:</span>
+                          <span className="text-gray-900 dark:text-white">{armorData.weight} lb.</span>
+                        </div>
+                        {armorData.minStrength > 0 && (
+                          <span className="text-xs px-2 py-0.5 bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 rounded">
+                            Str {armorData.minStrength}+ required
+                          </span>
+                        )}
+                        {armorData.stealthDisadvantage && (
+                          <span className="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded">
+                            Stealth Disadvantage
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Currency Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -2512,6 +2716,14 @@ export default function CharacterSheetPage() {
         isOpen={showWeaponPicker}
         onClose={() => setShowWeaponPicker(false)}
         onAddWeapon={addWeaponFromPicker}
+      />
+
+      {/* Armor Picker Modal */}
+      <ArmorPickerModal
+        isOpen={showArmorPicker}
+        onClose={() => setShowArmorPicker(false)}
+        onAddArmor={addArmorFromPicker}
+        armorProficiencies={getClassByName(character.class)?.armorProficiencies ?? []}
       />
 
       {/* Add Custom Weapon Modal */}
