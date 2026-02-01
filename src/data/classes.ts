@@ -284,8 +284,11 @@ export const CLASSES: ClassData[] = [
         name: 'Circle of the Land',
         description: 'The Circle of the Land is made up of mystics and sages who safeguard ancient knowledge and rites.',
         features: [
-          { name: 'Circle Spells', level: 3, description: 'Your mystical connection to the land grants you certain spells. Choose a terrain type; you gain access to its associated spells.' },
-          { name: 'Land\'s Aid', level: 3, description: 'As a Magic action, you can expend a use of Wild Shape and choose a point within 60 feet. Vitality-giving flowers appear that heal creatures of your choice for 2d6 hit points.' },
+          { name: 'Circle Spells', level: 3, description: 'Your mystical connection to the land grants you certain spells. Choose a terrain type (Arid, Polar, Temperate, or Tropical); you always have certain spells prepared based on your chosen terrain.' },
+          { name: 'Land\'s Aid', level: 3, description: 'As a Magic action, you can expend a use of Wild Shape and choose a point within 60 feet. Vitality-giving flowers appear in a 10-foot-radius Sphere centered on that point. Each creature of your choice in that area regains hit points equal to 2d6 plus your Druid level.' },
+          { name: 'Natural Recovery', level: 6, description: 'You can cast one of the spells of 5th level or lower from your Circle Spells without expending a spell slot. You must finish a Long Rest before you can do so again. When you reach certain Druid levels, you can cast additional spells this way: 10th level (6th-level spell), 14th level (7th-level spell), and 18th level (8th-level spell).' },
+          { name: 'Nature\'s Ward', level: 10, description: 'You are immune to the Poisoned condition, and you have Resistance to Poison damage. You are also immune to disease.' },
+          { name: 'Nature\'s Sanctuary', level: 14, description: 'As a Magic action, you can expend a use of Wild Shape and cause a 60-foot Emanation originating from you to be filled with spectral trees and vines for 1 minute. The Emanation is Difficult Terrain for your enemies. You and your allies have Half Cover while in the area, and beasts and plants are docile while in the area and won\'t attack unless you or an ally attacks them first.' },
         ],
       },
       {
@@ -293,7 +296,32 @@ export const CLASSES: ClassData[] = [
         description: 'Druids of the Circle of the Moon are fierce guardians of the wilds.',
         features: [
           { name: 'Combat Wild Shape', level: 3, description: 'You can use Wild Shape as a Bonus Action. While transformed, you can use a Bonus Action to expend a spell slot and regain 1d8 hit points per spell slot level.' },
-          { name: 'Circle Forms', level: 3, description: 'You can transform into beasts with a CR as high as 1. At 6th level, this increases to your druid level divided by 3.' },
+          { name: 'Circle Forms', level: 3, description: 'You can transform into beasts with a CR as high as 1. You gain Temporary Hit Points equal to three times your Druid level when you assume a Wild Shape form.' },
+          { name: 'Improved Circle Forms', level: 6, description: 'The maximum CR of your Circle Forms equals your Druid level divided by 3, rounded down. While in Wild Shape, you can use your Bonus Action to make one Unarmed Strike against a target within 5 feet of you.' },
+          { name: 'Elemental Wild Shape', level: 10, description: 'You can expend two uses of Wild Shape at the same time to transform into an Air Elemental, Earth Elemental, Fire Elemental, or Water Elemental.' },
+          { name: 'Thousand Forms', level: 14, description: 'You have learned to use magic to alter your physical form in subtler ways. You can cast Alter Self at will without expending a spell slot.' },
+        ],
+      },
+      {
+        name: 'Circle of the Sea',
+        description: 'Druids of the Circle of the Sea draw on the tempestuous forces of oceans and storms.',
+        features: [
+          { name: 'Circle Spells', level: 3, description: 'You always have certain spells prepared. When you reach certain Druid levels, you gain access to the Circle of the Sea spells: Fog Cloud, Gust of Wind (level 3), Shatter, Thunderwave (level 5), Lightning Bolt, Water Breathing (level 7), Control Water, Ice Storm (level 9).' },
+          { name: 'Wrath of the Sea', level: 3, description: 'As a Bonus Action, you can expend a use of Wild Shape to have spectral water surround you. While this effect is active, you have a Swim speed equal to your walking speed, and once per turn when you hit a creature with an attack roll, you can force the creature to make a Constitution saving throw against your spell save DC. On a failed save, the target takes Cold damage equal to 1d8 plus your Wisdom modifier and is pushed up to 15 feet away from you. This effect lasts for 10 minutes.' },
+          { name: 'Aquatic Affinity', level: 6, description: 'You can breathe underwater, and you have Resistance to Cold damage. In addition, you can communicate simple ideas to any Beast that has a Swim speed.' },
+          { name: 'Stormborn', level: 10, description: 'You have Resistance to Lightning and Thunder damage. In addition, you can expend a use of Wild Shape to become incorporeal for 10 minutes. During that time, you have a Fly speed equal to your walking speed, you can hover, and you can move through creatures and objects as if they were Difficult Terrain. If you end your turn inside a creature or object, you take 1d10 Force damage.' },
+          { name: 'Oceanic Gift', level: 14, description: 'Once on each of your turns when you deal Cold, Lightning, or Thunder damage to a creature with a spell of 1st level or higher, you can cause the creature to have the Stunned condition until the end of your next turn. Once you use this feature, you can\'t use it again until you finish a Short or Long Rest.' },
+        ],
+      },
+      {
+        name: 'Circle of the Stars',
+        description: 'Druids of the Circle of Stars draw on the power of starlight to guide them and bolster their magic.',
+        features: [
+          { name: 'Star Map', level: 3, description: 'You have created a star map as part of your study of the heavens. The star map is a Tiny object that you can use as a Spellcasting Focus. While holding it, you have the Guidance cantrip prepared, and you always have certain spells prepared. You can cast Guiding Bolt without expending a spell slot a number of times equal to your Wisdom modifier.' },
+          { name: 'Starry Form', level: 3, description: 'As a Bonus Action, you can expend a use of Wild Shape to take on a starry form rather than transforming into a beast. While in your Starry Form, you retain your game statistics but your body becomes luminous. You choose one of the following constellations to glimmer on your body: Archer (when you activate this form and as a Bonus Action on your subsequent turns, you can make a ranged spell attack with range 60 feet, dealing 1d8 + Wisdom modifier Radiant damage on hit), Chalice (when you cast a spell that restores hit points, you or another creature within 30 feet regains hit points equal to 1d8 + Wisdom modifier), or Dragon (you have a +1 bonus to Constitution saving throws to maintain Concentration, and the minimum roll on Intelligence and Wisdom checks is 10).' },
+          { name: 'Cosmic Omen', level: 6, description: 'You learn to use your star map to divine the will of the cosmos. Whenever you finish a Long Rest, you can consult your star map for omens. Roll a die; until your next Long Rest, you can use a Reaction when a creature you can see within 30 feet makes an attack roll, saving throw, or ability check. If the omen die is even (Weal), you can add 1d6 to the roll. If the omen die is odd (Woe), you can subtract 1d6 from the roll. You can use this Reaction a number of times equal to your Wisdom modifier.' },
+          { name: 'Twinkling Constellations', level: 10, description: 'The constellations of your Starry Form improve. The 1d8 of the Archer and the Chalice becomes 2d8, and while the Dragon constellation is active, you have a Fly speed of 20 feet and can hover. Additionally, at the start of each of your turns while in your Starry Form, you can change which constellation glimmers on your body.' },
+          { name: 'Full of Stars', level: 14, description: 'While in your Starry Form, you have Resistance to Bludgeoning, Piercing, and Slashing damage, and your body becomes starry and translucent. When you take damage, you can use your Reaction to expend a spell slot and reduce the damage by an amount equal to 1d10 times the level of the spell slot expended.' },
         ],
       },
     ],
