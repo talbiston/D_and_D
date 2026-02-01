@@ -16,6 +16,7 @@ import { useDarkModeContext } from '../context/DarkModeContext'
 import DiceRoller from '../components/DiceRoller'
 import LevelUpHPModal from '../components/LevelUpHPModal'
 import ASIModal, { type ASIChoice } from '../components/ASIModal'
+import LevelUpSummaryModal from '../components/LevelUpSummaryModal'
 import { levelUp, type LevelUpResult } from '../utils/calculations'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
@@ -95,6 +96,14 @@ export default function CharacterSheetPage() {
   const [showLevelUpHPModal, setShowLevelUpHPModal] = useState(false)
   const [showASIModal, setShowASIModal] = useState(false)
   const [pendingLevelUp, setPendingLevelUp] = useState<{ levelUpResult: LevelUpResult; hpGain: number } | null>(null)
+  const [levelUpSummary, setLevelUpSummary] = useState<{
+    newLevel: number
+    previousLevel: number
+    hpGain: number
+    newMaxHp: number
+    levelUpResult: LevelUpResult
+    asiChoice?: ASIChoice
+  } | null>(null)
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
   useEffect(() => {
@@ -439,6 +448,14 @@ export default function CharacterSheetPage() {
         maxHp: newMaxHp,
         currentHp: Math.min(character.currentHp + hpGain, newMaxHp)
       })
+      // Show level-up summary
+      setLevelUpSummary({
+        newLevel: levelUpResult.character.level,
+        previousLevel: character.level,
+        hpGain,
+        newMaxHp,
+        levelUpResult,
+      })
     }
   }
 
@@ -476,6 +493,16 @@ export default function CharacterSheetPage() {
 
     setShowASIModal(false)
     setPendingLevelUp(null)
+
+    // Show level-up summary with ASI/feat choice
+    setLevelUpSummary({
+      newLevel: levelUpResult.character.level,
+      previousLevel: character.level,
+      hpGain,
+      newMaxHp,
+      levelUpResult,
+      asiChoice: choice,
+    })
   }
 
   const handleASICancel = () => {
@@ -2073,6 +2100,23 @@ export default function CharacterSheetPage() {
           newLevel={pendingLevelUp.levelUpResult.character.level}
           onConfirm={handleASIConfirm}
           onCancel={handleASICancel}
+        />
+      )}
+
+      {/* Level Up Summary Modal */}
+      {levelUpSummary && character && (
+        <LevelUpSummaryModal
+          newLevel={levelUpSummary.newLevel}
+          previousLevel={levelUpSummary.previousLevel}
+          className={character.class}
+          hpGain={levelUpSummary.hpGain}
+          newMaxHp={levelUpSummary.newMaxHp}
+          newClassFeatures={levelUpSummary.levelUpResult.newClassFeatures}
+          newSubclassFeatures={levelUpSummary.levelUpResult.newSubclassFeatures}
+          oldSpellSlots={character.spellSlots}
+          newSpellSlots={levelUpSummary.levelUpResult.character.spellSlots}
+          asiChoice={levelUpSummary.asiChoice}
+          onClose={() => setLevelUpSummary(null)}
         />
       )}
     </div>
