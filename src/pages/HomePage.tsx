@@ -130,12 +130,12 @@ export default function HomePage() {
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 pr-8">
                     {character.name}
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Level {character.level}{' '}
+                  <p className="text-gray-600 dark:text-gray-400 flex items-center gap-1 flex-wrap">
+                    <span>Level {character.level}</span>
                     <span className="inline-flex items-center gap-1">
                       <SpeciesIcon species={character.species} size={18} />
                       {character.species}
-                    </span>{' '}
+                    </span>
                     <span className="inline-flex items-center gap-1">
                       <ClassIcon className={character.class} size={18} />
                       {character.class}
