@@ -356,3 +356,25 @@ Started: Sun Feb  1 12:07:52 AM CST 2026
   - Proficiency warning badge (yellow) shows when wearing armor without proficiency
   - No additional code changes were needed - functionality was verified and typecheck passes
 ---
+
+## 2026-02-01 - US-024
+- What was implemented: Enhanced currency management UI with quick add, conversion, and value/weight display
+- Files changed:
+  - `src/pages/CharacterSheetPage.tsx` - added:
+    - New state variables: showQuickAddCurrency, quickAddAmount, quickAddType
+    - getTotalValueInGold() - calculates total currency value in gold pieces using conversion rates
+    - getTotalCoinWeight() - calculates coin weight (50 coins = 1 lb)
+    - quickAddCurrency() - adds specified amount to selected currency type
+    - consolidateCurrency() - converts all currency to highest denominations (pp > gp > sp > cp, removes ep)
+    - Enhanced currency section with Quick Add and Convert buttons
+    - Full currency labels (Copper, Silver, etc.) with abbreviations below inputs
+    - Total value display in gold pieces (formatted to 2 decimal places)
+    - Coin weight display with total coin count
+    - Quick Add modal with amount input and currency type selector
+- **Learnings for future iterations:**
+  - Currency conversion rates: 1 pp = 1000 cp, 1 gp = 100 cp, 1 ep = 50 cp, 1 sp = 10 cp
+  - Consolidation removes electrum (ep) since it's uncommon - converts to gp/sp/cp instead
+  - Coin weight is 50 coins per pound (official D&D rule) - can add to encumbrance tracking
+  - useCallback wraps calculation functions that depend on character state for performance
+  - Modal pattern consistent with other pickers: fixed inset-0, bg-black/50, z-50
+---
