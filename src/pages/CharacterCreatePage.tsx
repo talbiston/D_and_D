@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getSpeciesNames } from '../data/species'
 import { getClassNames } from '../data/classes'
-import type { AbilityScores, AbilityName, Skill, SkillName } from '../types'
+import type { AbilityScores, AbilityName, Skill, SkillName, Weapon } from '../types'
 import { DEFAULT_ABILITY_SCORES, SKILL_ABILITIES, createDefaultSkills } from '../types'
 import { getAbilityModifier, formatModifier, getProficiencyBonus, getSkillBonus, getPassivePerception } from '../utils/calculations'
 import { saveCharacter } from '../utils/storage'
 import { getClassByName, getClassFeaturesForLevel, getSubclassNames } from '../data/classes'
+import type { StartingEquipmentChoice } from '../data/classes'
 import { getBackgroundNames, getBackgroundByName } from '../data/backgrounds'
 import { getSpeciesByName } from '../data/species'
 import type { Character } from '../types'
@@ -17,6 +18,8 @@ import {
   DEFAULT_BACKSTORY,
 } from '../types'
 import { useDarkModeContext } from '../context/DarkModeContext'
+import { getWeaponByName, getSimpleWeapons, getMartialWeapons } from '../data/weapons'
+import type { WeaponData } from '../data/weapons'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'Strength',
@@ -79,6 +82,9 @@ export default function CharacterCreatePage() {
   const [skills, setSkills] = useState<Skill[]>(createDefaultSkills())
   const { isDark, toggle: toggleDarkMode } = useDarkModeContext()
 
+  // Starting equipment weapon selections - track which weapon is selected for each choice index
+  const [weaponSelections, setWeaponSelections] = useState<Record<number, string>>({})
+
   const backgroundOptions = getBackgroundNames()
 
   const subclassOptions = characterClass ? getSubclassNames(characterClass) : []
@@ -114,6 +120,137 @@ export default function CharacterCreatePage() {
     )
   }
 
+  // Get weapon choices from a starting equipment choice option
+  const getWeaponOptionsForChoice = (choiceOption: string): WeaponData[] => {
+    const lowerChoice = choiceOption.toLowerCase()
+
+    // Handle "any martial melee weapon" patterns
+    if (lowerChoice.includes('any martial melee')) {
+      return getMartialWeapons().filter(w => w.type === 'melee')
+    }
+    if (lowerChoice.includes('any martial weapon')) {
+      return getMartialWeapons()
+    }
+    if (lowerChoice.includes('any simple melee')) {
+      return getSimpleWeapons().filter(w => w.type === 'melee')
+    }
+    if (lowerChoice.includes('any simple weapon')) {
+      return getSimpleWeapons()
+    }
+
+    // Handle specific weapon by name
+    const weapon = getWeaponByName(choiceOption)
+    if (weapon) {
+      return [weapon]
+    }
+
+    // Handle compound options like "Two Handaxes"
+    const twoMatch = choiceOption.match(/^Two\s+(.+)s?$/i)
+    if (twoMatch) {
+      const weaponName = twoMatch[1].replace(/s$/, '') // Remove trailing 's'
+      const weapon = getWeaponByName(weaponName)
+      if (weapon) return [weapon]
+    }
+
+    return []
+  }
+
+  // Check if a starting equipment choice is a weapon choice
+  const isWeaponChoice = (choice: StartingEquipmentChoice): boolean => {
+    if (choice.choice) {
+      return choice.choice.some(opt => {
+        const lower = opt.toLowerCase()
+        // Check if it's a weapon-related option
+        if (lower.includes('martial') && lower.includes('weapon')) return true
+        if (lower.includes('simple') && lower.includes('weapon')) return true
+        if (getWeaponByName(opt)) return true
+        if (opt.match(/^Two\s+\w+/i)) {
+          const match = opt.match(/^Two\s+(.+)s?$/i)
+          if (match) {
+            const weaponName = match[1].replace(/s$/, '')
+            if (getWeaponByName(weaponName)) return true
+          }
+        }
+        return false
+      })
+    }
+    if (choice.items) {
+      return choice.items.some(item => getWeaponByName(item.item) !== undefined)
+    }
+    return false
+  }
+
+  // Get weapon choices from class starting equipment
+  const getClassWeaponChoices = (): { index: number; choice: StartingEquipmentChoice }[] => {
+    const classData = getClassByName(characterClass)
+    if (!classData?.startingEquipment) return []
+
+    return classData.startingEquipment
+      .map((choice, index) => ({ index, choice }))
+      .filter(({ choice }) => isWeaponChoice(choice))
+  }
+
+  // Update weapon selection for a choice
+  const handleWeaponSelection = (choiceIndex: number, weaponName: string) => {
+    setWeaponSelections(prev => ({ ...prev, [choiceIndex]: weaponName }))
+  }
+
+  // Reset weapon selections when class changes
+  const handleClassChange = (newClass: string) => {
+    setCharacterClass(newClass)
+    setSubclass('')
+    setWeaponSelections({})
+  }
+
+  // Build weapons array from selections and fixed items
+  const buildStartingWeapons = (): Weapon[] => {
+    const weapons: Weapon[] = []
+    const classData = getClassByName(characterClass)
+    if (!classData?.startingEquipment) return weapons
+
+    classData.startingEquipment.forEach((choice, index) => {
+      // Handle choices - use the selected weapon
+      if (choice.choice) {
+        const selectedName = weaponSelections[index]
+        if (selectedName) {
+          const weaponData = getWeaponByName(selectedName)
+          if (weaponData) {
+            weapons.push({
+              name: weaponData.name,
+              damage: weaponData.damage,
+              damageType: weaponData.damageType,
+              properties: [...weaponData.properties],
+              isEquipped: true,
+              isTwoHanding: false,
+            })
+          }
+        }
+      }
+
+      // Handle fixed items - add all weapons automatically
+      if (choice.items) {
+        choice.items.forEach(item => {
+          const weaponData = getWeaponByName(item.item)
+          if (weaponData) {
+            const quantity = item.quantity ?? 1
+            for (let i = 0; i < quantity; i++) {
+              weapons.push({
+                name: weaponData.name,
+                damage: weaponData.damage,
+                damageType: weaponData.damageType,
+                properties: [...weaponData.properties],
+                isEquipped: true,
+                isTwoHanding: false,
+              })
+            }
+          }
+        })
+      }
+    })
+
+    return weapons
+  }
+
   const handleCreateCharacter = () => {
     if (!isValid) return
 
@@ -128,6 +265,9 @@ export default function CharacterCreatePage() {
 
     // Build feats array with origin feat if background selected
     const feats = backgroundData ? [backgroundData.originFeat] : []
+
+    // Build starting weapons from selections and fixed items
+    const startingWeapons = buildStartingWeapons()
 
     // Build character object
     const character: Character = {
@@ -147,7 +287,7 @@ export default function CharacterCreatePage() {
       armorClass: 10 + getAbilityModifier(abilityScores.dexterity),
       speed: speciesData?.speed ?? 30,
       size: speciesData?.size ?? 'medium',
-      weapons: [],
+      weapons: startingWeapons,
       equipment: [],
       spells: [],
       spellSlots: { ...DEFAULT_SPELL_SLOTS },
@@ -261,10 +401,7 @@ export default function CharacterCreatePage() {
               <select
                 id="class"
                 value={characterClass}
-                onChange={(e) => {
-                  setCharacterClass(e.target.value)
-                  setSubclass('')
-                }}
+                onChange={(e) => handleClassChange(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
                 <option value="">Select a class</option>
@@ -336,6 +473,162 @@ export default function CharacterCreatePage() {
               Level {level} &bull; Proficiency Bonus: <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatModifier(proficiencyBonus)}</span>
             </p>
           </div>
+
+          {/* Starting Equipment - Weapon Selection */}
+          {characterClass && getClassWeaponChoices().length > 0 && (
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Starting Equipment
+              </h2>
+              <div className="space-y-4">
+                {getClassWeaponChoices().map(({ index, choice }) => {
+                  // Handle choices (pick one)
+                  if (choice.choice) {
+                    // Collect all available weapons for this choice
+                    const allWeaponOptions: WeaponData[] = []
+                    const optionLabels: { label: string; weapons: WeaponData[] }[] = []
+
+                    choice.choice.forEach(opt => {
+                      const weapons = getWeaponOptionsForChoice(opt)
+                      if (weapons.length > 0) {
+                        optionLabels.push({ label: opt, weapons })
+                        weapons.forEach(w => {
+                          if (!allWeaponOptions.find(existing => existing.name === w.name)) {
+                            allWeaponOptions.push(w)
+                          }
+                        })
+                      }
+                    })
+
+                    if (allWeaponOptions.length === 0) return null
+
+                    const selectedWeaponName = weaponSelections[index] || ''
+                    const selectedWeapon = selectedWeaponName ? getWeaponByName(selectedWeaponName) : null
+
+                    return (
+                      <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Choose a weapon:
+                        </label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                          {choice.choice.join(' or ')}
+                        </p>
+                        <select
+                          value={selectedWeaponName}
+                          onChange={(e) => handleWeaponSelection(index, e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        >
+                          <option value="">Select a weapon</option>
+                          {allWeaponOptions.map((weapon) => (
+                            <option key={weapon.name} value={weapon.name}>
+                              {weapon.name}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Display selected weapon stats */}
+                        {selectedWeapon && (
+                          <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="font-semibold text-gray-900 dark:text-white">
+                                  {selectedWeapon.name}
+                                </span>
+                                <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                                  ({selectedWeapon.category} {selectedWeapon.type})
+                                </span>
+                              </div>
+                              <span className="text-sm text-gray-600 dark:text-gray-400">
+                                {selectedWeapon.weight} lb
+                              </span>
+                            </div>
+                            <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                              <span className="font-medium">{selectedWeapon.damage}</span>
+                              <span className="text-gray-500 dark:text-gray-400"> {selectedWeapon.damageType}</span>
+                              {selectedWeapon.versatileDamage && (
+                                <span className="text-gray-500 dark:text-gray-400">
+                                  {' '}(versatile: {selectedWeapon.versatileDamage})
+                                </span>
+                              )}
+                            </div>
+                            {selectedWeapon.properties.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {selectedWeapon.properties.map((prop) => (
+                                  <span
+                                    key={prop}
+                                    className="px-2 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded"
+                                  >
+                                    {prop}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {selectedWeapon.range && (
+                              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                Range: {selectedWeapon.range.normal}/{selectedWeapon.range.long} ft
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+
+                  // Handle fixed items (weapons the character automatically gets)
+                  if (choice.items) {
+                    const weaponItems = choice.items.filter(item => getWeaponByName(item.item))
+                    if (weaponItems.length === 0) return null
+
+                    return (
+                      <div key={index} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          You will receive:
+                        </p>
+                        {weaponItems.map((item) => {
+                          const weapon = getWeaponByName(item.item)!
+                          return (
+                            <div key={item.item} className="mt-2 p-3 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <span className="font-semibold text-gray-900 dark:text-white">
+                                    {item.quantity && item.quantity > 1 ? `${item.quantity}x ` : ''}{weapon.name}
+                                  </span>
+                                  <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                                    ({weapon.category} {weapon.type})
+                                  </span>
+                                </div>
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                  {weapon.weight} lb
+                                </span>
+                              </div>
+                              <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                                <span className="font-medium">{weapon.damage}</span>
+                                <span className="text-gray-500 dark:text-gray-400"> {weapon.damageType}</span>
+                              </div>
+                              {weapon.properties.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-1">
+                                  {weapon.properties.map((prop) => (
+                                    <span
+                                      key={prop}
+                                      className="px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded"
+                                    >
+                                      {prop}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  }
+
+                  return null
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Ability Scores */}
           <div>
