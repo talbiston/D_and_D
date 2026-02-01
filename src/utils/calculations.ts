@@ -308,3 +308,132 @@ export function getPactMagicSlots(level: number): PactMagicSlots {
   const clampedLevel = Math.max(1, Math.min(20, level))
   return PACT_MAGIC_SLOTS[clampedLevel]
 }
+
+// =============================================================================
+// SCALING FEATURE CALCULATIONS
+// =============================================================================
+
+/**
+ * Get the number of Sneak Attack dice for a Rogue
+ * Rogues get 1d6 at level 1, and +1d6 at every odd level
+ * Formula: ceil(level / 2)
+ *
+ * @param rogueLevel - The Rogue level (1-20)
+ * @returns The number of d6s for Sneak Attack
+ */
+export function getSneakAttackDice(rogueLevel: number): number {
+  const clampedLevel = Math.max(1, Math.min(20, rogueLevel))
+  return Math.ceil(clampedLevel / 2)
+}
+
+/**
+ * Get the Bardic Inspiration die size for a Bard
+ * d6 at levels 1-4, d8 at levels 5-9, d10 at levels 10-14, d12 at levels 15-20
+ *
+ * @param bardLevel - The Bard level (1-20)
+ * @returns The die type as a string ('d6', 'd8', 'd10', or 'd12')
+ */
+export function getBardicInspirationDie(bardLevel: number): 'd6' | 'd8' | 'd10' | 'd12' {
+  const clampedLevel = Math.max(1, Math.min(20, bardLevel))
+  if (clampedLevel >= 15) return 'd12'
+  if (clampedLevel >= 10) return 'd10'
+  if (clampedLevel >= 5) return 'd8'
+  return 'd6'
+}
+
+/**
+ * Get the Martial Arts die size for a Monk
+ * d6 at levels 1-4, d8 at levels 5-10, d10 at levels 11-16, d12 at levels 17-20
+ *
+ * @param monkLevel - The Monk level (1-20)
+ * @returns The die type as a string ('d6', 'd8', 'd10', or 'd12')
+ */
+export function getMartialArtsDie(monkLevel: number): 'd6' | 'd8' | 'd10' | 'd12' {
+  const clampedLevel = Math.max(1, Math.min(20, monkLevel))
+  if (clampedLevel >= 17) return 'd12'
+  if (clampedLevel >= 11) return 'd10'
+  if (clampedLevel >= 5) return 'd8'
+  return 'd6'
+}
+
+/**
+ * Get the Rage damage bonus for a Barbarian
+ * +2 at levels 1-8, +3 at levels 9-15, +4 at levels 16-20
+ *
+ * @param barbarianLevel - The Barbarian level (1-20)
+ * @returns The bonus damage while raging (2, 3, or 4)
+ */
+export function getRageDamage(barbarianLevel: number): 2 | 3 | 4 {
+  const clampedLevel = Math.max(1, Math.min(20, barbarianLevel))
+  if (clampedLevel >= 16) return 4
+  if (clampedLevel >= 9) return 3
+  return 2
+}
+
+/**
+ * Get the number of Rage uses for a Barbarian
+ * 2 at levels 1-2, 3 at levels 3-5, 4 at levels 6-11, 5 at levels 12-16, 6 at levels 17-19, unlimited at level 20
+ *
+ * @param barbarianLevel - The Barbarian level (1-20)
+ * @returns The number of rages per long rest, or 'unlimited' at level 20
+ */
+export function getRageCount(barbarianLevel: number): number | 'unlimited' {
+  const clampedLevel = Math.max(1, Math.min(20, barbarianLevel))
+  if (clampedLevel >= 20) return 'unlimited'
+  if (clampedLevel >= 17) return 6
+  if (clampedLevel >= 12) return 5
+  if (clampedLevel >= 6) return 4
+  if (clampedLevel >= 3) return 3
+  return 2
+}
+
+/**
+ * Get the number of Focus Points for a Monk
+ * Equal to Monk level (renamed from Ki Points in D&D 2024)
+ *
+ * @param monkLevel - The Monk level (1-20)
+ * @returns The number of Focus Points
+ */
+export function getFocusPoints(monkLevel: number): number {
+  return Math.max(1, Math.min(20, monkLevel))
+}
+
+/**
+ * Get the number of Sorcery Points for a Sorcerer
+ * Equal to Sorcerer level (gained at level 2+)
+ *
+ * @param sorcererLevel - The Sorcerer level (1-20)
+ * @returns The number of Sorcery Points (0 at level 1, level thereafter)
+ */
+export function getSorceryPoints(sorcererLevel: number): number {
+  const clampedLevel = Math.max(1, Math.min(20, sorcererLevel))
+  // Sorcery Points start at level 2
+  if (clampedLevel < 2) return 0
+  return clampedLevel
+}
+
+/**
+ * Get the number of Channel Divinity uses for a Cleric
+ * 1 at levels 1-5, 2 at levels 6-17, 3 at levels 18-20
+ *
+ * @param clericLevel - The Cleric level (1-20)
+ * @returns The number of Channel Divinity uses per short/long rest
+ */
+export function getChannelDivinityUses(clericLevel: number): 1 | 2 | 3 {
+  const clampedLevel = Math.max(1, Math.min(20, clericLevel))
+  if (clampedLevel >= 18) return 3
+  if (clampedLevel >= 6) return 2
+  return 1
+}
+
+/**
+ * Get the Lay on Hands healing pool for a Paladin
+ * Equal to 5 times Paladin level
+ *
+ * @param paladinLevel - The Paladin level (1-20)
+ * @returns The total healing pool
+ */
+export function getLayOnHandsPool(paladinLevel: number): number {
+  const clampedLevel = Math.max(1, Math.min(20, paladinLevel))
+  return 5 * clampedLevel
+}
