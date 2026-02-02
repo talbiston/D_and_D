@@ -1,116 +1,89 @@
 # Ralph Progress Log
-Started: Sun Feb  1 05:14:48 PM CST 2026
----
+Started: Sun Feb  1 08:46:04 PM CST 2026
 
 ## Codebase Patterns
-- Use `npx tsc --noEmit` for typecheck (no "typecheck" npm script)
-- Icon files stored in public/icons/{classes,species}/ with lowercase-hyphenated filenames
-- SVGs use black fill by default (need inversion for dark mode)
-
-## 2026-02-01 17:16 - US-001
-- **What was implemented:** Set up icon directory structure and copied all SVG files
-- **Files changed:**
-  - Created public/icons/classes/ with 13 class SVGs (artificer.svg through wizard.svg)
-  - Created public/icons/species/ with 11 species SVGs (tiefling.svg, forest-gnome.svg, etc.)
-- **Learnings for future iterations:**
-  - Typecheck command is `npx tsc --noEmit` (no npm script for it)
-  - Source icons were in scratchpad with "Class Icon - Name.svg" and "Race Icon - Name.svg" naming
-  - Species icons use lowercase-hyphenated format (e.g., "forest-gnome", "air-genasi")
+- Typecheck using `npx tsc -b` (no typecheck script in package.json)
+- Lint using `npm run lint` - pre-existing lint errors in DiceRoller.tsx and DarkModeContext.tsx are known issues
+- SpeciesAncestryOption in src/types/index.ts is used for species-specific choices (e.g., Dragonborn draconic ancestry, Elven Lineage)
+- To add spells with a source, use: `{ ...getSpellByName('SpellName'), source: 'Lineage' }` - the source field is optional and displayed in CharacterSheetPage
+- Spell interface has optional `notes` field for special rules (e.g., 'Once per Long Rest without a spell slot') - displayed in amber/italic below description
+- Use `getLineageSpellsForLevelUp(character, prevLevel, newLevel)` to get lineage spells granted on level-up
 ---
 
-## 2026-02-01 17:20 - US-002
-- **What was implemented:** Added .icon-invertible CSS class for dark mode icon support
-- **Files changed:**
-  - src/index.css - Added .icon-invertible class with filter transition and dark mode invert
+## 2026-02-01 20:46 CST - US-001
+- What was implemented: Added four optional fields to SpeciesAncestryOption interface for Elven Lineage support
+- Files changed: src/types/index.ts
 - **Learnings for future iterations:**
-  - The project uses Tailwind v4 with `@import "tailwindcss"` syntax
-  - Dark mode is controlled by `.dark` class on parent elements
-  - CSS additions go at the top of index.css after the import, before print styles
+  - SpeciesAncestryOption is used for species ancestry choices - it now supports speedOverride, darkvisionOverride, cantrip, and leveledSpells
+  - The codebase has pre-existing lint errors that are not blockers for commits
+  - Use `npx tsc -b` for typechecking since there's no typecheck script
 ---
 
-## 2026-02-01 17:25 - US-003
-- **What was implemented:** Created ClassIcon component for displaying class icons
-- **Files changed:**
-  - src/components/ClassIcon.tsx - New component with className and optional size props
+## 2026-02-01 20:48 CST - US-002
+- What was implemented: Added ancestry data for Elven Lineages (Drow, High Elf, Wood Elf) to Elf species
+- Files changed: src/data/species.ts
 - **Learnings for future iterations:**
-  - Components use `export default` pattern
-  - Use `as const` for string literal arrays to enable type narrowing
-  - Component returns null for unsupported values (graceful degradation)
+  - Elf species in species.ts now has an ancestry field with choiceName 'Elven Lineage' and three options
+  - Drow: darkvisionOverride=120, cantrip='Dancing Lights', leveledSpells=[{level:3, Faerie Fire}, {level:5, Darkness}]
+  - High Elf: cantrip='Prestidigitation', leveledSpells=[{level:3, Detect Magic}, {level:5, Misty Step}]
+  - Wood Elf: speedOverride=35, cantrip='Druidcraft', leveledSpells=[{level:3, Longstrider}, {level:5, Pass Without Trace}]
+  - Follow existing ancestry patterns in species.ts (e.g., Dragonborn, Gnome, Tiefling, Goliath, Aasimar)
 ---
 
-## 2026-02-01 17:35 - US-004
-- **What was implemented:** Created SpeciesIcon component for displaying species icons
-- **Files changed:**
-  - src/components/SpeciesIcon.tsx - New component with species and optional size props
+## 2026-02-01 21:05 CST - US-003
+- What was implemented: Applied lineage speed and darkvision overrides during character creation
+- Files changed: src/pages/CharacterCreatePage.tsx
 - **Learnings for future iterations:**
-  - Species names need conversion to lowercase-hyphenated format (e.g., "Forest Gnome" -> "forest-gnome")
-  - Use `.replace(/\s+/g, '-')` to convert spaces to hyphens
-  - Follow same pattern as ClassIcon for consistency
+  - Character creation applies ancestry overrides in `handleCreateCharacter` function around line 740
+  - `finalSpeed` is calculated from `speedOverride` if present, otherwise from species default
+  - `finalSpeciesTraits` maps over species traits and updates Darkvision description if `darkvisionOverride` is present
+  - The pattern for modifying traits: map over the array and replace matching trait with updated description
 ---
 
-## 2026-02-01 17:45 - US-005
-- **What was implemented:** Added class and species icons to character sheet header
-- **Files changed:**
-  - src/pages/CharacterSheetPage.tsx - Added ClassIcon and SpeciesIcon imports and usage in header
+## 2026-02-01 21:15 CST - US-004
+- What was implemented: Added lineage cantrip to character's spells array during character creation
+- Files changed: src/types/index.ts, src/data/spells.ts, src/pages/CharacterCreatePage.tsx, src/pages/CharacterSheetPage.tsx
 - **Learnings for future iterations:**
-  - Species/class display is around line 1166-1170 in the header paragraph element
-  - Use `<span className="inline-flex items-center gap-1">` to wrap icon and text for alignment
-  - Icons are 20px size in header for good visibility without being overwhelming
-  - The header structure: Level Up button, species name, ancestry (optional), class name, subclass (optional)
+  - Spell interface now has optional `source` field to track origin (e.g., 'Lineage', 'Class', 'Feat')
+  - Dancing Lights cantrip was added to spells.ts (was missing from spell data)
+  - Lineage cantrips are added in `handleCreateCharacter` using `getSpellByName` to look up spell data
+  - CharacterSheetPage displays spell source as an emerald-colored badge next to the level badge
+  - Pattern for adding lineage spells: get spell data with `getSpellByName`, spread it, add source field
 ---
 
-## 2026-02-01 17:50 - US-006
-- **What was implemented:** Added class and species icons to home page character cards
-- **Files changed:**
-  - src/pages/HomePage.tsx - Added ClassIcon and SpeciesIcon imports and usage in character card display
+## 2026-02-01 21:30 CST - US-005
+- What was implemented: Added lineage spells when character levels up to 3 or 5
+- Files changed: src/utils/calculations.ts, src/pages/CharacterSheetPage.tsx, src/types/index.ts
 - **Learnings for future iterations:**
-  - Character cards are in a grid at lines 118-146
-  - Character info paragraph is at line 131-133 showing "Level X Species Class"
-  - Use 18px icons for cards (smaller than header's 20px for proportional sizing)
-  - Same inline-flex pattern works here for icon+text alignment
-  - Manual browser verification needed (no browser tools available)
+  - Created `getLineageSpellsForLevelUp(character, previousLevel, newLevel)` utility in calculations.ts
+  - The function looks up species ancestry, finds the selected option, and returns spells for threshold levels
+  - Lineage spells are added in `completeLevelUp` function in CharacterSheetPage.tsx after class spells
+  - Added `notes` optional field to Spell interface for special casting rules (e.g., "Once per Long Rest without a spell slot")
+  - Notes are displayed in amber/italic below the spell description in the expanded spell view
+  - To integrate with level-up, call `getLineageSpellsForLevelUp` and add results to character's spells array
 ---
 
-## 2026-02-01 18:00 - US-007
-- **What was implemented:** Added class icon to character creation page
-- **Files changed:**
-  - src/pages/CharacterCreatePage.tsx - Added ClassIcon import and display next to class dropdown
+## 2026-02-01 21:45 CST - US-006
+- What was implemented: Updated Keen Senses trait to allow choice of Insight, Perception, or Survival proficiency
+- Files changed: src/data/species.ts, src/pages/CharacterCreatePage.tsx
 - **Learnings for future iterations:**
-  - Class dropdown is around line 872-893 in CharacterCreatePage.tsx
-  - Wrapped dropdown in flex container with icon for inline alignment
-  - Used 32px size for prominent display during character creation
-  - Icon only renders when characterClass is selected (truthy check)
-  - Manual browser verification needed (no browser tools available)
+  - Keen Senses trait description now mentions all three skill options
+  - Added `keenSensesSkill` state in CharacterCreatePage for Elves
+  - Dropdown appears when Elf species is selected, alongside the Elven Lineage selection
+  - Skill proficiency is applied in `finalSkills` during character creation, similar to background skills
+  - Validation ensures Keen Senses skill is selected before allowing character creation for Elves
+  - Pattern for species-specific skill choices: add state, add UI conditionally based on species, apply in finalSkills computation
 ---
 
-## 2026-02-01 18:15 - US-008
-- **What was implemented:** Added class icons to spell picker modal
-- **Files changed:**
-  - src/pages/CharacterSheetPage.tsx - Added ClassIcon for each class in spell.classes array in spell picker list
+## 2026-02-01 22:00 CST - US-007
+- What was implemented: Added migration modal for existing Elf characters without lineage selection
+- Files changed: src/pages/CharacterSheetPage.tsx
 - **Learnings for future iterations:**
-  - Spell data has a `classes: string[]` property containing class names that can cast the spell
-  - Spell picker is around line 3537-3560 in CharacterSheetPage.tsx
-  - Placed icons on the info line (school/casting time) to keep the UI clean and not clutter the spell name
-  - Used gap-0.5 for tight icon spacing in the class icons row
-  - ClassIcon was already imported from US-005
-  - Manual browser verification needed (no browser tools available)
----
-
-## 2026-02-01 - Character Image Feature
-- **What was implemented:** Added character portrait/image support with URL input and file upload
-- **Files changed:**
-  - src/types/index.ts - Added `imageUrl?: string` to Character interface
-  - src/utils/api.ts - Added `imageUrl?: string` to CharacterSummary interface
-  - src/components/CharacterImageInput.tsx - New reusable component for image URL/upload
-  - src/pages/CharacterCreatePage.tsx - Added image input after character name
-  - src/pages/CharacterSheetPage.tsx - Added portrait in header with edit modal
-  - src/pages/HomePage.tsx - Added thumbnail on character cards
-- **Learnings for future iterations:**
-  - Character data object is built around line 688-754 in CharacterCreatePage.tsx
-  - CharacterSheetPage header structure starts around line 1142
-  - Use FileReader.readAsDataURL() to convert files to base64 for storage
-  - Limit file size to 500KB to avoid database bloat
-  - Use `no-print` class to hide interactive elements when printing
-  - Show separate print-only portrait without click handler for print stylesheet
-  - Use flex layout with items-start gap-4 for thumbnail + content alignment on cards
+  - Migration modals should be blocking (no dismiss without selection) by omitting Cancel button
+  - Detect missing data in useEffect: `if (character && character.species === 'Elf' && !character.speciesAncestry)`
+  - Import `getSpellByName` from '../data/spells' for looking up spell data
+  - Apply all migration changes atomically: speciesAncestry, speed, speciesTraits, spells, skills
+  - For level-based lineage spells, check `character.level >= leveledSpell.level` to grant all applicable spells
+  - Save migration immediately (not debounced) since it's a one-time critical update
+  - Use `getSpeciesByName('Elf')?.ancestry?.options` to access lineage options in the modal
 ---

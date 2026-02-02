@@ -11,7 +11,7 @@ import { TOOLS, getToolByName, type ToolCategory } from '../data/tools'
 import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel } from '../data/classes'
 import { getSpeciesByName } from '../data/species'
 import { getSpellSaveDC, getSpellAttackBonus, XP_THRESHOLDS } from '../utils/calculations'
-import { getSpellsByClass } from '../data/spells'
+import { getSpellsByClass, getSpellByName } from '../data/spells'
 import { FEATS, getFeatByName } from '../data/feats'
 import type { Spell, InventoryItem } from '../types'
 import type { AbilityName, SkillName, DamageType, WeaponProperty, Weapon, Alignment, Backstory } from '../types'
@@ -23,7 +23,7 @@ import ASIModal, { type ASIChoice } from '../components/ASIModal'
 import LevelUpSummaryModal from '../components/LevelUpSummaryModal'
 import InvocationPickerModal from '../components/InvocationPickerModal'
 import ManeuverPickerModal from '../components/ManeuverPickerModal'
-import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel, getPactMagicSlots } from '../utils/calculations'
+import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel, getPactMagicSlots, getLineageSpellsForLevelUp } from '../utils/calculations'
 import { INVOCATIONS, getInvocationsKnown } from '../data/invocations'
 import { MANEUVERS, getManeuversKnown, getSuperiorityDice } from '../data/maneuvers'
 import { METAMAGIC_OPTIONS, getMetamagicKnown } from '../data/metamagic'
@@ -173,6 +173,11 @@ export default function CharacterSheetPage() {
   const linkCopiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Character image edit modal state
   const [showImageEdit, setShowImageEdit] = useState(false)
+  // Elf lineage migration modal state
+  const [showElfMigrationModal, setShowElfMigrationModal] = useState(false)
+  const [migrationLineage, setMigrationLineage] = useState<string>('')
+  const [migrationKeenSensesSkill, setMigrationKeenSensesSkill] = useState<SkillName | ''>('')
+  const KEEN_SENSES_OPTIONS: SkillName[] = ['insight', 'perception', 'survival']
 
   useEffect(() => {
     async function loadCharacter() {
@@ -201,6 +206,13 @@ export default function CharacterSheetPage() {
 
     loadCharacter()
   }, [id])
+
+  // Detect Elf characters without lineage and show migration modal
+  useEffect(() => {
+    if (character && character.species === 'Elf' && !character.speciesAncestry) {
+      setShowElfMigrationModal(true)
+    }
+  }, [character])
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -264,6 +276,92 @@ export default function CharacterSheetPage() {
       }, 2000)
     })
   }, [id])
+
+  // Handle Elf lineage migration for existing characters
+  const handleElfMigration = useCallback(() => {
+    if (!character || !migrationLineage || !migrationKeenSensesSkill) return
+
+    const elfSpecies = getSpeciesByName('Elf')
+    if (!elfSpecies?.ancestry) return
+
+    const selectedAncestryOption = elfSpecies.ancestry.options.find(
+      (opt) => opt.name === migrationLineage
+    )
+    if (!selectedAncestryOption) return
+
+    // Apply speed override
+    const finalSpeed = selectedAncestryOption.speedOverride ?? character.speed
+
+    // Apply darkvision override to traits
+    const finalSpeciesTraits = character.speciesTraits.map((trait) => {
+      if (trait.name === 'Darkvision' && selectedAncestryOption.darkvisionOverride) {
+        return {
+          ...trait,
+          description: `You have Darkvision with a range of ${selectedAncestryOption.darkvisionOverride} feet.`,
+        }
+      }
+      return trait
+    })
+
+    // Build spells array with lineage cantrip
+    const newSpells: Spell[] = []
+    if (selectedAncestryOption.cantrip) {
+      const cantripData = getSpellByName(selectedAncestryOption.cantrip)
+      if (cantripData && !character.spells.some((s) => s.name === cantripData.name)) {
+        newSpells.push({
+          ...cantripData,
+          source: 'Lineage',
+        })
+      }
+    }
+
+    // Add lineage spells for current level (if level 3+ or 5+)
+    if (selectedAncestryOption.leveledSpells) {
+      for (const leveledSpell of selectedAncestryOption.leveledSpells) {
+        if (character.level >= leveledSpell.level) {
+          const spellData = getSpellByName(leveledSpell.spell)
+          if (spellData && !character.spells.some((s) => s.name === spellData.name)) {
+            newSpells.push({
+              ...spellData,
+              source: 'Lineage',
+              notes: 'Once per Long Rest without a spell slot',
+            })
+          }
+        }
+      }
+    }
+
+    // Apply Keen Senses skill proficiency
+    const finalSkills = character.skills.map((skill) => {
+      if (skill.name === migrationKeenSensesSkill && !skill.proficient) {
+        return { ...skill, proficient: true }
+      }
+      return skill
+    })
+
+    // Update character with all migration changes
+    const updates: Partial<Character> = {
+      speciesAncestry: {
+        choiceName: elfSpecies.ancestry.choiceName,
+        selectedOption: migrationLineage,
+      },
+      speed: finalSpeed,
+      speciesTraits: finalSpeciesTraits,
+      spells: [...character.spells, ...newSpells],
+      skills: finalSkills,
+    }
+
+    setCharacter({ ...character, ...updates })
+    pendingCharacterRef.current = { ...character, ...updates }
+
+    // Save immediately (not debounced since this is a one-time migration)
+    saveToApi({ ...character, ...updates })
+
+    // Reset modal state
+    setShowElfMigrationModal(false)
+    setMigrationLineage('')
+    setMigrationKeenSensesSkill('')
+  }, [character, migrationLineage, migrationKeenSensesSkill, saveToApi])
 
   const updateCharacter = useCallback((updates: Partial<Character>) => {
     if (!character) return
@@ -960,6 +1058,15 @@ export default function CharacterSheetPage() {
       updatedCharacter = {
         ...updatedCharacter,
         spells: [...updatedCharacter.spells, ...newSpells]
+      }
+    }
+
+    // Apply lineage spells if leveling up grants any (e.g., Elven Lineage spells at level 3 and 5)
+    const lineageSpells = getLineageSpellsForLevelUp(character, character.level, levelUpResult.character.level)
+    if (lineageSpells.length > 0) {
+      updatedCharacter = {
+        ...updatedCharacter,
+        spells: [...updatedCharacter.spells, ...lineageSpells]
       }
     }
 
@@ -2494,6 +2601,11 @@ export default function CharacterSheetPage() {
                               <span className="text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded">
                                 {spell.level === 0 ? 'Cantrip' : `Lvl ${spell.level}`}
                               </span>
+                              {spell.source && (
+                                <span className="text-xs px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded">
+                                  {spell.source}
+                                </span>
+                              )}
                               <span className="font-medium text-gray-900 dark:text-white">{spell.name}</span>
                               <span className="text-xs text-gray-500">
                                 {spell.concentration && 'C'}
@@ -2528,6 +2640,9 @@ export default function CharacterSheetPage() {
                               <span>School: {spell.school}</span>
                             </div>
                             <p className="text-gray-600 dark:text-gray-300">{spell.description}</p>
+                            {spell.notes && (
+                              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 italic">{spell.notes}</p>
+                            )}
                           </div>
                         )}
                       </div>
@@ -4475,6 +4590,96 @@ export default function CharacterSheetPage() {
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Elf Lineage Migration Modal */}
+      {showElfMigrationModal && character && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Select Your Elven Lineage
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Your Elf character needs a lineage selection. Please choose your Elven Lineage and Keen Senses skill proficiency.
+            </p>
+
+            {/* Lineage Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Elven Lineage *
+              </label>
+              <div className="space-y-3">
+                {getSpeciesByName('Elf')?.ancestry?.options.map((option) => (
+                  <button
+                    key={option.name}
+                    onClick={() => setMigrationLineage(option.name)}
+                    className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                      migrationLineage === option.name
+                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30'
+                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {option.name}
+                      {option.speedOverride && (
+                        <span className="ml-2 text-xs px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 rounded">
+                          Speed: {option.speedOverride}ft
+                        </span>
+                      )}
+                      {option.darkvisionOverride && (
+                        <span className="ml-2 text-xs px-2 py-0.5 bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-400 rounded">
+                          Darkvision: {option.darkvisionOverride}ft
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {option.description}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Keen Senses Skill Selection */}
+            <div className="mb-6">
+              <label
+                htmlFor="migrationKeenSensesSkill"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+              >
+                Keen Senses Skill *
+              </label>
+              <select
+                id="migrationKeenSensesSkill"
+                value={migrationKeenSensesSkill}
+                onChange={(e) => setMigrationKeenSensesSkill(e.target.value as SkillName)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                <option value="">Select skill proficiency</option>
+                {KEEN_SENSES_OPTIONS.map((skill) => (
+                  <option key={skill} value={skill}>
+                    {skill.charAt(0).toUpperCase() + skill.slice(1)}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Your Keen Senses trait grants proficiency in one of these skills.
+              </p>
+            </div>
+
+            {/* Confirm Button */}
+            <button
+              onClick={handleElfMigration}
+              disabled={!migrationLineage || !migrationKeenSensesSkill}
+              className={`w-full px-4 py-2 font-semibold rounded-lg transition-colors ${
+                migrationLineage && migrationKeenSensesSkill
+                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Confirm Selection
+            </button>
           </div>
         </div>
       )}

@@ -78,6 +78,11 @@ export interface SpeciesAncestryOption {
   breathWeaponShape?: string
   spells?: string[]
   abilities?: string[]
+  // Elven Lineage fields
+  speedOverride?: number
+  darkvisionOverride?: number
+  cantrip?: string
+  leveledSpells?: { level: number; spell: string }[]
 }
 
 // Species ancestry data (the choice and its options)
@@ -244,6 +249,8 @@ export interface Spell {
   ritual: boolean
   description: string
   classes: string[] // Class names that can cast this spell
+  source?: string // Origin of the spell (e.g., 'Lineage', 'Class', 'Feat')
+  notes?: string // Additional notes (e.g., 'Once per Long Rest without a spell slot')
 }
 
 // Equipment type

@@ -1,31 +1,33 @@
 {
-  "project": "D&D Character Sheet App Artwork",
-  "branchName": "ralph/app-artwork",
-  "description": "Add tasteful class icons, species icons, and subtle background textures throughout the D&D character sheet app for a modern fantasy aesthetic",
+  "project": "D&D Character Sheet",
+  "branchName": "ralph/elven-lineages",
+  "description": "Elven Lineages - Add Drow, High Elf, and Wood Elf lineage options to the Elf species with unique traits, cantrips, and leveled spells",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Set up icon directory structure and copy SVG files",
-      "description": "As a developer, I need icon files organized in the public folder so they can be loaded by the app.",
+      "title": "Update SpeciesAncestryOption type for lineage features",
+      "description": "As a developer, I need the type system to support lineage-specific overrides (speed, darkvision) and leveled spells so Elven Lineages can be properly defined.",
       "acceptanceCriteria": [
-        "Create public/icons/classes/ directory",
-        "Create public/icons/species/ directory",
-        "Copy all 13 class SVGs from scratchpad to public/icons/classes/ with lowercase filenames (artificer.svg, barbarian.svg, bard.svg, cleric.svg, druid.svg, fighter.svg, monk.svg, paladin.svg, ranger.svg, rogue.svg, sorcerer.svg, warlock.svg, wizard.svg)",
-        "Copy available species SVGs to public/icons/species/ with lowercase-hyphenated filenames (tiefling.svg, forest-gnome.svg, high-elf.svg, drow.svg, firbolg.svg, triton.svg, yuan-ti.svg, air-genasi.svg, earth-genasi.svg, fire-genasi.svg, water-genasi.svg)",
+        "Add optional `speedOverride?: number` field to SpeciesAncestryOption interface in src/types/index.ts",
+        "Add optional `darkvisionOverride?: number` field to SpeciesAncestryOption interface",
+        "Add optional `cantrip?: string` field to SpeciesAncestryOption interface",
+        "Add optional `leveledSpells?: { level: number; spell: string }[]` field to SpeciesAncestryOption interface",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Source icons at /tmp/claude-1000/-home-talbiston-Code-D-and-D/1368db4d-f6d7-4352-91de-6e30174e1cae/scratchpad/"
+      "notes": ""
     },
     {
       "id": "US-002",
-      "title": "Add dark mode CSS for icons",
-      "description": "As a developer, I need CSS that inverts icon colors in dark mode.",
+      "title": "Add Elven Lineage ancestry data to Elf species",
+      "description": "As a developer, I need to add the three Elven Lineages (Drow, High Elf, Wood Elf) to the Elf species data with their unique traits.",
       "acceptanceCriteria": [
-        "Add .icon-invertible class to src/index.css",
-        "Class applies filter: invert(1) when .dark is present on parent",
-        "Add smooth transition for filter changes",
+        "Add `ancestry` field to Elf species in src/data/species.ts with choiceName 'Elven Lineage'",
+        "Drow option: darkvisionOverride=120, cantrip='Dancing Lights', leveledSpells for Faerie Fire (L3) and Darkness (L5)",
+        "High Elf option: cantrip='Prestidigitation', leveledSpells for Detect Magic (L3) and Misty Step (L5)",
+        "Wood Elf option: speedOverride=35, cantrip='Druidcraft', leveledSpells for Longstrider (L3) and Pass Without Trace (L5)",
+        "Each lineage has a clear description explaining its benefits",
         "Typecheck passes"
       ],
       "priority": 2,
@@ -34,49 +36,47 @@
     },
     {
       "id": "US-003",
-      "title": "Create ClassIcon component",
-      "description": "As a developer, I need a reusable component to display class icons.",
+      "title": "Apply lineage speed and darkvision overrides",
+      "description": "As a player, when I select Drow or Wood Elf lineage, my character's stats should update accordingly (Drow: 120ft Darkvision, Wood Elf: 35ft speed).",
       "acceptanceCriteria": [
-        "Create src/components/ClassIcon.tsx",
-        "Component accepts className (string) and optional size (number, default 24) props",
-        "Component returns <img> tag with src pointing to /icons/classes/{name}.svg",
-        "Component returns null for classes not in the available set",
-        "Uses icon-invertible class for dark mode support",
-        "Typecheck passes"
+        "In CharacterCreatePage, when Elf ancestry is selected, check for speedOverride and apply to character speed",
+        "In CharacterCreatePage, when Elf ancestry is selected, check for darkvisionOverride and update Darkvision trait",
+        "Character sheet displays correct speed (35ft for Wood Elf, 30ft for others)",
+        "Character sheet displays correct Darkvision range (120ft for Drow, 60ft for others)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Available classes: artificer, barbarian, bard, cleric, druid, fighter, monk, paladin, ranger, rogue, sorcerer, warlock, wizard"
+      "notes": ""
     },
     {
       "id": "US-004",
-      "title": "Create SpeciesIcon component",
-      "description": "As a developer, I need a reusable component to display species icons.",
+      "title": "Add lineage cantrip to character spells",
+      "description": "As a player, when I select an Elven Lineage, the lineage cantrip should be added to my character's known spells.",
       "acceptanceCriteria": [
-        "Create src/components/SpeciesIcon.tsx",
-        "Component accepts species (string) and optional size (number, default 24) props",
-        "Component returns <img> tag with src pointing to /icons/species/{name}.svg",
-        "Component returns null for species not in the available set",
-        "Converts species name to lowercase-hyphenated format (e.g., 'Forest Gnome' -> 'forest-gnome')",
-        "Uses icon-invertible class for dark mode support",
-        "Typecheck passes"
+        "In CharacterCreatePage, when Elf ancestry is selected, add the lineage cantrip to character's spells array",
+        "Cantrip is marked with source 'Lineage' or similar indicator (not class)",
+        "Dancing Lights added for Drow, Prestidigitation for High Elf, Druidcraft for Wood Elf",
+        "Cantrip appears in character sheet Spells section",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Available species: tiefling, forest-gnome, high-elf, drow, firbolg, triton, yuan-ti, air-genasi, earth-genasi, fire-genasi, water-genasi"
+      "notes": ""
     },
     {
       "id": "US-005",
-      "title": "Add icons to character sheet header",
-      "description": "As a user, I want to see class and species icons in the character sheet header.",
+      "title": "Add lineage spells when character reaches levels 3 and 5",
+      "description": "As a player with an Elf character, when I level up to 3 or 5, the appropriate lineage spell should be added to my known spells.",
       "acceptanceCriteria": [
-        "Import ClassIcon and SpeciesIcon components in CharacterSheetPage.tsx",
-        "Add ClassIcon next to class name in header (around line 1168)",
-        "Add SpeciesIcon next to species name in header (around line 1166)",
-        "Icons are 20-24px size",
-        "Wrap text and icon in inline-flex container with gap for alignment",
+        "Create utility function to get lineage spells for a given Elf ancestry and character level",
+        "When leveling up to level 3, add the level 3 lineage spell (Faerie Fire/Detect Magic/Longstrider)",
+        "When leveling up to level 5, add the level 5 lineage spell (Darkness/Misty Step/Pass Without Trace)",
+        "Lineage spells are marked with source 'Lineage' and note about once per Long Rest casting",
         "Typecheck passes",
-        "Verify in browser: icons appear next to class/species names"
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 5,
       "passes": true,
@@ -84,17 +84,15 @@
     },
     {
       "id": "US-006",
-      "title": "Add icons to home page character cards",
-      "description": "As a user, I want to see class and species icons on character cards for quick identification.",
+      "title": "Update Keen Senses trait to allow skill choice",
+      "description": "As a player, I want to choose between Insight, Perception, or Survival proficiency for my Elf's Keen Senses trait.",
       "acceptanceCriteria": [
-        "Import ClassIcon and SpeciesIcon components in HomePage.tsx",
-        "Modify character card display (around line 131-133) to include icons",
-        "Class icon appears next to class name",
-        "Species icon appears next to species name (when available)",
-        "Icons are 18px size on cards",
-        "Layout remains clean and not cluttered",
+        "Update Keen Senses trait description in species.ts to mention choice of Insight, Perception, or Survival",
+        "Add optional `keenSensesSkill?: string` field to Character type (or use existing mechanism)",
+        "In CharacterCreatePage, show dropdown for Keen Senses skill choice when Elf is selected",
+        "Selected skill is added to character's skill proficiencies on creation",
         "Typecheck passes",
-        "Verify in browser: icons appear on character cards"
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 6,
       "passes": true,
@@ -102,32 +100,18 @@
     },
     {
       "id": "US-007",
-      "title": "Add icons to character creation page",
-      "description": "As a user, I want to see class icons during character creation.",
+      "title": "Add migration modal for existing Elf characters",
+      "description": "As a player with an existing Elf character, I want to be prompted to select a lineage when I open my character sheet.",
       "acceptanceCriteria": [
-        "Import ClassIcon component in CharacterCreatePage.tsx",
-        "Show selected class icon prominently after class is chosen",
-        "Icon is 32px size",
+        "In CharacterSheetPage, detect if character is Elf without speciesAncestry",
+        "Show blocking modal with lineage selection (Drow, High Elf, Wood Elf) and descriptions",
+        "Modal cannot be dismissed without making a selection",
+        "On selection, update character with chosen lineage, apply overrides, and add appropriate spells",
+        "Also prompt for Keen Senses skill choice in the migration modal",
         "Typecheck passes",
-        "Verify in browser: icon appears when class is selected"
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 7,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-008",
-      "title": "Add icons to spell picker modal",
-      "description": "As a user, I want to see class icons in the spell picker to identify which classes can cast each spell.",
-      "acceptanceCriteria": [
-        "In CharacterSheetPage.tsx spell picker section (around line 3535-3558), add class icons",
-        "Show small ClassIcon (16px) for each class in spell.classes array",
-        "Icons appear in the spell list rows near the spell name or in a dedicated area",
-        "Does not clutter the interface - icons are subtle",
-        "Typecheck passes",
-        "Verify in browser: class icons appear for each spell"
-      ],
-      "priority": 8,
       "passes": true,
       "notes": ""
     }

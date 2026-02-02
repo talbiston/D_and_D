@@ -4,7 +4,9 @@
 
 import { getArmorByName, type ArmorData } from '../data/armor'
 import { getWeaponByName, type WeaponData } from '../data/weapons'
-import type { Weapon, DamageType, CharacterArmor, InventoryItem } from '../types'
+import { getSpeciesByName } from '../data/species'
+import { getSpellByName } from '../data/spells'
+import type { Weapon, DamageType, CharacterArmor, InventoryItem, Spell, Character, ClassFeature } from '../types'
 
 /**
  * Calculate ability modifier from ability score
@@ -539,7 +541,6 @@ export function getASICount(className: string, level: number): number {
 // LEVEL-UP LOGIC
 // =============================================================================
 
-import type { Character, ClassFeature } from '../types'
 import { getClassFeaturesForLevel, getSubclassFeaturesForLevel } from '../data/classes'
 
 /**
@@ -681,6 +682,74 @@ export function levelUp(character: Character): LevelUpResult {
     newClassFeatures,
     newSubclassFeatures
   }
+}
+
+// =============================================================================
+// LINEAGE SPELLS
+// =============================================================================
+
+/**
+ * Get lineage spells that should be added when leveling up.
+ *
+ * This function checks if a character with a species ancestry (e.g., Elven Lineage)
+ * should receive any lineage spells based on their new level. Lineage spells are
+ * granted at specific levels (e.g., level 3 and level 5 for Elven Lineages).
+ *
+ * @param character - The character being leveled up
+ * @param previousLevel - The character's level before leveling up
+ * @param newLevel - The character's new level after leveling up
+ * @returns Array of spells to add, with source set to 'Lineage' and Long Rest casting note
+ */
+export function getLineageSpellsForLevelUp(
+  character: Character,
+  previousLevel: number,
+  newLevel: number
+): Spell[] {
+  // Check if character has a species ancestry
+  if (!character.speciesAncestry) {
+    return []
+  }
+
+  // Get the species data to find the ancestry options
+  const speciesData = getSpeciesByName(character.species)
+  if (!speciesData?.ancestry) {
+    return []
+  }
+
+  // Find the selected ancestry option
+  const ancestryOption = speciesData.ancestry.options.find(
+    opt => opt.name === character.speciesAncestry?.selectedOption
+  )
+
+  // Check if this ancestry has leveled spells
+  if (!ancestryOption?.leveledSpells) {
+    return []
+  }
+
+  const newSpells: Spell[] = []
+
+  // Check each leveled spell to see if it should be granted
+  for (const leveledSpell of ancestryOption.leveledSpells) {
+    // Only add the spell if we're crossing the threshold level
+    if (previousLevel < leveledSpell.level && newLevel >= leveledSpell.level) {
+      const spellData = getSpellByName(leveledSpell.spell)
+      if (spellData) {
+        // Check if the character already has this spell
+        const alreadyHasSpell = character.spells.some(
+          s => s.name.toLowerCase() === spellData.name.toLowerCase()
+        )
+        if (!alreadyHasSpell) {
+          newSpells.push({
+            ...spellData,
+            source: 'Lineage',
+            notes: 'Once per Long Rest without a spell slot'
+          })
+        }
+      }
+    }
+  }
+
+  return newSpells
 }
 
 // =============================================================================
