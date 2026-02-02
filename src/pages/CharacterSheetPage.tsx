@@ -23,7 +23,7 @@ import ASIModal, { type ASIChoice } from '../components/ASIModal'
 import LevelUpSummaryModal from '../components/LevelUpSummaryModal'
 import InvocationPickerModal from '../components/InvocationPickerModal'
 import ManeuverPickerModal from '../components/ManeuverPickerModal'
-import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel, getPactMagicSlots, getLineageSpellsForLevelUp } from '../utils/calculations'
+import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel, getPactMagicSlots, getLineageSpellsForLevelUp, getSubclassSpellsForLevelUp } from '../utils/calculations'
 import { INVOCATIONS, getInvocationsKnown } from '../data/invocations'
 import { MANEUVERS, getManeuversKnown, getSuperiorityDice } from '../data/maneuvers'
 import { METAMAGIC_OPTIONS, getMetamagicKnown } from '../data/metamagic'
@@ -1158,6 +1158,28 @@ export default function CharacterSheetPage() {
       updatedCharacter = {
         ...updatedCharacter,
         spells: [...updatedCharacter.spells, ...lineageSpells]
+      }
+    }
+
+    // Apply subclass spells if applicable
+    // Use selectedSubclass if newly chosen, or character's existing subclass for level-up grants
+    const subclassForSpells = selectedSubclass || character.subclass
+    if (subclassForSpells) {
+      // If selecting a new subclass, get all spells up to current level (previousLevel = 0)
+      // If already have subclass, get newly available spells from leveling up
+      const previousLevelForSubclass = selectedSubclass ? 0 : character.level
+      const subclassSpells = getSubclassSpellsForLevelUp(
+        { ...character, spells: updatedCharacter.spells }, // Use updated spells to avoid duplicates
+        character.class,
+        subclassForSpells,
+        previousLevelForSubclass,
+        levelUpResult.character.level
+      )
+      if (subclassSpells.length > 0) {
+        updatedCharacter = {
+          ...updatedCharacter,
+          spells: [...updatedCharacter.spells, ...subclassSpells]
+        }
       }
     }
 

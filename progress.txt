@@ -89,3 +89,21 @@ Started: Sun Feb  2 12:00:00 AM CST 2026
   - Cancel on required modals (like subclass) should cancel entire level-up
 
 ---
+
+## 2026-02-01 - US-006: Auto-add subclass spells when subclass is chosen
+- Created getSubclassSpellsForLevel(className, subclassName, level) in calculations.ts
+- Created getSubclassSpellsForLevelUp(character, className, subclassName, previousLevel, newLevel)
+- Both functions use getSubclass and getSpellByName to look up data
+- Added import for getSubclass from classes.ts
+- Integrated into completeLevelUp in CharacterSheetPage.tsx
+- When selectedSubclass is set (new choice), gets all spells up to current level (previousLevel = 0)
+- When leveling up with existing subclass, gets only newly available spells
+- Spells added with source: 'Subclass' and notes: 'Always prepared'
+- Duplicate check prevents adding spells already in character.spells
+- Files changed: src/utils/calculations.ts, src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Pattern: check existing spells before adding with .some() case-insensitive comparison
+  - Use spread operator with updated spells array to prevent duplicates from lineage + subclass
+  - getSubclass returns undefined if subclass not found, so check for spells field explicitly
+
+---

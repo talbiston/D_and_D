@@ -6,6 +6,7 @@ import { getArmorByName, type ArmorData } from '../data/armor'
 import { getWeaponByName, type WeaponData } from '../data/weapons'
 import { getSpeciesByName } from '../data/species'
 import { getSpellByName } from '../data/spells'
+import { getSubclass } from '../data/classes'
 import type { Weapon, DamageType, CharacterArmor, InventoryItem, Spell, Character, ClassFeature } from '../types'
 
 /**
@@ -744,6 +745,87 @@ export function getLineageSpellsForLevelUp(
             source: 'Lineage',
             notes: 'Once per Long Rest without a spell slot'
           })
+        }
+      }
+    }
+  }
+
+  return newSpells
+}
+
+// =============================================================================
+// SUBCLASS SPELLS
+// =============================================================================
+
+/**
+ * Get subclass spells that are available at a given character level
+ *
+ * @param className - The character's class
+ * @param subclassName - The character's subclass name
+ * @param level - The character level to check
+ * @returns Array of spell names available at or below this level
+ */
+export function getSubclassSpellsForLevel(
+  className: string,
+  subclassName: string,
+  level: number
+): string[] {
+  const subclass = getSubclass(className, subclassName)
+  if (!subclass?.spells) {
+    return []
+  }
+
+  const spellNames: string[] = []
+  for (const grant of subclass.spells) {
+    if (grant.level <= level) {
+      spellNames.push(...grant.spells)
+    }
+  }
+  return spellNames
+}
+
+/**
+ * Get subclass spells that should be added when a character gains a subclass or levels up
+ * Returns spells with source: 'Subclass' that aren't already in the character's spell list
+ *
+ * @param character - The character (used to check existing spells)
+ * @param className - The character's class
+ * @param subclassName - The subclass being chosen or the current subclass
+ * @param previousLevel - The character's previous level (0 if just choosing subclass)
+ * @param newLevel - The character's new level
+ * @returns Array of Spell objects to add, with source set to 'Subclass'
+ */
+export function getSubclassSpellsForLevelUp(
+  character: Character,
+  className: string,
+  subclassName: string,
+  previousLevel: number,
+  newLevel: number
+): Spell[] {
+  const subclass = getSubclass(className, subclassName)
+  if (!subclass?.spells) {
+    return []
+  }
+
+  const newSpells: Spell[] = []
+
+  for (const grant of subclass.spells) {
+    // Only add spells if we're crossing the threshold level
+    if (previousLevel < grant.level && newLevel >= grant.level) {
+      for (const spellName of grant.spells) {
+        const spellData = getSpellByName(spellName)
+        if (spellData) {
+          // Check if the character already has this spell
+          const alreadyHasSpell = character.spells.some(
+            s => s.name.toLowerCase() === spellData.name.toLowerCase()
+          )
+          if (!alreadyHasSpell) {
+            newSpells.push({
+              ...spellData,
+              source: 'Subclass',
+              notes: 'Always prepared'
+            })
+          }
         }
       }
     }
