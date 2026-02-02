@@ -53,3 +53,23 @@ Started: Sun Feb  2 12:00:00 AM CST 2026
   - Spell entries need all fields: name, level, school, castingTime, range, components, duration, concentration, ritual, description, classes
 
 ---
+
+## 2026-02-01 - US-004: Create SubclassPickerModal component
+- Created new component at src/components/SubclassPickerModal.tsx
+- Props: isOpen, characterClass, onConfirm, onCancel
+- Features:
+  - Radio button selection for single subclass choice
+  - Shows subclass name and description preview
+  - Expandable "View Details" section for each subclass
+  - Shows features by level when expanded
+  - Shows subclass spells (domain/patron/oath spells) when expanded
+  - Amber badge indicating "Subclass Spells Available" for subclasses with spells
+  - Confirm button disabled until selection made
+- Files changed: src/components/SubclassPickerModal.tsx (new)
+- **Learnings for future iterations:**
+  - Modal pattern: fixed inset-0 with z-50 for overlay
+  - Use getSubclassesByClass(className) to get subclass list
+  - Use getClassByName(className)?.subclassName for class-specific terminology (e.g., "Divine Domain", "Primal Path")
+  - line-clamp-2 for truncating long descriptions
+
+---
