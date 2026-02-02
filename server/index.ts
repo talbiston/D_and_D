@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '2mb' })); // Increased limit for base64 images
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
@@ -58,6 +58,7 @@ app.get('/api/characters', (_req, res) => {
     return {
       id: row.id,
       name: row.name,
+      imageUrl: characterData.imageUrl || null,
       class: characterData.class || null,
       level: characterData.level || null,
       species: characterData.species || null,
