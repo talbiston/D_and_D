@@ -36,6 +36,7 @@ import ClassIcon from '../components/ClassIcon'
 import SpeciesIcon from '../components/SpeciesIcon'
 import CharacterImageInput from '../components/CharacterImageInput'
 import ExpertisePickerModal from '../components/ExpertisePickerModal'
+import SubclassPickerModal from '../components/SubclassPickerModal'
 import type { ClassFeature, ExpertiseGrant } from '../types'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
@@ -130,12 +131,14 @@ export default function CharacterSheetPage() {
   const [showLevelUpSpellPicker, setShowLevelUpSpellPicker] = useState(false)
   const [showExpertisePicker, setShowExpertisePicker] = useState(false)
   const [pendingExpertiseGrant, setPendingExpertiseGrant] = useState<{ feature: ClassFeature; grant: ExpertiseGrant } | null>(null)
+  const [showSubclassPickerModal, setShowSubclassPickerModal] = useState(false)
   const [pendingLevelUp, setPendingLevelUp] = useState<{
     levelUpResult: LevelUpResult
     hpGain: number
     asiChoice?: ASIChoice
     selectedSpells?: Spell[]
     expertiseChoices?: { skillName: SkillName; source: string }[]
+    selectedSubclass?: string
   } | null>(null)
   const [levelUpSummary, setLevelUpSummary] = useState<{
     newLevel: number
@@ -1110,12 +1113,18 @@ export default function CharacterSheetPage() {
     hpGain: number,
     asiChoice?: ASIChoice,
     newSpells?: Spell[],
-    expertiseChoices?: { skillName: SkillName; source: string }[]
+    expertiseChoices?: { skillName: SkillName; source: string }[],
+    selectedSubclass?: string
   ) => {
     if (!character) return
 
     const newMaxHp = character.maxHp + hpGain
     let updatedCharacter = { ...levelUpResult.character }
+
+    // Apply subclass choice if present
+    if (selectedSubclass) {
+      updatedCharacter = { ...updatedCharacter, subclass: selectedSubclass }
+    }
 
     // Apply ASI choice if present
     if (asiChoice) {
@@ -1193,8 +1202,14 @@ export default function CharacterSheetPage() {
     // Use the levelUp utility to get updated character with features and spell slots
     const levelUpResult = levelUp(character)
 
-    // Check if this level grants an ASI
-    if (levelUpResult.choices.needsASI) {
+    // Check if leveling to level 3 and needs subclass selection
+    const needsSubclass = levelUpResult.character.level === 3 && !character.subclass
+
+    if (needsSubclass) {
+      // Store pending level up data and show subclass picker
+      setPendingLevelUp({ levelUpResult, hpGain })
+      setShowSubclassPickerModal(true)
+    } else if (levelUpResult.choices.needsASI) {
       // Store pending level up data and show ASI modal
       setPendingLevelUp({ levelUpResult, hpGain })
       setShowASIModal(true)
@@ -1218,25 +1233,25 @@ export default function CharacterSheetPage() {
 
   const handleASIConfirm = (choice: ASIChoice) => {
     if (!character || !pendingLevelUp) return
-    const { levelUpResult, hpGain } = pendingLevelUp
+    const { levelUpResult, hpGain, selectedSubclass } = pendingLevelUp
 
     setShowASIModal(false)
 
     // Check if we also need to select spells
     if (levelUpResult.choices.newSpellsToLearn > 0 && isKnownCaster(character.class)) {
       // Store the ASI choice and show spell picker
-      setPendingLevelUp({ levelUpResult, hpGain, asiChoice: choice })
+      setPendingLevelUp({ ...pendingLevelUp, asiChoice: choice })
       setShowLevelUpSpellPicker(true)
     } else {
       // Check for expertise grants
       const expertiseGrants = getExpertiseGrantsFromFeatures(levelUpResult)
       if (expertiseGrants.length > 0) {
-        setPendingLevelUp({ levelUpResult, hpGain, asiChoice: choice })
+        setPendingLevelUp({ ...pendingLevelUp, asiChoice: choice })
         setPendingExpertiseGrant(expertiseGrants[0])
         setShowExpertisePicker(true)
       } else {
         // No spells, no expertise - complete level-up with ASI choice
-        completeLevelUp(levelUpResult, hpGain, choice)
+        completeLevelUp(levelUpResult, hpGain, choice, undefined, undefined, selectedSubclass)
       }
     }
   }
@@ -1249,7 +1264,7 @@ export default function CharacterSheetPage() {
 
   const handleLevelUpSpellsConfirm = (selectedSpells: Spell[]) => {
     if (!character || !pendingLevelUp) return
-    const { levelUpResult, hpGain, asiChoice } = pendingLevelUp
+    const { levelUpResult, hpGain, asiChoice, selectedSubclass } = pendingLevelUp
 
     setShowLevelUpSpellPicker(false)
 
@@ -1262,7 +1277,7 @@ export default function CharacterSheetPage() {
       setShowExpertisePicker(true)
     } else {
       // No expertise grants, complete level-up
-      completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells)
+      completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells, undefined, selectedSubclass)
     }
   }
 
@@ -1274,7 +1289,7 @@ export default function CharacterSheetPage() {
 
   const handleExpertiseConfirm = (selectedSkills: SkillName[]) => {
     if (!character || !pendingLevelUp || !pendingExpertiseGrant) return
-    const { levelUpResult, hpGain, asiChoice, selectedSpells, expertiseChoices = [] } = pendingLevelUp
+    const { levelUpResult, hpGain, asiChoice, selectedSpells, expertiseChoices = [], selectedSubclass } = pendingLevelUp
 
     setShowExpertisePicker(false)
 
@@ -1298,20 +1313,55 @@ export default function CharacterSheetPage() {
     } else {
       // All expertise grants processed, complete level-up
       setPendingExpertiseGrant(null)
-      completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells, allExpertiseChoices)
+      completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells, allExpertiseChoices, selectedSubclass)
     }
   }
 
   const handleExpertiseCancel = () => {
     // Cancel expertise picker - continue without selecting expertise
     if (!pendingLevelUp) return
-    const { levelUpResult, hpGain, asiChoice, selectedSpells, expertiseChoices } = pendingLevelUp
+    const { levelUpResult, hpGain, asiChoice, selectedSpells, expertiseChoices, selectedSubclass } = pendingLevelUp
 
     setShowExpertisePicker(false)
     setPendingExpertiseGrant(null)
 
     // Complete level-up with whatever choices were made
-    completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells, expertiseChoices)
+    completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells, expertiseChoices, selectedSubclass)
+  }
+
+  const handleSubclassConfirm = (subclassName: string) => {
+    if (!character || !pendingLevelUp) return
+    const { levelUpResult, hpGain } = pendingLevelUp
+
+    setShowSubclassPickerModal(false)
+
+    // Store the subclass choice and continue with level-up flow
+    const updatedPendingLevelUp = { ...pendingLevelUp, selectedSubclass: subclassName }
+    setPendingLevelUp(updatedPendingLevelUp)
+
+    // Continue with the normal level-up flow
+    if (levelUpResult.choices.needsASI) {
+      setShowASIModal(true)
+    } else if (levelUpResult.choices.newSpellsToLearn > 0 && isKnownCaster(character.class)) {
+      setShowLevelUpSpellPicker(true)
+    } else {
+      // Check for expertise grants
+      const expertiseGrants = getExpertiseGrantsFromFeatures(levelUpResult)
+      if (expertiseGrants.length > 0) {
+        setPendingExpertiseGrant(expertiseGrants[0])
+        setShowExpertisePicker(true)
+      } else {
+        // No ASI, no spells, no expertise - complete level-up
+        completeLevelUp(levelUpResult, hpGain, undefined, undefined, undefined, subclassName)
+      }
+    }
+  }
+
+  const handleSubclassCancel = () => {
+    // Cannot cancel subclass selection at level 3 - it's required
+    // But we still need to handle the cancel button, so we cancel the entire level-up
+    setShowSubclassPickerModal(false)
+    setPendingLevelUp(null)
   }
 
   if (loading) {
@@ -4712,6 +4762,16 @@ export default function CharacterSheetPage() {
           currentSkills={character.skills}
           abilityScores={character.abilityScores}
           proficiencyBonus={getProficiencyBonus(character.level)}
+        />
+      )}
+
+      {/* Subclass Picker Modal (Level-Up to Level 3) */}
+      {showSubclassPickerModal && character && (
+        <SubclassPickerModal
+          isOpen={showSubclassPickerModal}
+          characterClass={character.class}
+          onConfirm={handleSubclassConfirm}
+          onCancel={handleSubclassCancel}
         />
       )}
 

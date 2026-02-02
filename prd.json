@@ -76,8 +76,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Integrated SubclassPickerModal into level-up flow. Shows after HP roll when leveling to 3. Cancel button cancels entire level-up (subclass is required). Subclass is applied in completeLevelUp."
     },
     {
       "id": "US-006",

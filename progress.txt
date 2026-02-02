@@ -73,3 +73,19 @@ Started: Sun Feb  2 12:00:00 AM CST 2026
   - line-clamp-2 for truncating long descriptions
 
 ---
+
+## 2026-02-01 - US-005: Prompt for subclass selection during level-up to level 3
+- Modified handleLevelUpHPConfirm to check if leveling to level 3 and needs subclass
+- Added showSubclassPickerModal state and selectedSubclass to pendingLevelUp type
+- Created handleSubclassConfirm and handleSubclassCancel handlers
+- Updated completeLevelUp to accept and apply selectedSubclass parameter
+- Updated all level-up flow handlers (ASI, spells, expertise) to preserve/pass selectedSubclass
+- Added SubclassPickerModal render in JSX
+- Files changed: src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Level-up flow chains modals: HP -> Subclass (at L3) -> ASI -> Spells -> Expertise -> Summary
+  - pendingLevelUp stores all choices that need to be applied at the end
+  - When updating pendingLevelUp, use spread operator to preserve existing fields
+  - Cancel on required modals (like subclass) should cancel entire level-up
+
+---
