@@ -1,9 +1,15 @@
 import type { AbilityName, ClassFeature } from '../types'
 
+export interface SubclassSpellGrant {
+  level: number  // Character level when these spells become available
+  spells: string[]  // Spell names
+}
+
 export interface Subclass {
   name: string
   description: string
   features: ClassFeature[]
+  spells?: SubclassSpellGrant[]  // Subclass-granted spells (domain spells, patron spells, etc.)
 }
 
 /**
@@ -251,6 +257,12 @@ export const CLASSES: ClassData[] = [
           { name: 'Preserve Life', level: 6, description: 'As a Magic action, you present your Holy Symbol and expend a use of Channel Divinity to evoke healing energy. Choose any creatures within 30 feet of you and divide Hit Points equal to five times your Cleric level among them. This feature can restore a creature to no more than half of its Hit Point maximum. You can\'t use this feature on an Undead or a Construct.' },
           { name: 'Supreme Healing', level: 17, description: 'When you would normally roll one or more dice to restore Hit Points to a creature with a spell or Channel Divinity, you instead use the highest number possible for each die. For example, instead of restoring 2d6 Hit Points to a creature, you restore 12.' },
         ],
+        spells: [
+          { level: 3, spells: ['Bless', 'Cure Wounds'] },
+          { level: 5, spells: ['Lesser Restoration', 'Spiritual Weapon'] },
+          { level: 7, spells: ['Mass Healing Word', 'Revivify'] },
+          { level: 9, spells: ['Aura of Life', 'Death Ward'] },
+        ],
       },
       {
         name: 'Light Domain',
@@ -260,6 +272,12 @@ export const CLASSES: ClassData[] = [
           { name: 'Warding Flare', level: 3, description: 'When a creature that you can see within 30 feet of you makes an attack roll, you can take a Reaction to impose Disadvantage on the attack roll, causing light to flare before the attacker. An attacker that can\'t be Blinded is immune to this feature. You can use this feature a number of times equal to your Wisdom modifier (minimum once), and you regain all expended uses when you finish a Long Rest.' },
           { name: 'Radiance of the Dawn', level: 6, description: 'As a Magic action, you present your Holy Symbol and expend a use of Channel Divinity to emit sunlight in a 30-foot Emanation for 1 minute. The Emanation is Bright Light and sheds Dim Light for an additional 30 feet. Whenever a creature ends its turn in the Bright Light, you can force it to make a Constitution saving throw, taking Radiant damage equal to 2d10 + your Cleric level on a failed save, or half as much damage on a successful one.' },
           { name: 'Corona of Light', level: 17, description: 'You can use a Bonus Action to activate an aura of sunlight that lasts for 1 minute or until you dismiss it (no action required). You emit Bright Light in a 60-foot radius and Dim Light for an additional 30 feet. Your enemies in the Bright Light have Disadvantage on saving throws against any spell that deals Fire or Radiant damage. You can use this feature a number of times equal to your Wisdom modifier (minimum once), and you regain all expended uses when you finish a Long Rest.' },
+        ],
+        spells: [
+          { level: 3, spells: ['Burning Hands', 'Faerie Fire'] },
+          { level: 5, spells: ['Flaming Sphere', 'Scorching Ray'] },
+          { level: 7, spells: ['Daylight', 'Fireball'] },
+          { level: 9, spells: ['Arcane Eye', 'Wall of Fire'] },
         ],
       },
       {
@@ -271,6 +289,12 @@ export const CLASSES: ClassData[] = [
           { name: 'Invoke Duplicity', level: 6, description: 'As a Magic action, you can expend a use of Channel Divinity to create an illusory duplicate of yourself. The duplicate appears in an unoccupied space you can see within 30 feet. The illusion lasts for 1 minute or until you lose Concentration. As a Bonus Action, you can move the illusion up to 30 feet. When you and your illusion are within 5 feet of a creature, you have Advantage on attack rolls against that creature. Additionally, you can cast spells as though you were in the illusion\'s space.' },
           { name: 'Improved Duplicity', level: 17, description: 'When you use Invoke Duplicity, you can create two duplicates instead of one. If you have two duplicates, you can move them with the same Bonus Action, and if you and both duplicates are within 5 feet of a creature, you have Advantage on attack rolls against it. Additionally, when you or a duplicate is hit by an attack, you can use your Reaction to swap places with the duplicate, potentially making the attack miss.' },
         ],
+        spells: [
+          { level: 3, spells: ['Charm Person', 'Disguise Self'] },
+          { level: 5, spells: ['Mirror Image', 'Pass without Trace'] },
+          { level: 7, spells: ['Hypnotic Pattern', 'Nondetection'] },
+          { level: 9, spells: ['Confusion', 'Dimension Door'] },
+        ],
       },
       {
         name: 'War Domain',
@@ -280,6 +304,12 @@ export const CLASSES: ClassData[] = [
           { name: 'War Priest', level: 3, description: 'Your god delivers bolts of inspiration to you while you are engaged in battle. When you take the Attack action, you can make one extra attack as a Bonus Action. You can use this feature a number of times equal to your Wisdom modifier (minimum once), and you regain all expended uses when you finish a Long Rest.' },
           { name: 'War God\'s Blessing', level: 6, description: 'When a creature within 30 feet of you makes an attack roll, you can take a Reaction to expend a use of Channel Divinity to grant a +10 bonus to the roll. You make this choice after you see the roll, but before the DM says whether the attack hits or misses.' },
           { name: 'Avatar of Battle', level: 17, description: 'You gain resistance to Bludgeoning, Piercing, and Slashing damage.' },
+        ],
+        spells: [
+          { level: 3, spells: ['Divine Favor', 'Shield of Faith'] },
+          { level: 5, spells: ['Magic Weapon', 'Spiritual Weapon'] },
+          { level: 7, spells: ["Crusader's Mantle", 'Spirit Guardians'] },
+          { level: 9, spells: ['Freedom of Movement', 'Stoneskin'] },
         ],
       },
     ],
@@ -632,6 +662,13 @@ export const CLASSES: ClassData[] = [
           { name: 'Smite of Protection', level: 15, description: 'When you or an ally within 30 feet takes damage, you can use your Reaction to expend a spell slot to reduce that damage by 2d8 plus 1d8 for each spell level above 1st.' },
           { name: 'Holy Nimbus', level: 20, description: 'As a Bonus Action, you can emanate an aura of sunlight. For 1 minute, Bright Light shines from you in a 30-foot radius, and Dim Light shines 30 feet beyond that. Whenever an enemy creature starts its turn in the Bright Light, the creature takes 10 Radiant damage. In addition, for the duration, you have Advantage on saving throws against spells cast by Fiends or Undead. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
         ],
+        spells: [
+          { level: 3, spells: ['Protection from Evil and Good', 'Shield of Faith'] },
+          { level: 5, spells: ['Aid', 'Zone of Truth'] },
+          { level: 9, spells: ['Beacon of Hope', 'Dispel Magic'] },
+          { level: 13, spells: ['Freedom of Movement', 'Guardian of Faith'] },
+          { level: 17, spells: ['Commune', 'Flame Strike'] },
+        ],
       },
       {
         name: 'Oath of Glory',
@@ -643,6 +680,13 @@ export const CLASSES: ClassData[] = [
           { name: 'Aura of Alacrity', level: 7, description: 'Your walking speed increases by 10 feet. In addition, whenever an ally starts their turn within 10 feet of you, that ally\'s walking speed increases by 10 feet until the end of that turn. At 18th level, the aura extends to 30 feet.' },
           { name: 'Glorious Defense', level: 15, description: 'You can turn defense into a sudden strike. When you or an ally within 10 feet of you is hit by an attack roll, you can use your Reaction to add your Charisma modifier to the target\'s AC against that attack, potentially causing it to miss. If the attack misses, you can make one weapon attack against the attacker as part of this Reaction if the attacker is within your weapon\'s range. You can use this feature a number of times equal to your Charisma modifier (minimum 1), and you regain all expended uses when you finish a Long Rest.' },
           { name: 'Living Legend', level: 20, description: 'As a Bonus Action, you can empower yourself with legends. For 1 minute, you have Advantage on Charisma checks, and when you miss with a weapon attack, you can choose to hit instead. Once on each of your turns when you make a weapon attack and hit, you can choose to deal an extra 20 Force damage. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
+        ],
+        spells: [
+          { level: 3, spells: ['Guiding Bolt', 'Heroism'] },
+          { level: 5, spells: ['Enhance Ability', 'Magic Weapon'] },
+          { level: 9, spells: ['Haste', 'Protection from Energy'] },
+          { level: 13, spells: ['Compulsion', 'Freedom of Movement'] },
+          { level: 17, spells: ['Legend Lore', "Yolande's Regal Presence"] },
         ],
       },
       {
@@ -656,6 +700,13 @@ export const CLASSES: ClassData[] = [
           { name: 'Undying Sentinel', level: 15, description: 'When you are reduced to 0 Hit Points and are not killed outright, you can choose to drop to 1 Hit Point instead. Once you use this feature, you can\'t use it again until you finish a Long Rest. Additionally, you suffer none of the drawbacks of old age, and you can\'t be aged magically.' },
           { name: 'Elder Champion', level: 20, description: 'As a Bonus Action, you can assume the form of an ancient force of nature. For 1 minute, you gain the following benefits: At the start of each of your turns, you regain 10 Hit Points. Whenever you cast a Paladin spell that has a casting time of 1 action, you can cast it as a Bonus Action instead. Enemy creatures within 10 feet of you have Disadvantage on saving throws against your Paladin spells and Channel Divinity options. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
         ],
+        spells: [
+          { level: 3, spells: ['Ensnaring Strike', 'Speak with Animals'] },
+          { level: 5, spells: ['Misty Step', 'Moonbeam'] },
+          { level: 9, spells: ['Plant Growth', 'Protection from Energy'] },
+          { level: 13, spells: ['Ice Storm', 'Stoneskin'] },
+          { level: 17, spells: ['Commune with Nature', 'Tree Stride'] },
+        ],
       },
       {
         name: 'Oath of Vengeance',
@@ -667,6 +718,13 @@ export const CLASSES: ClassData[] = [
           { name: 'Relentless Avenger', level: 7, description: 'Your supernatural focus helps you close off a foe\'s retreat. When you hit a creature with an Opportunity Attack, you can move up to half your Speed immediately after the attack as part of the same Reaction. This movement doesn\'t provoke Opportunity Attacks.' },
           { name: 'Soul of Vengeance', level: 15, description: 'The authority with which you speak your Vow of Enmity gives you greater power over your foe. When a creature under the effect of your Vow of Enmity makes an attack, you can use your Reaction to make a melee weapon attack against that creature if it is within range.' },
           { name: 'Avenging Angel', level: 20, description: 'As a Bonus Action, you can transform, gaining the following benefits for 1 minute: Wings sprout from your back and grant you a Fly Speed of 60 feet. You emanate an aura of menace in a 30-foot radius. The first time any enemy creature enters the aura or starts its turn there during a battle, the creature must succeed on a Wisdom saving throw or have the Frightened condition for 1 minute or until it takes any damage. Attack rolls against the Frightened creature have Advantage. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
+        ],
+        spells: [
+          { level: 3, spells: ['Bane', "Hunter's Mark"] },
+          { level: 5, spells: ['Hold Person', 'Misty Step'] },
+          { level: 9, spells: ['Haste', 'Protection from Energy'] },
+          { level: 13, spells: ['Banishment', 'Dimension Door'] },
+          { level: 17, spells: ['Hold Monster', 'Scrying'] },
         ],
       },
     ],
@@ -994,6 +1052,12 @@ export const CLASSES: ClassData[] = [
           { name: 'Beguiling Defenses', level: 10, description: 'Your patron teaches you how to turn the mind-affecting magic of your enemies against them. You have Immunity to the Charmed condition. In addition, immediately after a creature attempts to Charm you, you can take a Reaction to force that creature to make a Wisdom saving throw against your spell save DC. On a failed save, the creature has the Charmed condition for 1 minute or until the creature takes damage.' },
           { name: 'Dark Delirium', level: 14, description: 'You can plunge a creature into an illusory realm. As a Magic action, choose a creature you can see within 60 feet of you. It must make a Wisdom saving throw against your spell save DC. On a failed save, it has the Charmed or Frightened condition (your choice) for 1 minute or until your Concentration ends. The target perceives itself as lost in a misty realm of your choosing. The creature can\'t see or hear anything other than the illusion, itself, and you. At the end of each of its turns, the affected creature can repeat the saving throw, ending the effect on itself on a success. Once you use this feature, you can\'t use it again until you finish a Short or Long Rest.' },
         ],
+        spells: [
+          { level: 3, spells: ['Calm Emotions', 'Faerie Fire', 'Misty Step', 'Sleep'] },
+          { level: 5, spells: ['Blink', 'Plant Growth'] },
+          { level: 7, spells: ['Dominate Beast', 'Greater Invisibility'] },
+          { level: 9, spells: ['Dominate Person', 'Seeming'] },
+        ],
       },
       {
         name: 'Celestial Patron',
@@ -1004,6 +1068,12 @@ export const CLASSES: ClassData[] = [
           { name: 'Radiant Soul', level: 6, description: 'Your link to the Celestial allows you to serve as a conduit for radiant energy. You have Resistance to Radiant damage. Additionally, when you cast a spell that deals Radiant or Fire damage, you can add your Charisma modifier to one Radiant or Fire damage roll of that spell against one of its targets.' },
           { name: 'Celestial Resilience', level: 10, description: 'You gain Temporary Hit Points whenever you finish a Short or Long Rest. These Temporary Hit Points equal your Warlock level plus your Charisma modifier. Additionally, choose up to five creatures you can see at the end of the rest. Those creatures each gain Temporary Hit Points equal to half your Warlock level plus your Charisma modifier.' },
           { name: 'Searing Vengeance', level: 14, description: 'The radiant energy you channel allows you to resist death. When you would make a Death Saving Throw, you can instead spring to your feet with a burst of radiant energy. You regain Hit Points equal to half your Hit Point Maximum and then stand if you so choose. Each creature of your choice that is within 30 feet of you takes Radiant damage equal to 2d8 plus your Charisma modifier and has the Blinded condition until the end of your turn. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
+        ],
+        spells: [
+          { level: 3, spells: ['Cure Wounds', 'Guiding Bolt', 'Lesser Restoration', 'Light'] },
+          { level: 5, spells: ['Daylight', 'Revivify'] },
+          { level: 7, spells: ['Guardian of Faith', 'Wall of Fire'] },
+          { level: 9, spells: ['Greater Restoration', 'Summon Celestial'] },
         ],
       },
       {
@@ -1016,6 +1086,12 @@ export const CLASSES: ClassData[] = [
           { name: 'Fiendish Resilience', level: 10, description: 'Choose one damage type when you finish a Short or Long Rest. You gain Resistance to that damage type until you choose a different one with this feature. Damage from magical weapons or silver weapons ignores this Resistance.' },
           { name: 'Hurl Through Hell', level: 14, description: 'When you hit a creature with an attack roll, you can try to instantly transport the target through the Lower Planes. The target must succeed on a Charisma saving throw against your spell save DC, or the target disappears and hurtles through a nightmare landscape. The target takes 10d10 Psychic damage, and it reappears in the space it previously occupied or in the nearest unoccupied space at the end of your next turn. If the target is a Fiend, it is immune to this feature. Once you use this feature, you can\'t use it again until you finish a Long Rest.' },
         ],
+        spells: [
+          { level: 3, spells: ['Burning Hands', 'Command', 'Scorching Ray', 'Suggestion'] },
+          { level: 5, spells: ['Fireball', 'Stinking Cloud'] },
+          { level: 7, spells: ['Fire Shield', 'Wall of Fire'] },
+          { level: 9, spells: ['Geas', 'Insect Plague'] },
+        ],
       },
       {
         name: 'Great Old One Patron',
@@ -1026,6 +1102,12 @@ export const CLASSES: ClassData[] = [
           { name: 'Clairvoyant Combatant', level: 6, description: 'When you form a telepathic bond with a creature using your Awakened Mind, you can force that creature to make a Wisdom saving throw against your spell save DC. On a failed save, the creature has Disadvantage on attack rolls against you, and you have Advantage on attack rolls against that creature for 1 minute or until the telepathic connection ends. Once you use this feature, you can\'t use it again until you finish a Short or Long Rest, unless you spend a Pact Magic spell slot (no action required) to restore your use of it.' },
           { name: 'Thought Shield', level: 10, description: 'Your thoughts can\'t be read by telepathy or other means unless you allow it. You also have Resistance to Psychic damage, and whenever a creature deals Psychic damage to you, that creature takes the same amount of damage that you take.' },
           { name: 'Create Thrall', level: 14, description: 'Your patron grants you the ability to dominate another creature\'s mind. As a Magic action, touch an Incapacitated creature. That creature is then Charmed by you until a Remove Curse spell is cast on it, the Charmed condition is removed from it, or you use this feature again. You can communicate telepathically with the Charmed creature as long as the two of you are on the same plane of existence. Whenever the Charmed creature takes damage, it can repeat the saving throw against your spell save DC, ending the effect on a success.' },
+        ],
+        spells: [
+          { level: 3, spells: ['Detect Thoughts', 'Dissonant Whispers', 'Phantasmal Force', "Tasha's Hideous Laughter"] },
+          { level: 5, spells: ['Clairvoyance', 'Hunger of Hadar'] },
+          { level: 7, spells: ['Confusion', 'Summon Aberration'] },
+          { level: 9, spells: ['Modify Memory', 'Telekinesis'] },
         ],
       },
     ],
