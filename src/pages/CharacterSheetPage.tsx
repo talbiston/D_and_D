@@ -2494,6 +2494,11 @@ export default function CharacterSheetPage() {
                               <span className="text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded">
                                 {spell.level === 0 ? 'Cantrip' : `Lvl ${spell.level}`}
                               </span>
+                              {spell.source && (
+                                <span className="text-xs px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded">
+                                  {spell.source}
+                                </span>
+                              )}
                               <span className="font-medium text-gray-900 dark:text-white">{spell.name}</span>
                               <span className="text-xs text-gray-500">
                                 {spell.concentration && 'C'}

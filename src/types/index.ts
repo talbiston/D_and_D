@@ -249,6 +249,7 @@ export interface Spell {
   ritual: boolean
   description: string
   classes: string[] // Class names that can cast this spell
+  source?: string // Origin of the spell (e.g., 'Lineage', 'Class', 'Feat')
 }
 
 // Equipment type

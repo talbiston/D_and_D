@@ -26,6 +26,8 @@ import type { CharacterArmor } from '../types'
 import { EQUIPMENT_PACKS, getPackByName } from '../data/equipmentPacks'
 import type { EquipmentPack } from '../data/equipmentPacks'
 import { getGearByName } from '../data/gear'
+import { getSpellByName } from '../data/spells'
+import type { Spell } from '../types'
 import ClassIcon from '../components/ClassIcon'
 import CharacterImageInput from '../components/CharacterImageInput'
 
@@ -753,6 +755,18 @@ export default function CharacterCreatePage() {
       return trait
     })
 
+    // Build starting spells array (lineage cantrips)
+    const startingSpells: Spell[] = []
+    if (selectedAncestryData?.cantrip) {
+      const cantripData = getSpellByName(selectedAncestryData.cantrip)
+      if (cantripData) {
+        startingSpells.push({
+          ...cantripData,
+          source: 'Lineage',
+        })
+      }
+    }
+
     // Build character data object (without id - server generates it)
     const characterData = {
       name: name.trim(),
@@ -774,7 +788,7 @@ export default function CharacterCreatePage() {
       size: speciesData?.size ?? 'medium',
       weapons: startingWeapons,
       equipment: startingInventory,
-      spells: [],
+      spells: startingSpells,
       spellSlots: { ...DEFAULT_SPELL_SLOTS },
       pactMagic: characterClass === 'Warlock' ? { ...getPactMagicSlots(level), expended: 0 } : undefined,
       eldritchInvocations: characterClass === 'Warlock' ? [] : undefined,
