@@ -78,6 +78,11 @@ export interface SpeciesAncestryOption {
   breathWeaponShape?: string
   spells?: string[]
   abilities?: string[]
+  // Elven Lineage fields
+  speedOverride?: number
+  darkvisionOverride?: number
+  cantrip?: string
+  leveledSpells?: { level: number; spell: string }[]
 }
 
 // Species ancestry data (the choice and its options)
