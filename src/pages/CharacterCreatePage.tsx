@@ -512,22 +512,74 @@ export default function CharacterCreatePage() {
     setGoldRollDetails({ rolls, multiplier: parsed.multiplier })
   }
 
-  // Build starting inventory from selected pack
+  // Helper to find gear by name with fallback for ammunition naming
+  const findGearByName = (name: string): { gearData: ReturnType<typeof getGearByName>, displayName: string } => {
+    // Try exact match first
+    let gearData = getGearByName(name)
+    if (gearData) return { gearData, displayName: gearData.name }
+
+    // Try common ammunition naming patterns (e.g., "Arrows" -> "Arrows (20)")
+    const ammunitionPatterns: Record<string, string> = {
+      'arrows': 'Arrows (20)',
+      'bolts': 'Crossbow Bolts (20)',
+      'crossbow bolts': 'Crossbow Bolts (20)',
+      'needles': 'Blowgun Needles (50)',
+      'blowgun needles': 'Blowgun Needles (50)',
+      'sling bullets': 'Sling Bullets (20)',
+    }
+    const normalizedName = name.toLowerCase()
+    const mappedName = ammunitionPatterns[normalizedName]
+    if (mappedName) {
+      gearData = getGearByName(mappedName)
+      if (gearData) return { gearData, displayName: gearData.name }
+    }
+
+    return { gearData: undefined, displayName: name }
+  }
+
+  // Build starting inventory from selected pack AND non-weapon class starting equipment
   const buildStartingInventory = (): InventoryItem[] => {
-    if (equipmentMode !== 'pack' || !selectedPack) return []
+    const inventory: InventoryItem[] = []
+    const classData = getClassByName(characterClass)
 
-    const pack = getPackByName(selectedPack)
-    if (!pack) return []
-
-    return pack.contents.map(item => {
-      const gearData = getGearByName(item.item)
-      return {
-        name: item.item,
-        quantity: item.quantity,
-        weight: gearData?.weight ?? 0,
-        category: gearData?.category ?? 'adventuring gear',
+    // Add items from selected equipment pack
+    if (equipmentMode === 'pack' && selectedPack) {
+      const pack = getPackByName(selectedPack)
+      if (pack) {
+        pack.contents.forEach(item => {
+          const gearData = getGearByName(item.item)
+          inventory.push({
+            name: item.item,
+            quantity: item.quantity,
+            weight: gearData?.weight ?? 0,
+            category: gearData?.category ?? 'adventuring gear',
+          })
+        })
       }
-    })
+    }
+
+    // Add non-weapon fixed items from class starting equipment (like arrows, component pouches, etc.)
+    if (classData?.startingEquipment) {
+      classData.startingEquipment.forEach(choice => {
+        if (choice.items) {
+          choice.items.forEach(item => {
+            // Skip if it's a weapon (already handled by buildStartingWeapons)
+            const weaponData = getWeaponByName(item.item)
+            if (weaponData) return
+
+            const { gearData, displayName } = findGearByName(item.item)
+            inventory.push({
+              name: displayName,
+              quantity: item.quantity ?? 1,
+              weight: gearData?.weight ?? 0,
+              category: gearData?.category ?? 'adventuring gear',
+            })
+          })
+        }
+      })
+    }
+
+    return inventory
   }
 
   // Build starting currency
