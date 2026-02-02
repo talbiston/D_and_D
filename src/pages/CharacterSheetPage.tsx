@@ -151,6 +151,7 @@ export default function CharacterSheetPage() {
     asiChoice?: ASIChoice
     selectedSubclass?: string
     newSubclassSpells?: Spell[]
+    resourceChanges?: { name: string; oldMax: number | null; newMax: number }[]
   } | null>(null)
   // Equipment state
   const [showACOverride, setShowACOverride] = useState(false)
@@ -1310,6 +1311,8 @@ export default function CharacterSheetPage() {
     // Update class resources for new level
     // Get the new max for each resource at the new level
     const classData = getClassByName(character.class)
+    const resourceChanges: { name: string; oldMax: number | null; newMax: number }[] = []
+
     if (classData?.resources) {
       const newLevel = levelUpResult.character.level
       const pb = getProficiencyBonus(newLevel)
@@ -1325,9 +1328,11 @@ export default function CharacterSheetPage() {
           // If the max increased, give the character the extra uses
           if (oldMax !== null && newMax > oldMax) {
             newResources[resource.name] = currentValue + (newMax - oldMax)
+            resourceChanges.push({ name: resource.name, oldMax, newMax })
           } else if (oldMax === null && newMax !== null) {
             // Resource became available at this level (e.g., Channel Divinity at L2)
             newResources[resource.name] = newMax
+            resourceChanges.push({ name: resource.name, oldMax: null, newMax })
           } else {
             // Keep current value, but ensure it doesn't exceed new max
             newResources[resource.name] = Math.min(currentValue, newMax)
@@ -1350,6 +1355,7 @@ export default function CharacterSheetPage() {
       asiChoice,
       selectedSubclass,
       newSubclassSpells: subclassSpells.length > 0 ? subclassSpells : undefined,
+      resourceChanges: resourceChanges.length > 0 ? resourceChanges : undefined,
     })
 
     setPendingLevelUp(null)
@@ -5331,6 +5337,7 @@ export default function CharacterSheetPage() {
           asiChoice={levelUpSummary.asiChoice}
           selectedSubclass={levelUpSummary.selectedSubclass}
           newSubclassSpells={levelUpSummary.newSubclassSpells}
+          resourceChanges={levelUpSummary.resourceChanges}
           onClose={() => setLevelUpSummary(null)}
         />
       )}
