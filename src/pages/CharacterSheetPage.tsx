@@ -1154,8 +1154,9 @@ export default function CharacterSheetPage() {
                     src={character.imageUrl}
                     alt={character.name}
                     className="w-full h-full object-cover"
-                    style={character.imageStyle ? {
-                      transform: `scale(${character.imageStyle.zoom}) translate(${character.imageStyle.x / character.imageStyle.zoom}%, ${character.imageStyle.y / character.imageStyle.zoom}%)`
+                    style={character.imageStyle && (character.imageStyle.zoom !== 1 || character.imageStyle.x !== 0 || character.imageStyle.y !== 0) ? {
+                      transform: `scale(${character.imageStyle.zoom}) translate(${character.imageStyle.x / character.imageStyle.zoom}%, ${character.imageStyle.y / character.imageStyle.zoom}%)`,
+                      transformOrigin: 'center center',
                     } : undefined}
                   />
                 ) : (
@@ -1173,8 +1174,9 @@ export default function CharacterSheetPage() {
                     src={character.imageUrl}
                     alt={character.name}
                     className="w-full h-full object-cover"
-                    style={character.imageStyle ? {
-                      transform: `scale(${character.imageStyle.zoom}) translate(${character.imageStyle.x / character.imageStyle.zoom}%, ${character.imageStyle.y / character.imageStyle.zoom}%)`
+                    style={character.imageStyle && (character.imageStyle.zoom !== 1 || character.imageStyle.x !== 0 || character.imageStyle.y !== 0) ? {
+                      transform: `scale(${character.imageStyle.zoom}) translate(${character.imageStyle.x / character.imageStyle.zoom}%, ${character.imageStyle.y / character.imageStyle.zoom}%)`,
+                      transformOrigin: 'center center',
                     } : undefined}
                   />
                 ) : (
@@ -4457,7 +4459,7 @@ export default function CharacterSheetPage() {
             <CharacterImageInput
               value={character.imageUrl}
               imageStyle={character.imageStyle}
-              onChange={(url) => updateCharacter({ imageUrl: url })}
+              onChange={(url) => updateCharacter({ imageUrl: url, imageStyle: url ? character.imageStyle : undefined })}
               onStyleChange={(style) => updateCharacter({ imageStyle: style })}
               size="large"
             />

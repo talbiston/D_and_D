@@ -135,8 +135,9 @@ export default function HomePage() {
                           src={character.imageUrl}
                           alt={character.name}
                           className="w-full h-full object-cover"
-                          style={character.imageStyle ? {
-                            transform: `scale(${character.imageStyle.zoom}) translate(${character.imageStyle.x / character.imageStyle.zoom}%, ${character.imageStyle.y / character.imageStyle.zoom}%)`
+                          style={character.imageStyle && (character.imageStyle.zoom !== 1 || character.imageStyle.x !== 0 || character.imageStyle.y !== 0) ? {
+                            transform: `scale(${character.imageStyle.zoom}) translate(${character.imageStyle.x / character.imageStyle.zoom}%, ${character.imageStyle.y / character.imageStyle.zoom}%)`,
+                            transformOrigin: 'center center',
                           } : undefined}
                         />
                       ) : (

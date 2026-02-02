@@ -5,7 +5,7 @@ interface CharacterImageInputProps {
   value?: string
   imageStyle?: ImageStyle
   onChange: (url: string | undefined) => void
-  onStyleChange?: (style: ImageStyle) => void
+  onStyleChange?: (style: ImageStyle | undefined) => void
   size?: 'small' | 'medium' | 'large'
 }
 
@@ -15,7 +15,7 @@ const DEFAULT_STYLE: ImageStyle = { zoom: 1, x: 0, y: 0 }
 
 export default function CharacterImageInput({
   value,
-  imageStyle = DEFAULT_STYLE,
+  imageStyle,
   onChange,
   onStyleChange,
   size = 'medium',
@@ -27,6 +27,9 @@ export default function CharacterImageInput({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const previewRef = useRef<HTMLDivElement>(null)
+
+  // Use default style if none provided
+  const currentStyle = imageStyle ?? DEFAULT_STYLE
 
   const imageSizeClasses = {
     small: 'w-16 h-16',
@@ -67,6 +70,8 @@ export default function CharacterImageInput({
     reader.onload = () => {
       const base64 = reader.result as string
       onChange(base64)
+      // Reset style for new image
+      onStyleChange?.(undefined)
     }
     reader.onerror = () => {
       setError('Failed to read file')
@@ -76,7 +81,7 @@ export default function CharacterImageInput({
 
   const handleClear = () => {
     onChange(undefined)
-    onStyleChange?.(DEFAULT_STYLE)
+    onStyleChange?.(undefined)
     setUrlInput('')
     setError(null)
     if (fileInputRef.current) {
@@ -85,22 +90,22 @@ export default function CharacterImageInput({
   }
 
   const handleZoomChange = (zoom: number) => {
-    onStyleChange?.({ ...imageStyle, zoom })
+    onStyleChange?.({ ...currentStyle, zoom })
   }
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!value) return
     e.preventDefault()
     setIsDragging(true)
-    setDragStart({ x: e.clientX - imageStyle.x, y: e.clientY - imageStyle.y })
-  }, [value, imageStyle.x, imageStyle.y])
+    setDragStart({ x: e.clientX - currentStyle.x, y: e.clientY - currentStyle.y })
+  }, [value, currentStyle.x, currentStyle.y])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging) return
     const newX = Math.max(-50, Math.min(50, e.clientX - dragStart.x))
     const newY = Math.max(-50, Math.min(50, e.clientY - dragStart.y))
-    onStyleChange?.({ ...imageStyle, x: newX, y: newY })
-  }, [isDragging, dragStart, imageStyle, onStyleChange])
+    onStyleChange?.({ ...currentStyle, x: newX, y: newY })
+  }, [isDragging, dragStart, currentStyle, onStyleChange])
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false)
@@ -111,15 +116,19 @@ export default function CharacterImageInput({
   }, [])
 
   const resetPosition = () => {
-    onStyleChange?.({ ...imageStyle, x: 0, y: 0 })
+    onStyleChange?.({ ...currentStyle, x: 0, y: 0 })
   }
 
   const resetZoom = () => {
-    onStyleChange?.({ ...imageStyle, zoom: 1 })
+    onStyleChange?.({ ...currentStyle, zoom: 1 })
   }
 
-  // Calculate transform style for the image
-  const imageTransform = `scale(${imageStyle.zoom}) translate(${imageStyle.x / imageStyle.zoom}%, ${imageStyle.y / imageStyle.zoom}%)`
+  // Only apply transform if style has non-default values
+  const hasCustomStyle = currentStyle.zoom !== 1 || currentStyle.x !== 0 || currentStyle.y !== 0
+  const imageTransformStyle = hasCustomStyle ? {
+    transform: `scale(${currentStyle.zoom}) translate(${currentStyle.x / currentStyle.zoom}%, ${currentStyle.y / currentStyle.zoom}%)`,
+    transformOrigin: 'center center',
+  } : undefined
 
   return (
     <div className="space-y-3">
@@ -203,7 +212,7 @@ export default function CharacterImageInput({
                 src={value}
                 alt="Character preview"
                 className="w-full h-full object-cover pointer-events-none"
-                style={{ transform: imageTransform }}
+                style={imageTransformStyle}
                 draggable={false}
                 onError={(e) => {
                   e.currentTarget.style.display = 'none'
@@ -241,12 +250,12 @@ export default function CharacterImageInput({
                   min="1"
                   max="3"
                   step="0.1"
-                  value={imageStyle.zoom}
+                  value={currentStyle.zoom}
                   onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
                   className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400 w-12 text-right">
-                  {Math.round(imageStyle.zoom * 100)}%
+                  {Math.round(currentStyle.zoom * 100)}%
                 </span>
               </div>
               <div className="flex gap-2">

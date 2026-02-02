@@ -85,7 +85,7 @@ export default function CharacterCreatePage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined)
-  const [imageStyle, setImageStyle] = useState<ImageStyle>({ zoom: 1, x: 0, y: 0 })
+  const [imageStyle, setImageStyle] = useState<ImageStyle | undefined>(undefined)
   const [species, setSpecies] = useState('')
   const [speciesAncestry, setSpeciesAncestry] = useState('')
   const [characterClass, setCharacterClass] = useState('')
