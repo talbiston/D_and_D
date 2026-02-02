@@ -739,6 +739,20 @@ export default function CharacterCreatePage() {
       ? { damageType: selectedAncestryData.damageType, shape: selectedAncestryData.breathWeaponShape }
       : undefined
 
+    // Apply lineage overrides for speed and darkvision
+    const finalSpeed = selectedAncestryData?.speedOverride ?? speciesData?.speed ?? 30
+
+    // Build species traits, applying darkvisionOverride if present
+    const finalSpeciesTraits = (speciesData?.traits ?? []).map(trait => {
+      if (trait.name === 'Darkvision' && selectedAncestryData?.darkvisionOverride) {
+        return {
+          ...trait,
+          description: `You have Darkvision with a range of ${selectedAncestryData.darkvisionOverride} feet.`,
+        }
+      }
+      return trait
+    })
+
     // Build character data object (without id - server generates it)
     const characterData = {
       name: name.trim(),
@@ -756,7 +770,7 @@ export default function CharacterCreatePage() {
       currentHp: maxHp,
       tempHp: 0,
       armorClass: calculatedAC,
-      speed: speciesData?.speed ?? 30,
+      speed: finalSpeed,
       size: speciesData?.size ?? 'medium',
       weapons: startingWeapons,
       equipment: startingInventory,
@@ -769,7 +783,7 @@ export default function CharacterCreatePage() {
       spellcastingAbility: classData?.spellcastingAbility,
       classFeatures: getClassFeaturesForLevel(characterClass, level),
       feats,
-      speciesTraits: speciesData?.traits ?? [],
+      speciesTraits: finalSpeciesTraits,
       speciesAncestry: speciesData?.ancestry && speciesAncestry
         ? { choiceName: speciesData.ancestry.choiceName, selectedOption: speciesAncestry }
         : undefined,
