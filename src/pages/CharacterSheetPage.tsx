@@ -214,6 +214,61 @@ export default function CharacterSheetPage() {
     }
   }, [character])
 
+  // Auto-fix: Add missing lineage spells for Elf characters with a lineage
+  useEffect(() => {
+    if (!character || character.species !== 'Elf' || !character.speciesAncestry) {
+      return
+    }
+
+    const elfSpecies = getSpeciesByName('Elf')
+    if (!elfSpecies?.ancestry) return
+
+    const ancestryOption = elfSpecies.ancestry.options.find(
+      opt => opt.name === character.speciesAncestry?.selectedOption
+    )
+    if (!ancestryOption) return
+
+    const missingSpells: Spell[] = []
+
+    // Check if lineage cantrip is missing
+    if (ancestryOption.cantrip) {
+      const cantripData = getSpellByName(ancestryOption.cantrip)
+      if (cantripData && !character.spells.some(s => s.name.toLowerCase() === cantripData.name.toLowerCase())) {
+        missingSpells.push({
+          ...cantripData,
+          source: 'Lineage',
+        })
+      }
+    }
+
+    // Check if lineage leveled spells are missing (for current level)
+    if (ancestryOption.leveledSpells) {
+      for (const leveledSpell of ancestryOption.leveledSpells) {
+        if (character.level >= leveledSpell.level) {
+          const spellData = getSpellByName(leveledSpell.spell)
+          if (spellData && !character.spells.some(s => s.name.toLowerCase() === spellData.name.toLowerCase())) {
+            missingSpells.push({
+              ...spellData,
+              source: 'Lineage',
+              notes: 'Once per Long Rest without a spell slot',
+            })
+          }
+        }
+      }
+    }
+
+    // If there are missing spells, add them and save
+    if (missingSpells.length > 0) {
+      const updatedCharacter = {
+        ...character,
+        spells: [...character.spells, ...missingSpells],
+      }
+      setCharacter(updatedCharacter)
+      pendingCharacterRef.current = updatedCharacter
+      saveToApi(updatedCharacter)
+    }
+  }, [character?.id, character?.speciesAncestry?.selectedOption]) // Only run when character ID or ancestry changes
+
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
