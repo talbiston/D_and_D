@@ -35,6 +35,8 @@ import ArmorPickerModal from '../components/ArmorPickerModal'
 import ClassIcon from '../components/ClassIcon'
 import SpeciesIcon from '../components/SpeciesIcon'
 import CharacterImageInput from '../components/CharacterImageInput'
+import ExpertisePickerModal from '../components/ExpertisePickerModal'
+import type { ClassFeature, ExpertiseGrant } from '../types'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -126,7 +128,15 @@ export default function CharacterSheetPage() {
   const [showManeuverPicker, setShowManeuverPicker] = useState(false)
   const [showMetamagicPicker, setShowMetamagicPicker] = useState(false)
   const [showLevelUpSpellPicker, setShowLevelUpSpellPicker] = useState(false)
-  const [pendingLevelUp, setPendingLevelUp] = useState<{ levelUpResult: LevelUpResult; hpGain: number; asiChoice?: ASIChoice } | null>(null)
+  const [showExpertisePicker, setShowExpertisePicker] = useState(false)
+  const [pendingExpertiseGrant, setPendingExpertiseGrant] = useState<{ feature: ClassFeature; grant: ExpertiseGrant } | null>(null)
+  const [pendingLevelUp, setPendingLevelUp] = useState<{
+    levelUpResult: LevelUpResult
+    hpGain: number
+    asiChoice?: ASIChoice
+    selectedSpells?: Spell[]
+    expertiseChoices?: { skillName: SkillName; source: string }[]
+  } | null>(null)
   const [levelUpSummary, setLevelUpSummary] = useState<{
     newLevel: number
     previousLevel: number
@@ -1078,12 +1088,29 @@ export default function CharacterSheetPage() {
     setShowLevelUpHPModal(true)
   }
 
+  // Helper to find expertise-granting features from level-up result
+  const getExpertiseGrantsFromFeatures = (levelUpResult: LevelUpResult): { feature: ClassFeature; grant: ExpertiseGrant }[] => {
+    const grants: { feature: ClassFeature; grant: ExpertiseGrant }[] = []
+    for (const feature of levelUpResult.newClassFeatures) {
+      if (feature.expertiseGrant) {
+        grants.push({ feature, grant: feature.expertiseGrant })
+      }
+    }
+    for (const feature of levelUpResult.newSubclassFeatures) {
+      if (feature.expertiseGrant) {
+        grants.push({ feature, grant: feature.expertiseGrant })
+      }
+    }
+    return grants
+  }
+
   // Helper to complete the level-up and show summary
   const completeLevelUp = (
     levelUpResult: LevelUpResult,
     hpGain: number,
     asiChoice?: ASIChoice,
-    newSpells?: Spell[]
+    newSpells?: Spell[],
+    expertiseChoices?: { skillName: SkillName; source: string }[]
   ) => {
     if (!character) return
 
@@ -1125,6 +1152,18 @@ export default function CharacterSheetPage() {
       }
     }
 
+    // Apply expertise choices if present
+    if (expertiseChoices && expertiseChoices.length > 0) {
+      const updatedSkills = updatedCharacter.skills.map(skill => {
+        const choice = expertiseChoices.find(c => c.skillName === skill.name)
+        if (choice) {
+          return { ...skill, expertise: true, expertiseSource: choice.source }
+        }
+        return skill
+      })
+      updatedCharacter = { ...updatedCharacter, skills: updatedSkills }
+    }
+
     // Apply HP changes
     updatedCharacter = {
       ...updatedCharacter,
@@ -1164,8 +1203,16 @@ export default function CharacterSheetPage() {
       setPendingLevelUp({ levelUpResult, hpGain })
       setShowLevelUpSpellPicker(true)
     } else {
-      // No ASI and no spells to learn, complete level-up directly
-      completeLevelUp(levelUpResult, hpGain)
+      // Check for expertise grants
+      const expertiseGrants = getExpertiseGrantsFromFeatures(levelUpResult)
+      if (expertiseGrants.length > 0) {
+        setPendingLevelUp({ levelUpResult, hpGain })
+        setPendingExpertiseGrant(expertiseGrants[0])
+        setShowExpertisePicker(true)
+      } else {
+        // No ASI, no spells, no expertise - complete level-up directly
+        completeLevelUp(levelUpResult, hpGain)
+      }
     }
   }
 
@@ -1181,8 +1228,16 @@ export default function CharacterSheetPage() {
       setPendingLevelUp({ levelUpResult, hpGain, asiChoice: choice })
       setShowLevelUpSpellPicker(true)
     } else {
-      // No spells to learn, complete level-up with ASI choice
-      completeLevelUp(levelUpResult, hpGain, choice)
+      // Check for expertise grants
+      const expertiseGrants = getExpertiseGrantsFromFeatures(levelUpResult)
+      if (expertiseGrants.length > 0) {
+        setPendingLevelUp({ levelUpResult, hpGain, asiChoice: choice })
+        setPendingExpertiseGrant(expertiseGrants[0])
+        setShowExpertisePicker(true)
+      } else {
+        // No spells, no expertise - complete level-up with ASI choice
+        completeLevelUp(levelUpResult, hpGain, choice)
+      }
     }
   }
 
@@ -1198,14 +1253,65 @@ export default function CharacterSheetPage() {
 
     setShowLevelUpSpellPicker(false)
 
-    // Complete level-up with ASI choice (if any) and new spells
-    completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells)
+    // Check if we need to select expertise
+    const expertiseGrants = getExpertiseGrantsFromFeatures(levelUpResult)
+    if (expertiseGrants.length > 0) {
+      // Store spells and show expertise picker for first grant
+      setPendingLevelUp({ ...pendingLevelUp, selectedSpells })
+      setPendingExpertiseGrant(expertiseGrants[0])
+      setShowExpertisePicker(true)
+    } else {
+      // No expertise grants, complete level-up
+      completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells)
+    }
   }
 
   const handleLevelUpSpellsCancel = () => {
     // Cancel spell picker - also cancels the level up
     setShowLevelUpSpellPicker(false)
     setPendingLevelUp(null)
+  }
+
+  const handleExpertiseConfirm = (selectedSkills: SkillName[]) => {
+    if (!character || !pendingLevelUp || !pendingExpertiseGrant) return
+    const { levelUpResult, hpGain, asiChoice, selectedSpells, expertiseChoices = [] } = pendingLevelUp
+
+    setShowExpertisePicker(false)
+
+    // Add the new expertise choices
+    const newChoices = selectedSkills.map(skillName => ({
+      skillName,
+      source: pendingExpertiseGrant.feature.name
+    }))
+    const allExpertiseChoices = [...expertiseChoices, ...newChoices]
+
+    // Check if there are more expertise grants to process
+    const allGrants = getExpertiseGrantsFromFeatures(levelUpResult)
+    const processedFeatures = new Set(allExpertiseChoices.map(c => c.source))
+    const remainingGrants = allGrants.filter(g => !processedFeatures.has(g.feature.name))
+
+    if (remainingGrants.length > 0) {
+      // More expertise grants to process
+      setPendingLevelUp({ ...pendingLevelUp, expertiseChoices: allExpertiseChoices })
+      setPendingExpertiseGrant(remainingGrants[0])
+      setShowExpertisePicker(true)
+    } else {
+      // All expertise grants processed, complete level-up
+      setPendingExpertiseGrant(null)
+      completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells, allExpertiseChoices)
+    }
+  }
+
+  const handleExpertiseCancel = () => {
+    // Cancel expertise picker - continue without selecting expertise
+    if (!pendingLevelUp) return
+    const { levelUpResult, hpGain, asiChoice, selectedSpells, expertiseChoices } = pendingLevelUp
+
+    setShowExpertisePicker(false)
+    setPendingExpertiseGrant(null)
+
+    // Complete level-up with whatever choices were made
+    completeLevelUp(levelUpResult, hpGain, asiChoice, selectedSpells, expertiseChoices)
   }
 
   if (loading) {
@@ -4580,6 +4686,21 @@ export default function CharacterSheetPage() {
           maxSpellLevel={pendingLevelUp.levelUpResult.choices.maxSpellLevel}
           onConfirm={handleLevelUpSpellsConfirm}
           onCancel={handleLevelUpSpellsCancel}
+        />
+      )}
+
+      {/* Expertise Picker Modal (Level-Up) */}
+      {showExpertisePicker && character && pendingExpertiseGrant && (
+        <ExpertisePickerModal
+          isOpen={showExpertisePicker}
+          onClose={handleExpertiseCancel}
+          onConfirm={handleExpertiseConfirm}
+          title={`${pendingExpertiseGrant.feature.name} - Choose Expertise`}
+          availableSkills={pendingExpertiseGrant.grant.skills}
+          count={pendingExpertiseGrant.grant.count}
+          currentSkills={character.skills}
+          abilityScores={character.abilityScores}
+          proficiencyBonus={getProficiencyBonus(character.level)}
         />
       )}
 
