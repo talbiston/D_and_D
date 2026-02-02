@@ -1695,6 +1695,7 @@ export default function CharacterSheetPage() {
                           )
                           const isProficient = skill?.proficient ?? false
                           const hasExpertise = skill?.expertise ?? false
+                          const expertiseSource = skill?.expertiseSource
 
                           // Toggle expertise handler for proficient skills
                           const handleExpertiseToggle = () => {
@@ -1714,6 +1715,16 @@ export default function CharacterSheetPage() {
                             saveToApi(updatedCharacter)
                           }
 
+                          // Build tooltip text
+                          const getTooltip = () => {
+                            if (!isProficient) return 'Must be proficient to add expertise'
+                            if (hasExpertise) {
+                              const sourceText = expertiseSource ? `Expertise from: ${expertiseSource}` : 'Expertise'
+                              return `${sourceText} (click to remove)`
+                            }
+                            return 'Click to add expertise'
+                          }
+
                           return (
                             <div
                               key={skillName}
@@ -1723,7 +1734,7 @@ export default function CharacterSheetPage() {
                                 <button
                                   onClick={handleExpertiseToggle}
                                   disabled={!isProficient}
-                                  title={isProficient ? (hasExpertise ? 'Remove expertise' : 'Add expertise') : 'Must be proficient to add expertise'}
+                                  title={getTooltip()}
                                   className={`w-4 h-4 rounded-full border-2 flex items-center justify-center text-xs transition-colors ${
                                     hasExpertise
                                       ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 hover:border-indigo-700'
