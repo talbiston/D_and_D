@@ -3,6 +3,19 @@ import type { Spell } from '../types'
 export const SPELLS: Spell[] = [
   // Cantrips (Level 0)
   {
+    name: 'Acid Splash',
+    level: 0,
+    school: 'evocation',
+    castingTime: '1 action',
+    range: '60 feet',
+    components: { verbal: true, somatic: true, material: false },
+    duration: 'Instantaneous',
+    concentration: false,
+    ritual: false,
+    description: 'You create an acidic bubble at a point within range, where it explodes in a 5-foot-radius Sphere. Each creature in that Sphere must succeed on a Dexterity saving throw or take 1d6 Acid damage. This spell\'s damage increases by 1d6 when you reach 5th level (2d6), 11th level (3d6), and 17th level (4d6).',
+    classes: ['Sorcerer', 'Wizard'],
+  },
+  {
     name: 'Fire Bolt',
     level: 0,
     school: 'evocation',
