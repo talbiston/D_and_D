@@ -34,6 +34,7 @@ import WeaponPickerModal from '../components/WeaponPickerModal'
 import ArmorPickerModal from '../components/ArmorPickerModal'
 import ClassIcon from '../components/ClassIcon'
 import SpeciesIcon from '../components/SpeciesIcon'
+import CharacterImageInput from '../components/CharacterImageInput'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'STR',
@@ -170,6 +171,8 @@ export default function CharacterSheetPage() {
   // Share link state
   const [showLinkCopied, setShowLinkCopied] = useState(false)
   const linkCopiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Character image edit modal state
+  const [showImageEdit, setShowImageEdit] = useState(false)
 
   useEffect(() => {
     async function loadCharacter() {
@@ -1139,10 +1142,47 @@ export default function CharacterSheetPage() {
         {/* Character Header */}
         <header className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {character.name}
-              </h1>
+            <div className="flex items-start gap-4">
+              {/* Character Portrait */}
+              <button
+                onClick={() => setShowImageEdit(true)}
+                className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 hover:ring-2 hover:ring-indigo-500 transition-all cursor-pointer no-print"
+                title="Click to edit character portrait"
+              >
+                {character.imageUrl ? (
+                  <img
+                    src={character.imageUrl}
+                    alt={character.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                )}
+              </button>
+              {/* Print-only portrait (non-clickable) */}
+              <div className="hidden print:block w-20 h-20 rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
+                {character.imageUrl ? (
+                  <img
+                    src={character.imageUrl}
+                    alt={character.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {character.name}
+                </h1>
               <p className="text-lg text-gray-600 dark:text-gray-400">
                 <button
                   onClick={openLevelModal}
@@ -1213,6 +1253,7 @@ export default function CharacterSheetPage() {
                     </button>
                   </span>
                 )}
+              </div>
               </div>
             </div>
             <div className="flex gap-2 no-print">
@@ -4392,6 +4433,30 @@ export default function CharacterSheetPage() {
           asiChoice={levelUpSummary.asiChoice}
           onClose={() => setLevelUpSummary(null)}
         />
+      )}
+
+      {/* Character Image Edit Modal */}
+      {showImageEdit && character && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Edit Character Portrait
+            </h3>
+            <CharacterImageInput
+              value={character.imageUrl}
+              onChange={(url) => updateCharacter({ imageUrl: url })}
+              size="large"
+            />
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowImageEdit(false)}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

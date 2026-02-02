@@ -90,6 +90,7 @@ export interface SpeciesAncestryData {
 export interface Character {
   id: string
   name: string
+  imageUrl?: string // URL or base64 data URL for character portrait
   species: string
   class: string
   subclass: string
