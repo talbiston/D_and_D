@@ -29,7 +29,7 @@ import { MANEUVERS, getManeuversKnown, getSuperiorityDice } from '../data/maneuv
 import { METAMAGIC_OPTIONS, getMetamagicKnown } from '../data/metamagic'
 import MetamagicPickerModal from '../components/MetamagicPickerModal'
 import LevelUpSpellPickerModal from '../components/LevelUpSpellPickerModal'
-import { getSorceryPoints, isKnownCaster, getResourceMax, getResourceResetType } from '../utils/calculations'
+import { getSorceryPoints, isKnownCaster, getResourceMax, getResourceResetType, initializeClassResources } from '../utils/calculations'
 import WeaponPickerModal from '../components/WeaponPickerModal'
 import ArmorPickerModal from '../components/ArmorPickerModal'
 import ClassIcon from '../components/ClassIcon'
@@ -1305,6 +1305,37 @@ export default function CharacterSheetPage() {
       ...updatedCharacter,
       maxHp: newMaxHp,
       currentHp: Math.min(character.currentHp + hpGain, newMaxHp)
+    }
+
+    // Update class resources for new level
+    // Get the new max for each resource at the new level
+    const classData = getClassByName(character.class)
+    if (classData?.resources) {
+      const newLevel = levelUpResult.character.level
+      const pb = getProficiencyBonus(newLevel)
+      const newResources: Record<string, number> = { ...updatedCharacter.resources }
+
+      for (const resource of classData.resources) {
+        const oldMax = getResourceMax(resource, character.level, character.abilityScores, getProficiencyBonus(character.level))
+        const newMax = getResourceMax(resource, newLevel, updatedCharacter.abilityScores, pb)
+
+        if (newMax !== null) {
+          const currentValue = character.resources?.[resource.name] ?? oldMax ?? 0
+
+          // If the max increased, give the character the extra uses
+          if (oldMax !== null && newMax > oldMax) {
+            newResources[resource.name] = currentValue + (newMax - oldMax)
+          } else if (oldMax === null && newMax !== null) {
+            // Resource became available at this level (e.g., Channel Divinity at L2)
+            newResources[resource.name] = newMax
+          } else {
+            // Keep current value, but ensure it doesn't exceed new max
+            newResources[resource.name] = Math.min(currentValue, newMax)
+          }
+        }
+      }
+
+      updatedCharacter = { ...updatedCharacter, resources: newResources }
     }
 
     updateCharacter(updatedCharacter)
