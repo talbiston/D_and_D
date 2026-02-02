@@ -137,8 +137,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added useEffect to detect L3+ characters without subclass. Added isRequiredSubclassSelection state to track context. Cancel does nothing when required. handleRequiredSubclassConfirm applies subclass and spells."
     },
     {
       "id": "US-010",

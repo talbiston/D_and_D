@@ -132,6 +132,7 @@ export default function CharacterSheetPage() {
   const [showExpertisePicker, setShowExpertisePicker] = useState(false)
   const [pendingExpertiseGrant, setPendingExpertiseGrant] = useState<{ feature: ClassFeature; grant: ExpertiseGrant } | null>(null)
   const [showSubclassPickerModal, setShowSubclassPickerModal] = useState(false)
+  const [isRequiredSubclassSelection, setIsRequiredSubclassSelection] = useState(false) // True when selecting subclass for existing L3+ character
   const [pendingLevelUp, setPendingLevelUp] = useState<{
     levelUpResult: LevelUpResult
     hpGain: number
@@ -226,6 +227,14 @@ export default function CharacterSheetPage() {
       setShowElfMigrationModal(true)
     }
   }, [character])
+
+  // Detect level 3+ characters without a subclass and show required selection modal
+  useEffect(() => {
+    if (character && character.level >= 3 && !character.subclass) {
+      setIsRequiredSubclassSelection(true)
+      setShowSubclassPickerModal(true)
+    }
+  }, [character?.id, character?.level, character?.subclass])
 
   // Auto-fix: Add missing lineage spells for Elf characters with a lineage
   useEffect(() => {
@@ -1382,8 +1391,38 @@ export default function CharacterSheetPage() {
   const handleSubclassCancel = () => {
     // Cannot cancel subclass selection at level 3 - it's required
     // But we still need to handle the cancel button, so we cancel the entire level-up
+    if (isRequiredSubclassSelection) {
+      // Don't allow canceling required subclass selection
+      return
+    }
     setShowSubclassPickerModal(false)
     setPendingLevelUp(null)
+  }
+
+  // Handle required subclass selection for existing level 3+ characters
+  const handleRequiredSubclassConfirm = (subclassName: string) => {
+    if (!character) return
+
+    setShowSubclassPickerModal(false)
+    setIsRequiredSubclassSelection(false)
+
+    // Get subclass spells for current level (all spells up to current level)
+    const subclassSpells = getSubclassSpellsForLevelUp(
+      character,
+      character.class,
+      subclassName,
+      0, // Get all spells from level 0 (i.e., all available spells)
+      character.level
+    )
+
+    // Update character with subclass and spells
+    const updatedCharacter = {
+      ...character,
+      subclass: subclassName,
+      spells: [...character.spells, ...subclassSpells],
+    }
+
+    updateCharacter(updatedCharacter)
   }
 
   if (loading) {
@@ -4805,12 +4844,12 @@ export default function CharacterSheetPage() {
         />
       )}
 
-      {/* Subclass Picker Modal (Level-Up to Level 3) */}
+      {/* Subclass Picker Modal (Level-Up to Level 3 or Required for Existing Characters) */}
       {showSubclassPickerModal && character && (
         <SubclassPickerModal
           isOpen={showSubclassPickerModal}
           characterClass={character.class}
-          onConfirm={handleSubclassConfirm}
+          onConfirm={isRequiredSubclassSelection ? handleRequiredSubclassConfirm : handleSubclassConfirm}
           onCancel={handleSubclassCancel}
         />
       )}

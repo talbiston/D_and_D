@@ -137,3 +137,20 @@ Started: Sun Feb  2 12:00:00 AM CST 2026
   - Badge colors: indigo for level, amber for subclass, emerald for lineage/other
 
 ---
+
+## 2026-02-01 - US-009: Validate existing characters need subclass at level 3+
+- Added useEffect to detect level 3+ characters without subclass on load
+- Added isRequiredSubclassSelection state to track if we're in required mode
+- handleSubclassCancel returns early if isRequiredSubclassSelection (can't cancel)
+- Created handleRequiredSubclassConfirm for handling required selection:
+  - Gets all subclass spells up to current level (previousLevel = 0)
+  - Updates character with subclass and spells
+  - Saves via updateCharacter
+- SubclassPickerModal uses conditional handler based on isRequiredSubclassSelection
+- Files changed: src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Use separate state to track modal context (required vs optional)
+  - useEffect dependencies should include specific character fields, not just character object
+  - Pattern: return early from cancel handler for required modals
+
+---
