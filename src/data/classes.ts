@@ -1,4 +1,4 @@
-import type { AbilityName, ClassFeature } from '../types'
+import type { AbilityName, ClassFeature, SkillName } from '../types'
 
 export interface SubclassSpellGrant {
   level: number  // Character level when these spells become available
@@ -12,12 +12,21 @@ export interface SubclassACCalculation {
   abilities: AbilityName[]  // Abilities to add modifiers from (e.g., ['dexterity'])
 }
 
+// Proficiencies granted by a subclass
+export interface SubclassProficiencies {
+  armor?: string[]  // e.g., ['Heavy Armor']
+  weapons?: string[]  // e.g., ['Martial Weapons', 'Scimitar']
+  tools?: string[]  // e.g., ["Artisan's Tools"]
+  skills?: SkillName[]  // e.g., ['athletics', 'intimidation']
+}
+
 export interface Subclass {
   name: string
   description: string
   features: ClassFeature[]
   spells?: SubclassSpellGrant[]  // Subclass-granted spells (domain spells, patron spells, etc.)
   acCalculation?: SubclassACCalculation  // Subclass-specific AC calculation (e.g., Draconic Resilience)
+  proficiencies?: SubclassProficiencies  // Proficiencies granted when this subclass is selected
 }
 
 /**
@@ -157,7 +166,7 @@ export const CLASSES: ClassData[] = [
       { name: 'Spellcasting', level: 1, description: 'You have learned to untangle and reshape the fabric of reality in harmony with your wishes and music. Charisma is your spellcasting ability.' },
       { name: 'Expertise', level: 2, description: 'Choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies.', expertiseGrant: { count: 2 } },
       { name: 'Jack of All Trades', level: 2, description: 'You can add half your proficiency bonus, rounded down, to any ability check you make that does not already include your proficiency bonus.' },
-      { name: 'Bard College', level: 3, description: 'Choose a Bard College that shapes your bardic abilities: College of Dance, College of Glamour, College of Lore, or College of Valor.' },
+      { name: 'Bard College', level: 3, description: 'Choose a Bard College that shapes your bardic abilities: College of Dance, College of Glamour, College of Lore, College of Swords, or College of Valor.' },
       { name: 'Ability Score Improvement', level: 4, description: 'Increase one ability score by 2, or two ability scores by 1 each. Alternatively, choose a feat.' },
       { name: 'Font of Inspiration', level: 5, description: 'You regain all expended uses of Bardic Inspiration when you finish a Short or Long Rest.' },
       { name: 'Subclass Feature', level: 6, description: 'You gain a feature from your Bard College subclass.' },
@@ -210,10 +219,29 @@ export const CLASSES: ClassData[] = [
         description: 'Bards of the College of Valor are daring skalds whose tales keep alive the memory of the great heroes of the past.',
         features: [
           { name: 'Combat Inspiration', level: 3, description: 'A creature that has a Bardic Inspiration die from you can roll that die and add the number rolled to a weapon damage roll it just made, or add it to their AC until the start of your next turn.' },
-          { name: 'Martial Training', level: 3, description: 'You gain proficiency with Medium armor and with Martial weapons.' },
+          { name: 'Martial Training', level: 3, description: 'You gain proficiency with Medium armor, Shields, and Martial weapons.' },
           { name: 'Extra Attack', level: 6, description: 'You can attack twice, instead of once, whenever you take the Attack action on your turn.' },
           { name: 'Battle Magic', level: 14, description: 'When you use your action to cast a Bard spell, you can make one weapon attack as a Bonus Action.' },
         ],
+        proficiencies: {
+          armor: ['Medium Armor', 'Shields'],
+          weapons: ['Martial Weapons'],
+        },
+      },
+      {
+        name: 'College of Swords',
+        description: 'Bards of the College of Swords are called blades, and they entertain through daring feats of weapon prowess. They perform stunts such as sword swallowing, knife throwing, and mock combats.',
+        features: [
+          { name: 'Bonus Proficiencies', level: 3, description: 'You gain proficiency with Medium armor and the Scimitar. If you are proficient with a Simple or Martial melee weapon, you can use it as a spellcasting focus for your Bard spells.' },
+          { name: 'Fighting Style', level: 3, description: 'You adopt a particular style of fighting as your specialty. Choose one of the following options: Dueling or Two-Weapon Fighting.' },
+          { name: 'Blade Flourish', level: 3, description: 'Whenever you take the Attack action on your turn, your walking speed increases by 10 feet until the end of the turn, and if you deal damage with a weapon attack, you can expend one use of Bardic Inspiration to use one Blade Flourish option: Defensive Flourish, Slashing Flourish, or Mobile Flourish.' },
+          { name: 'Extra Attack', level: 6, description: 'You can attack twice, instead of once, whenever you take the Attack action on your turn.' },
+          { name: "Master's Flourish", level: 14, description: 'Whenever you use a Blade Flourish option, you can roll a d6 and use it instead of expending a Bardic Inspiration die.' },
+        ],
+        proficiencies: {
+          armor: ['Medium Armor'],
+          weapons: ['Scimitar'],
+        },
       },
     ],
     startingEquipment: [
@@ -319,6 +347,10 @@ export const CLASSES: ClassData[] = [
           { level: 7, spells: ["Crusader's Mantle", 'Spirit Guardians'] },
           { level: 9, spells: ['Freedom of Movement', 'Stoneskin'] },
         ],
+        proficiencies: {
+          armor: ['Heavy Armor'],
+          weapons: ['Martial Weapons'],
+        },
       },
     ],
     startingEquipment: [
