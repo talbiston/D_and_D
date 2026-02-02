@@ -134,10 +134,15 @@ export default function CharacterCreatePage() {
     setBalancedAbilities([])
   }
 
-  // Reset ancestry selection when species changes
+  // Keen Senses skill choice for Elves
+  const [keenSensesSkill, setKeenSensesSkill] = useState<SkillName | ''>('')
+  const KEEN_SENSES_OPTIONS: SkillName[] = ['insight', 'perception', 'survival']
+
+  // Reset ancestry selection and Keen Senses when species changes
   const handleSpeciesChange = (newSpecies: string) => {
     setSpecies(newSpecies)
     setSpeciesAncestry('')
+    setKeenSensesSkill('')
   }
 
   // Get the current species data and ancestry options
@@ -205,7 +210,10 @@ export default function CharacterCreatePage() {
   // Check if class order is required and if it's selected
   const classOrderRequired = classOrderOptions.length > 0
   const classOrderValid = !classOrderRequired || classOrder !== ''
-  const isValid = name.trim() !== '' && species !== '' && characterClass !== '' && ancestryValid && classOrderValid
+  // Check if Keen Senses skill is required (Elf species) and if it's selected
+  const keenSensesRequired = species === 'Elf'
+  const keenSensesValid = !keenSensesRequired || keenSensesSkill !== ''
+  const isValid = name.trim() !== '' && species !== '' && characterClass !== '' && ancestryValid && classOrderValid && keenSensesValid
 
   const updateAbilityScore = (ability: AbilityName, value: number) => {
     const clampedValue = Math.max(1, Math.min(30, value))
@@ -685,13 +693,14 @@ export default function CharacterCreatePage() {
       : (characterClass === 'Druid' && classOrder === 'Magician') ? 'arcana'
       : null
 
-    // Apply background and class order skill proficiencies
+    // Apply background, class order, and Keen Senses skill proficiencies
     const finalSkills = skills.map((skill) => {
       const hasBackgroundProficiency = bgData?.skillProficiencies.includes(skill.name)
       const hasClassOrderProficiency = classOrderSkill === skill.name
+      const hasKeenSensesProficiency = species === 'Elf' && keenSensesSkill === skill.name
       return {
         ...skill,
-        proficient: skill.proficient || hasBackgroundProficiency || hasClassOrderProficiency || false,
+        proficient: skill.proficient || hasBackgroundProficiency || hasClassOrderProficiency || hasKeenSensesProficiency || false,
       }
     })
 
@@ -971,6 +980,34 @@ export default function CharacterCreatePage() {
                     {selectedAncestryOption.description}
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Keen Senses skill choice for Elves */}
+            {species === 'Elf' && (
+              <div>
+                <label
+                  htmlFor="keenSensesSkill"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                >
+                  Keen Senses Skill *
+                </label>
+                <select
+                  id="keenSensesSkill"
+                  value={keenSensesSkill}
+                  onChange={(e) => setKeenSensesSkill(e.target.value as SkillName)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="">Select skill proficiency</option>
+                  {KEEN_SENSES_OPTIONS.map((skill) => (
+                    <option key={skill} value={skill}>
+                      {SKILL_LABELS[skill]}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  Your Keen Senses trait grants proficiency in one of these skills.
+                </p>
               </div>
             )}
 

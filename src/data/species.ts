@@ -46,7 +46,7 @@ export const SPECIES: Species[] = [
       },
       {
         name: 'Keen Senses',
-        description: 'You have proficiency in the Perception skill.',
+        description: 'You have proficiency in the Insight, Perception, or Survival skill (your choice).',
       },
       {
         name: 'Trance',
