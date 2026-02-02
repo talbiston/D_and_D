@@ -9,167 +9,175 @@ Started: Sun Feb  2 12:00:00 AM CST 2026
 - Subclass data includes features array and spells?: SubclassSpellGrant[] field
 - SubclassSpellGrant interface: { level: number; spells: string[] }
 - Spells database in src/data/spells.ts uses Spell interface with name, level, school, etc.
+- AC calculation is in src/utils/calculations.ts with calculateAC function
+- Character type defined in src/types/index.ts
+- SubclassACCalculation interface: { type: 'unarmored'; base: number; abilities: AbilityName[] }
+- Draconic Sorcery uses 2024 PHB AC: 13 + DEX (not 2014 10+DEX+CHA)
 
 ---
 
-## 2026-02-01 - US-001: Add subclass spell data to class definitions
-- Added SubclassSpellGrant interface to src/data/classes.ts
-- Added spells field to Subclass interface
-- Added Cleric domain spells for Life, Light, Trickery, War (levels 3, 5, 7, 9)
-- Added Warlock patron spells for Archfey, Celestial, Fiend, Great Old One (levels 3, 5, 7, 9)
-- Added Paladin oath spells for Devotion, Glory, Ancients, Vengeance (levels 3, 5, 9, 13, 17)
-- Files changed: src/data/classes.ts
-- **Learnings for future iterations:**
-  - Subclass spells follow PHB 2024 format with character level thresholds
-  - Clerics, Warlocks get spells at levels 3, 5, 7, 9 (matches spell slot progression)
-  - Paladins get oath spells at 3, 5, 9, 13, 17 (every other paladin level from 3)
-
----
-
-## 2026-02-01 - US-002: Add Druid and Ranger subclass spells
-- Added Druid circle spells for Circle of Moon, Circle of Sea (levels 3, 5, 7, 9)
-- Added Ranger subclass spells for Fey Wanderer, Gloom Stalker (levels 3, 5, 9, 13, 17)
-- Verified Hunter and Beast Master have no subclass spells per PHB 2024
-- Files changed: src/data/classes.ts
-- **Learnings for future iterations:**
-  - Not all subclasses have spells - Hunter and Beast Master rangers don't
-  - Druid circles follow same pattern as Cleric domains (3, 5, 7, 9)
-  - Ranger conclaves follow same pattern as Paladin oaths (3, 5, 9, 13, 17)
-
----
-
-## 2026-02-01 - US-003: Add missing subclass spells to spells database
-- Audited all subclass-granted spells against SPELLS array
-- Added 26 missing spells to src/data/spells.ts:
-  - Level 1: Bane, Heroism, Shield of Faith
-  - Level 2: Detect Thoughts, Phantasmal Force, Rope Trick
-  - Level 3: Beacon of Hope, Blink, Clairvoyance, Daylight, Fear, Nondetection, Stinking Cloud, Water Breathing
-  - Level 4: Fount of Moonlight (2024 PHB)
-  - Level 5: Commune, Conjure Elemental, Geas, Insect Plague, Legend Lore, Mislead, Modify Memory, Scrying, Seeming, Summon Celestial, Yolande's Regal Presence (2024 PHB)
-- Files changed: src/data/spells.ts
-- **Learnings for future iterations:**
-  - Many PHB 2024 spells were already in the database
-  - New 2024 PHB spells include Fount of Moonlight and Yolande's Regal Presence
-  - Spell entries need all fields: name, level, school, castingTime, range, components, duration, concentration, ritual, description, classes
-
----
-
-## 2026-02-01 - US-004: Create SubclassPickerModal component
-- Created new component at src/components/SubclassPickerModal.tsx
-- Props: isOpen, characterClass, onConfirm, onCancel
-- Features:
-  - Radio button selection for single subclass choice
-  - Shows subclass name and description preview
-  - Expandable "View Details" section for each subclass
-  - Shows features by level when expanded
-  - Shows subclass spells (domain/patron/oath spells) when expanded
-  - Amber badge indicating "Subclass Spells Available" for subclasses with spells
-  - Confirm button disabled until selection made
-- Files changed: src/components/SubclassPickerModal.tsx (new)
-- **Learnings for future iterations:**
-  - Modal pattern: fixed inset-0 with z-50 for overlay
-  - Use getSubclassesByClass(className) to get subclass list
-  - Use getClassByName(className)?.subclassName for class-specific terminology (e.g., "Divine Domain", "Primal Path")
-  - line-clamp-2 for truncating long descriptions
-
----
-
-## 2026-02-01 - US-005: Prompt for subclass selection during level-up to level 3
-- Modified handleLevelUpHPConfirm to check if leveling to level 3 and needs subclass
-- Added showSubclassPickerModal state and selectedSubclass to pendingLevelUp type
-- Created handleSubclassConfirm and handleSubclassCancel handlers
-- Updated completeLevelUp to accept and apply selectedSubclass parameter
-- Updated all level-up flow handlers (ASI, spells, expertise) to preserve/pass selectedSubclass
-- Added SubclassPickerModal render in JSX
-- Files changed: src/pages/CharacterSheetPage.tsx
-- **Learnings for future iterations:**
-  - Level-up flow chains modals: HP -> Subclass (at L3) -> ASI -> Spells -> Expertise -> Summary
-  - pendingLevelUp stores all choices that need to be applied at the end
-  - When updating pendingLevelUp, use spread operator to preserve existing fields
-  - Cancel on required modals (like subclass) should cancel entire level-up
-
----
-
-## 2026-02-01 - US-006: Auto-add subclass spells when subclass is chosen
-- Created getSubclassSpellsForLevel(className, subclassName, level) in calculations.ts
-- Created getSubclassSpellsForLevelUp(character, className, subclassName, previousLevel, newLevel)
-- Both functions use getSubclass and getSpellByName to look up data
-- Added import for getSubclass from classes.ts
-- Integrated into completeLevelUp in CharacterSheetPage.tsx
-- When selectedSubclass is set (new choice), gets all spells up to current level (previousLevel = 0)
-- When leveling up with existing subclass, gets only newly available spells
-- Spells added with source: 'Subclass' and notes: 'Always prepared'
-- Duplicate check prevents adding spells already in character.spells
-- Files changed: src/utils/calculations.ts, src/pages/CharacterSheetPage.tsx
-- **Learnings for future iterations:**
-  - Pattern: check existing spells before adding with .some() case-insensitive comparison
-  - Use spread operator with updated spells array to prevent duplicates from lineage + subclass
-  - getSubclass returns undefined if subclass not found, so check for spells field explicitly
-
----
-
-## 2026-02-01 - US-007: Auto-add subclass spells during level-up
-- Already implemented in US-006's completeLevelUp logic
-- When character has existing subclass and levels up:
-  - subclassForSpells = character.subclass (existing)
-  - previousLevelForSubclass = character.level (current level before level-up)
-  - newLevel = levelUpResult.character.level (new level after)
-- getSubclassSpellsForLevelUp compares levels to find newly available spells
-- Works for all classes with subclass spells (Cleric, Warlock, Paladin, Druid, Ranger)
-- Files changed: prd.json (marked complete)
-- **Learnings for future iterations:**
-  - US-006 and US-007 were essentially the same feature, just different scenarios
-  - Consider combining stories that are really the same feature in different contexts
-
----
-
-## 2026-02-01 - US-008: Display subclass spells distinctly in spell list
-- Added isSubclassSpell, isLineageSpell, isProtectedSpell checks in spell list render
-- Subclass spells show amber "Always Prepared" badge with tooltip:
-  - "This spell is granted by your [subclass name] and is always prepared"
-- Lineage spells continue to show emerald "Lineage" badge
-- Remove button now conditionally rendered: hidden for protected spells (Subclass/Lineage)
-- Other sources still show generic emerald badge
-- Files changed: src/pages/CharacterSheetPage.tsx
-- **Learnings for future iterations:**
-  - Use title attribute for simple tooltips (cursor-help class for cursor)
-  - Conditional rendering with && for hiding elements (vs disabled state)
-  - Badge colors: indigo for level, amber for subclass, emerald for lineage/other
-
----
-
-## 2026-02-01 - US-009: Validate existing characters need subclass at level 3+
-- Added useEffect to detect level 3+ characters without subclass on load
-- Added isRequiredSubclassSelection state to track if we're in required mode
-- handleSubclassCancel returns early if isRequiredSubclassSelection (can't cancel)
-- Created handleRequiredSubclassConfirm for handling required selection:
-  - Gets all subclass spells up to current level (previousLevel = 0)
-  - Updates character with subclass and spells
-  - Saves via updateCharacter
-- SubclassPickerModal uses conditional handler based on isRequiredSubclassSelection
-- Files changed: src/pages/CharacterSheetPage.tsx
-- **Learnings for future iterations:**
-  - Use separate state to track modal context (required vs optional)
-  - useEffect dependencies should include specific character fields, not just character object
-  - Pattern: return early from cancel handler for required modals
-
----
-
-## 2026-02-01 - US-010: Add subclass to level-up summary
-- Updated LevelUpSummaryModal with selectedSubclass and newSubclassSpells props
-- Added purple "Subclass Chosen" section showing:
-  - Subclass name
-  - Subclass spells with level badges (when chosen this level)
-- Added amber "New Subclass Spells" section for level-up grants (when already has subclass)
-- Updated levelUpSummary state type in CharacterSheetPage
-- Tracked subclassSpells in completeLevelUp for inclusion in summary
-- Passed new props to LevelUpSummaryModal render
+## 2026-02-02 - US-012: Display resource info in level-up summary
+- Added ResourceChange interface to LevelUpSummaryModal.tsx
+- Added resourceChanges prop to LevelUpSummaryModal component
+- Added teal-colored "Resource Changes" section showing changes
+- Shows "New!" label for resources that became available at this level
+- Shows "X → Y (+Z)" format for resources with increased maximum
+- Updated levelUpSummary state type to include resourceChanges
+- Modified completeLevelUp to track resource changes during level-up
+- Passed resourceChanges to LevelUpSummaryModal when rendered
 - Files changed: src/components/LevelUpSummaryModal.tsx, src/pages/CharacterSheetPage.tsx
 - **Learnings for future iterations:**
-  - Track computed values (like subclassSpells) for display even if already applied
-  - Use different colors to distinguish contexts (purple for subclass choice, amber for spell grants)
-  - Move variable declarations outside if blocks when needed for later use
+  - LevelUpSummaryModal already handles various change displays (HP, spell slots, features)
+  - Follow existing pattern: interface for change type, prop for modal, track during level-up
+  - Use consistent color scheme (teal for resources matches other sections' distinct colors)
 
 ---
 
-## PRD COMPLETE - All 10 user stories implemented and passing!
+## 2026-02-02 - US-011: Handle level-scaled resources on level-up
+- Updated completeLevelUp to recalculate resource maximums at new level
+- If max increased (e.g., Rage 2->3), grants the extra uses
+- If resource became available at new level, initializes to max
+- If max somehow decreased, clamps current to new max
+- Imported initializeClassResources for initialization
+- Files changed: src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Compare oldMax to newMax to determine how to update current value
+  - Use null check for resources that don't exist yet (minLevel not reached)
+  - Ability scores might change during level-up (ASI), use updatedCharacter.abilityScores
+
+---
+
+## 2026-02-02 - US-009 & US-010: Add short rest and long rest functionality
+- Added Short Rest button (blue) to Class Resources header
+- Added Long Rest button (purple) to Class Resources header
+- Both show window.confirm() with list of what will reset
+- Short Rest: resets resources with resetOn: 'short'
+- Long Rest: resets ALL resources, HP to max, all spell slots, Pact Magic
+- Reuses subclassProficiencyNotification state for toast messages
+- Files changed: src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - window.confirm() works for simple confirmations
+  - Spell slots are stored with 'used' count, reset to 0
+  - Pact Magic has 'expended' count, reset to 0
+  - Reuse notification state rather than creating new state
+
+---
+
+## 2026-02-02 - US-008: Implement resource usage controls
+- Added - button (red) to use/decrease resource
+- Added + button (green) to restore/increase resource
+- Buttons disabled at limits (0 for -, max for +)
+- Made pips clickable for resources with ≤6 max uses
+- Changes auto-save via updateCharacter spread pattern
+- Files changed: src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Use Math.max(0, value) and Math.min(max, value) for clamping
+  - Spread existing resources when updating: { ...character.resources, [name]: value }
+  - disabled prop + cursor-not-allowed class for disabled buttons
+
+---
+
+## 2026-02-02 - US-007: Create class resources UI section
+- Added Class Resources section before Class Features in CharacterSheetPage
+- Shows resource name with SR/LR badge (blue for short, purple for long)
+- Fillable pips for resources with ≤6 max uses
+- Numeric current/max display for resources with >6 max uses
+- Infinity symbol (∞) for unlimited resources (L20 Rage)
+- Imports getResourceMax and getResourceResetType from calculations.ts
+- Files changed: src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Use IIFE pattern {(() => { ... })()} for inline calculations in JSX
+  - Filter resources by minLevel before rendering
+  - Pips work well for small numbers (≤6), use counter for larger
+
+---
+
+## 2026-02-02 - US-006: Add resource tracking to Character type
+- Added resources?: Record<string, number> to Character interface
+- Created getResourceMax function for calculating max uses based on level/ability
+- Created initializeClassResources to set up resources on character creation
+- Created getResourceResetType to handle reset type changes (Bardic Inspiration at L5)
+- Updated CharacterCreatePage to initialize resources
+- Files changed: src/types/index.ts, src/utils/calculations.ts, src/pages/CharacterCreatePage.tsx
+- **Learnings for future iterations:**
+  - Resources stored as simple name -> current uses mapping
+  - Max uses calculated on-demand from class data + level + ability scores
+  - Use 999 for "unlimited" resources (Rage at L20)
+  - getClassByName imported into calculations.ts for resource lookup
+
+---
+
+## 2026-02-02 - US-005: Add class resource definitions
+- Created ClassResource interface with maxUses, resetOn, levelScaling, minLevel, resetOnShortAtLevel
+- Added resources? field to ClassData interface
+- Added Rage to Barbarian with level scaling (2/3/4/5/6/∞)
+- Added Bardic Inspiration to Bard with ability-based uses and resetOnShortAtLevel
+- Added Channel Divinity to Cleric with level scaling
+- Added Wild Shape to Druid
+- Added Second Wind, Action Surge, Indomitable to Fighter
+- Added Hunter's Mark to Ranger (WIS-based, replaces Favored Foe concept)
+- Added Arcane Recovery to Wizard
+- Files changed: src/data/classes.ts
+- **Learnings for future iterations:**
+  - maxUses can be number | 'level' | 'proficiency' | 'ability' for different scaling
+  - levelScaling: Record<number, number> overrides maxUses at specific levels
+  - resetOnShortAtLevel allows Bardic Inspiration's L5 change from long to short rest
+  - Monk Focus Points and Sorcerer Sorcery Points have their own custom UI
+
+---
+
+## 2026-02-02 - US-004: Auto-grant subclass proficiencies on selection
+- Created applySubclassProficiencies helper function
+- Updates both completeLevelUp and handleRequiredSubclassConfirm to apply proficiencies
+- Deduplicates proficiencies with case-insensitive comparison
+- Added subclassProficiencyNotification state for toast notification
+- Added emerald notification toast UI with dismiss button and auto-hide (5s)
+- Files changed: src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Character.proficiencies has armor, weapons, tools arrays (not separate fields)
+  - Use setTimeout for auto-hiding notifications
+  - applySubclassProficiencies returns both updated character and list of granted profs
+
+---
+
+## 2026-02-02 - US-003: Add subclass proficiency data to class definitions
+- Created SubclassProficiencies interface with armor, weapons, tools, skills fields
+- Added proficiencies? field to Subclass interface
+- Added proficiencies to War Domain: Heavy Armor, Martial Weapons
+- Added proficiencies to College of Valor: Medium Armor, Shields, Martial Weapons
+- Created new College of Swords subclass with proficiencies: Medium Armor, Scimitar
+- Updated Bard College feature description to include College of Swords
+- Files changed: src/data/classes.ts
+- **Learnings for future iterations:**
+  - College of Valor also grants Shields proficiency (updated feature description)
+  - College of Swords was missing from codebase - added full subclass definition
+  - Import SkillName from types when adding skills to proficiencies
+
+---
+
+## 2026-02-02 - US-002: Implement subclass AC in AC calculation
+- Created calculateACWithSource function that returns {ac: number, source: string}
+- Updated calculateAC to accept optional subclassName and chaMod parameters
+- When unarmored, now compares all AC options (base, class, subclass) and picks highest
+- CharacterSheetPage now uses calculateACWithSource and displays source in breakdown
+- Added getSubclass import to CharacterSheetPage
+- Files changed: src/utils/calculations.ts, src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Use ACCalculationResult interface for returning both AC value and source
+  - acOptions array pattern: collect all possible ACs, then reduce to find best
+  - CharacterSheetPage has separate breakdown logic that may need updating for new AC sources
+
+---
+
+## 2026-02-02 - US-001: Add subclass AC calculation data to class definitions
+- Created SubclassACCalculation interface with type, base, and abilities fields
+- Added acCalculation? field to Subclass interface
+- Added Draconic Sorcery AC calculation: base 13 + DEX
+- Updated Draconic Resilience description to match 2024 PHB (was 10+DEX+CHA)
+- Files changed: src/data/classes.ts
+- **Learnings for future iterations:**
+  - 2024 PHB changed Draconic Resilience from 10+DEX+CHA to 13+DEX
+  - Base class unarmored defenses (Monk, Barbarian) are already hardcoded in calculateAC
+
+---
+

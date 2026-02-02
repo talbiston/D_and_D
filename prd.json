@@ -1,158 +1,200 @@
 {
   "project": "D&D Character Sheet",
-  "branchName": "ralph/subclass-overhaul",
-  "description": "Comprehensive Subclass System Overhaul - Enforce subclass selection at level 3, auto-add subclass spells, show descriptions during selection",
+  "branchName": "ralph/subclass-mechanics",
+  "description": "Subclass Mechanical Benefits - AC calculations, auto-grant proficiencies, and class resource tracking with rest functionality",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Add subclass spell data to class definitions",
-      "description": "As a developer, I need subclass spell data stored in the class definitions so the app can auto-grant spells.",
+      "title": "Add subclass AC calculation data to class definitions",
+      "description": "As a developer, I need subclass AC calculation formulas stored in the class definitions so the app can compute AC correctly.",
       "acceptanceCriteria": [
-        "Add `spells?: { level: number; spells: string[] }[]` field to Subclass interface in src/types/index.ts",
-        "Add Cleric domain spells for Life, Light, Trickery, War (levels 3, 5, 7, 9) in src/data/classes.ts",
-        "Add Warlock patron spells for Fiend, Great Old One, Celestial (levels 3, 5, 7, 9)",
-        "Add Paladin oath spells for Devotion, Vengeance (levels 3, 5, 9, 13, 17)",
+        "Add `acCalculation?: { type: 'unarmored'; base: number; abilities: AbilityName[] }` field to Subclass interface",
+        "Add Draconic Sorcerer AC: base 13 + DEX (Draconic Resilience)",
+        "Verify base class unarmored defenses exist (Monk: 10+DEX+WIS, Barbarian: 10+DEX+CON)",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Added SubclassSpellGrant interface to classes.ts. Added spells to Cleric domains (Life, Light, Trickery, War), Warlock patrons (Archfey, Celestial, Fiend, Great Old One), and Paladin oaths (Devotion, Glory, Ancients, Vengeance)."
+      "notes": "Added SubclassACCalculation interface with type, base, abilities fields. Added acCalculation to Subclass interface. Added Draconic Sorcery with base 13 + DEX. Updated description to match 2024 PHB."
     },
     {
       "id": "US-002",
-      "title": "Add Druid and Ranger subclass spells",
-      "description": "As a developer, I need Druid circle spells and Ranger conclave spells in the class definitions.",
+      "title": "Implement subclass AC in AC calculation",
+      "description": "As a player with a Draconic Sorcerer, I want my AC to automatically use Draconic Resilience when not wearing armor.",
       "acceptanceCriteria": [
-        "Add Druid circle spells for Moon, Sea (levels 3, 5, 7, 9)",
-        "Add Ranger subclass spells for Gloom Stalker, Fey Wanderer (levels 3, 5, 9, 13, 17)",
-        "Hunter and Beast Master have no subclass spells (verify no spells field needed)",
-        "Typecheck passes"
+        "Update `calculateAC` function to check for subclass AC calculations",
+        "When unarmored, use highest of: base 10+DEX, class unarmored defense, or subclass unarmored defense",
+        "Display source of AC calculation in AC breakdown tooltip",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "Added spells to Circle of Moon, Circle of Sea, Fey Wanderer, and Gloom Stalker. Hunter and Beast Master verified to have no subclass spells per PHB 2024."
+      "notes": "Added calculateACWithSource function returning {ac, source}. Updated calculateAC to accept subclass name and CHA mod. When unarmored, picks highest AC from base, class defense, or subclass. CharacterSheetPage uses acResult.source for breakdown display."
     },
     {
       "id": "US-003",
-      "title": "Add missing subclass spells to spells database",
-      "description": "As a developer, I need all subclass-granted spells to exist in the spells database.",
+      "title": "Add subclass proficiency data to class definitions",
+      "description": "As a developer, I need subclass-granted proficiencies stored in the class definitions.",
       "acceptanceCriteria": [
-        "Check Cleric domain spells exist in SPELLS array, add any missing",
-        "Check Warlock patron spells exist, add any missing",
-        "Check Paladin oath spells exist, add any missing (Steel Wind Strike, etc.)",
-        "Check Druid/Ranger spells exist, add any missing",
+        "Add `proficiencies?: { armor?: string[]; weapons?: string[]; tools?: string[]; skills?: SkillName[] }` field to Subclass interface",
+        "Add War Domain: heavy armor, martial weapons",
+        "Add College of Valor: medium armor, shields, martial weapons",
+        "Add College of Swords: medium armor, scimitar",
         "Typecheck passes"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Added 26 missing spells: Bane, Heroism, Shield of Faith, Detect Thoughts, Phantasmal Force, Rope Trick, Beacon of Hope, Blink, Clairvoyance, Daylight, Fear, Nondetection, Stinking Cloud, Water Breathing, Fount of Moonlight, Commune, Conjure Elemental, Geas, Insect Plague, Legend Lore, Mislead, Modify Memory, Scrying, Seeming, Summon Celestial, Yolande's Regal Presence."
+      "notes": "Added SubclassProficiencies interface. War Domain has Heavy Armor and Martial Weapons. College of Valor has Medium Armor, Shields, Martial Weapons. Added new College of Swords subclass with Medium Armor and Scimitar."
     },
     {
       "id": "US-004",
-      "title": "Create SubclassPickerModal component",
-      "description": "As a developer, I need a reusable modal for selecting subclass during level-up.",
+      "title": "Auto-grant subclass proficiencies on selection",
+      "description": "As a player, when I choose a subclass that grants proficiencies, I want them automatically added to my character.",
       "acceptanceCriteria": [
-        "Create SubclassPickerModal component in src/components/",
-        "Props: characterClass, onConfirm, onCancel",
-        "Shows all subclasses for the class with name and description",
-        "Shows subclass spells list if applicable",
-        "Confirm button disabled until selection made",
+        "When subclass is selected, check for proficiencies field",
+        "Add armor proficiencies to character.armorProficiencies",
+        "Add weapon proficiencies to character.weaponProficiencies",
+        "Show notification listing granted proficiencies",
+        "Don't add duplicates if already proficient",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Created SubclassPickerModal with expandable subclass cards showing name, description, features, and spells. Uses radio button selection pattern. Browser verification pending - will be verified when integrated in US-005."
+      "notes": "Added applySubclassProficiencies helper. Automatically grants armor/weapon/tool proficiencies on subclass selection. Shows emerald notification toast. Deduplicates using case-insensitive comparison."
     },
     {
       "id": "US-005",
-      "title": "Prompt for subclass selection during level-up to level 3",
-      "description": "As a player, when I level up to level 3, I want to be prompted to choose my subclass.",
+      "title": "Add class resource definitions",
+      "description": "As a developer, I need class resource data (uses, reset type) stored in class definitions.",
       "acceptanceCriteria": [
-        "During level-up from 2->3, show SubclassPickerModal after HP roll",
-        "Selection is required - cannot proceed without choosing",
-        "Selected subclass is saved to character.subclass",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Create `ClassResource` interface: `{ name: string; maxUses: number | 'level' | 'ability'; ability?: AbilityName; resetOn: 'short' | 'long'; levelScaling?: Record<number, number> }`",
+        "Add `resources?: ClassResource[]` field to ClassData interface",
+        "Add Barbarian: Rage (level-scaled uses, long rest)",
+        "Add Bard: Bardic Inspiration (CHA mod uses, long rest; short rest at L5)",
+        "Add Cleric: Channel Divinity (1/2/3 uses at L2/6/18, short rest)",
+        "Add Druid: Wild Shape (2 uses, short rest)",
+        "Add Fighter: Second Wind (1 use, short rest), Action Surge (1-2 uses, short rest), Indomitable (1-3 uses, long rest)",
+        "Add Ranger: Favored Foe (PB uses, long rest)",
+        "Add Wizard: Arcane Recovery (1 use, long rest)",
+        "Typecheck passes"
       ],
       "priority": 5,
       "passes": true,
-      "notes": "Integrated SubclassPickerModal into level-up flow. Shows after HP roll when leveling to 3. Cancel button cancels entire level-up (subclass is required). Subclass is applied in completeLevelUp."
+      "notes": "Added ClassResource interface with maxUses, resetOn, levelScaling, minLevel, resetOnShortAtLevel fields. Added resources to Barbarian (Rage), Bard (Bardic Inspiration), Cleric (Channel Divinity), Druid (Wild Shape), Fighter (Second Wind, Action Surge, Indomitable), Ranger (Hunter's Mark), Wizard (Arcane Recovery). Monk and Sorcerer have existing UI for their resources."
     },
     {
       "id": "US-006",
-      "title": "Auto-add subclass spells when subclass is chosen",
-      "description": "As a player, when I choose my subclass, I want the subclass-granted spells to be automatically added.",
+      "title": "Add resource tracking to Character type",
+      "description": "As a developer, I need to store current resource usage on the character.",
       "acceptanceCriteria": [
-        "Create helper function getSubclassSpellsForLevel(className, subclassName, level) in calculations.ts",
-        "When subclass is selected, get subclass spells for current level",
-        "Add spells to character.spells with source: 'Subclass'",
-        "Don't add duplicates if spell already exists",
+        "Add `resources?: Record<string, number>` field to Character interface for tracking current uses",
+        "Initialize resources when character is created or gains class features",
+        "Preserve resource values on character save/load",
         "Typecheck passes"
       ],
       "priority": 6,
       "passes": true,
-      "notes": "Created getSubclassSpellsForLevel and getSubclassSpellsForLevelUp functions. Integrated into completeLevelUp - when subclass is newly chosen, gets all spells up to current level. Spells have source: 'Subclass' and notes: 'Always prepared'."
+      "notes": "Added resources?: Record<string, number> to Character interface. Created getResourceMax, initializeClassResources, and getResourceResetType helpers in calculations.ts. CharacterCreatePage initializes resources on creation."
     },
     {
       "id": "US-007",
-      "title": "Auto-add subclass spells during level-up",
-      "description": "As a player, when I level up and my subclass grants new spells, I want them automatically added.",
+      "title": "Create class resources UI section",
+      "description": "As a player, I want to see my class resources (Rage, Channel Divinity, etc.) with current/max uses.",
       "acceptanceCriteria": [
-        "During level-up in completeLevelUp, check if new level grants subclass spells",
-        "Add newly available subclass spells to character.spells with source: 'Subclass'",
-        "Works for Cleric, Warlock, Paladin, Druid, Ranger",
+        "Add 'Class Resources' section to character sheet (in Features tab or new section)",
+        "Display each resource with name, current/max uses, and reset indicator",
+        "Reset indicator shows icon/badge: 'SR' for short rest, 'LR' for long rest",
+        "Current uses shown as fillable pips or counter",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 7,
       "passes": true,
-      "notes": "Already implemented in US-006. The completeLevelUp function uses character.subclass for existing subclasses and compares character.level to new level to get newly available spells."
+      "notes": "Added Class Resources section before Class Features. Shows resource name, SR/LR badge, and pips (≤6 uses) or numeric counter (>6 uses). Blue for short rest, purple for long rest. Infinity symbol for unlimited."
     },
     {
       "id": "US-008",
-      "title": "Display subclass spells distinctly in spell list",
-      "description": "As a player, I want to see which spells are from my subclass so I know they're always prepared.",
+      "title": "Implement resource usage controls",
+      "description": "As a player, I want to use and restore my class resources with +/- buttons.",
       "acceptanceCriteria": [
-        "Spells with source: 'Subclass' show badge (e.g., 'Domain' or 'Always Prepared')",
-        "Subclass spells cannot be removed (remove button hidden for these spells)",
-        "Tooltip explains 'This spell is granted by your subclass and is always prepared'",
+        "Each resource has - button to use (decrease current)",
+        "Each resource has + button to restore (increase current, up to max)",
+        "Cannot go below 0 or above max",
+        "Changes save automatically",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 8,
       "passes": true,
-      "notes": "Added amber 'Always Prepared' badge for subclass spells with tooltip. Remove button hidden for both Subclass and Lineage spells."
+      "notes": "Added +/- buttons for resource controls. Red - button to use, green + button to restore. Disabled at limits. Clickable pips for ≤6 max uses. Auto-saves via updateCharacter."
     },
     {
       "id": "US-009",
-      "title": "Validate existing characters need subclass at level 3+",
-      "description": "As a player with an existing level 3+ character without a subclass, I want to be prompted to select one.",
+      "title": "Add short rest functionality",
+      "description": "As a player, I want a 'Short Rest' button that resets appropriate resources.",
       "acceptanceCriteria": [
-        "When loading character sheet, check if level >= 3 and subclass is empty",
-        "If missing, show SubclassPickerModal automatically",
-        "Cannot dismiss modal without selecting",
-        "After selection, save character and apply subclass spells",
+        "Add 'Short Rest' button to character sheet header or rest section",
+        "Clicking shows confirmation with list of resources that will reset",
+        "On confirm, reset all resources with `resetOn: 'short'` to max",
+        "Show toast/notification confirming rest completed",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 9,
       "passes": true,
-      "notes": "Added useEffect to detect L3+ characters without subclass. Added isRequiredSubclassSelection state to track context. Cancel does nothing when required. handleRequiredSubclassConfirm applies subclass and spells."
+      "notes": "Added Short Rest button with confirmation dialog. Resets resources with resetOn: 'short'. Shows toast notification on completion."
     },
     {
       "id": "US-010",
-      "title": "Add subclass to level-up summary",
-      "description": "As a player, I want the level-up summary to show my subclass choice and new subclass spells.",
+      "title": "Add long rest functionality",
+      "description": "As a player, I want a 'Long Rest' button that resets all resources and HP.",
       "acceptanceCriteria": [
-        "LevelUpSummaryModal shows 'Subclass: [Name]' if chosen this level",
-        "Shows new subclass spells granted at this level",
+        "Add 'Long Rest' button to character sheet header or rest section",
+        "Clicking shows confirmation with list of what will reset",
+        "On confirm, reset ALL class resources to max",
+        "Restore HP to max",
+        "Reset spell slots to max (if applicable)",
+        "Show toast/notification confirming rest completed",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 10,
       "passes": true,
-      "notes": "Added selectedSubclass and newSubclassSpells props to LevelUpSummaryModal. Shows purple 'Subclass Chosen' section when selecting new subclass, amber 'New Subclass Spells' for level-up grants."
+      "notes": "Added Long Rest button with confirmation dialog. Resets ALL resources, HP to max, and all spell slots (including Pact Magic). Shows toast notification."
+    },
+    {
+      "id": "US-011",
+      "title": "Handle level-scaled resources",
+      "description": "As a player leveling up, I want my resource maximums to update automatically.",
+      "acceptanceCriteria": [
+        "Create helper function `getResourceMax(resource, level, abilityScores)`",
+        "Rage uses: 2 at L1, 3 at L3, 4 at L6, 5 at L12, 6 at L17, unlimited at L20",
+        "Channel Divinity: 1 at L2, 2 at L6, 3 at L18",
+        "Action Surge: 1 at L2, 2 at L17",
+        "Indomitable: 1 at L9, 2 at L13, 3 at L17",
+        "Bardic Inspiration: CHA modifier (minimum 1)",
+        "On level-up, recalculate and update max values",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Updated completeLevelUp to recalculate resource maximums. Grants extra uses if max increased, initializes new resources, and clamps to new max if decreased."
+    },
+    {
+      "id": "US-012",
+      "title": "Display resource info in level-up summary",
+      "description": "As a player leveling up, I want to see if my resource maximums increased.",
+      "acceptanceCriteria": [
+        "LevelUpSummaryModal shows 'Resource Changes' section if any max changed",
+        "Display: '[Resource Name]: X -> Y uses'",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "Added ResourceChange interface to LevelUpSummaryModal. Shows teal-colored Resource Changes section with 'New!' for newly available resources and 'X → Y (+Z)' for increased maximums."
     }
   ]
 }
