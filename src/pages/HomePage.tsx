@@ -54,10 +54,10 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8 relative">
       {/* Background image with overlay */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-25 dark:opacity-30"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 dark:opacity-45"
         style={{ backgroundImage: 'url(/images/image.jpg)' }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-100/70 via-gray-100/50 to-gray-100/80 dark:from-gray-900/70 dark:via-gray-900/50 dark:to-gray-900/80" />
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-100/50 via-gray-100/30 to-gray-100/60 dark:from-gray-900/50 dark:via-gray-900/30 dark:to-gray-900/60" />
 
       <div className="max-w-6xl mx-auto relative z-10">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
