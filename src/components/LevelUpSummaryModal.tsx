@@ -7,6 +7,12 @@ interface SpellSlotChange {
   newTotal: number
 }
 
+interface ResourceChange {
+  name: string
+  oldMax: number | null
+  newMax: number
+}
+
 interface LevelUpSummaryModalProps {
   newLevel: number
   previousLevel: number
@@ -20,6 +26,7 @@ interface LevelUpSummaryModalProps {
   asiChoice?: ASIChoice
   selectedSubclass?: string // Subclass chosen this level (if level 3)
   newSubclassSpells?: Spell[] // Subclass spells granted this level
+  resourceChanges?: ResourceChange[] // Resource max changes
   onClose: () => void
 }
 
@@ -45,6 +52,7 @@ export default function LevelUpSummaryModal({
   asiChoice,
   selectedSubclass,
   newSubclassSpells,
+  resourceChanges,
   onClose,
 }: LevelUpSummaryModalProps) {
   // Calculate spell slot changes
@@ -201,6 +209,39 @@ export default function LevelUpSummaryModal({
                       <span className="text-blue-600 dark:text-blue-400 ml-1">
                         (+{change.newTotal - change.oldTotal})
                       </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Resource Changes */}
+          {resourceChanges && resourceChanges.length > 0 && (
+            <div className="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide mb-2">
+                Resource Changes
+              </h3>
+              <ul className="space-y-1">
+                {resourceChanges.map((change) => (
+                  <li key={change.name} className="flex items-center justify-between">
+                    <span className="text-gray-700 dark:text-gray-300">
+                      {change.name}
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {change.oldMax === null ? (
+                        <>
+                          <span className="text-teal-600 dark:text-teal-400">New!</span>
+                          <span className="ml-2">{change.newMax} uses</span>
+                        </>
+                      ) : (
+                        <>
+                          {change.oldMax} → {change.newMax}
+                          <span className="text-teal-600 dark:text-teal-400 ml-1">
+                            (+{change.newMax - change.oldMax})
+                          </span>
+                        </>
+                      )}
                     </span>
                   </li>
                 ))}

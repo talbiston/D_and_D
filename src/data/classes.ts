@@ -1,8 +1,23 @@
-import type { AbilityName, ClassFeature } from '../types'
+import type { AbilityName, ClassFeature, SkillName } from '../types'
 
 export interface SubclassSpellGrant {
   level: number  // Character level when these spells become available
   spells: string[]  // Spell names
+}
+
+// AC calculation for subclasses with unarmored defense variants (e.g., Draconic Resilience)
+export interface SubclassACCalculation {
+  type: 'unarmored'
+  base: number  // Base AC (e.g., 13 for Draconic Resilience)
+  abilities: AbilityName[]  // Abilities to add modifiers from (e.g., ['dexterity'])
+}
+
+// Proficiencies granted by a subclass
+export interface SubclassProficiencies {
+  armor?: string[]  // e.g., ['Heavy Armor']
+  weapons?: string[]  // e.g., ['Martial Weapons', 'Scimitar']
+  tools?: string[]  // e.g., ["Artisan's Tools"]
+  skills?: SkillName[]  // e.g., ['athletics', 'intimidation']
 }
 
 export interface Subclass {
@@ -10,6 +25,8 @@ export interface Subclass {
   description: string
   features: ClassFeature[]
   spells?: SubclassSpellGrant[]  // Subclass-granted spells (domain spells, patron spells, etc.)
+  acCalculation?: SubclassACCalculation  // Subclass-specific AC calculation (e.g., Draconic Resilience)
+  proficiencies?: SubclassProficiencies  // Proficiencies granted when this subclass is selected
 }
 
 /**
@@ -29,6 +46,17 @@ export interface ClassOrder {
   description: string
 }
 
+// Class resource (e.g., Rage, Channel Divinity, Wild Shape)
+export interface ClassResource {
+  name: string
+  maxUses: number | 'level' | 'proficiency' | 'ability'  // Fixed number, equal to level, PB, or ability modifier
+  ability?: AbilityName  // Which ability modifier to use (for 'ability' type)
+  resetOn: 'short' | 'long'  // When the resource resets
+  levelScaling?: Record<number, number>  // Level -> max uses mapping (overrides maxUses when character reaches that level)
+  minLevel?: number  // Minimum level to gain this resource (default 1)
+  resetOnShortAtLevel?: number  // Level at which resetOn changes from 'long' to 'short' (e.g., Bardic Inspiration at L5)
+}
+
 export interface ClassData {
   name: string
   hitDie: number
@@ -45,6 +73,7 @@ export interface ClassData {
   startingGold?: string // Dice formula for starting gold (e.g., "5d4 x 10")
   classOrders?: ClassOrder[] // Level 1 class order choices (e.g., Divine Order, Primal Order)
   classOrderName?: string // Display name for the order choice (e.g., "Divine Order", "Primal Order")
+  resources?: ClassResource[] // Class resources that can be tracked (e.g., Rage, Channel Divinity)
 }
 
 export const CLASSES: ClassData[] = [
@@ -135,6 +164,14 @@ export const CLASSES: ClassData[] = [
       { items: [{ item: 'Javelin', quantity: 4 }] },
     ],
     startingGold: '2d4 x 10',
+    resources: [
+      {
+        name: 'Rage',
+        maxUses: 2,
+        resetOn: 'long',
+        levelScaling: { 1: 2, 3: 3, 6: 4, 12: 5, 17: 6, 20: Infinity },
+      },
+    ],
   },
   {
     name: 'Bard',
@@ -149,7 +186,7 @@ export const CLASSES: ClassData[] = [
       { name: 'Spellcasting', level: 1, description: 'You have learned to untangle and reshape the fabric of reality in harmony with your wishes and music. Charisma is your spellcasting ability.' },
       { name: 'Expertise', level: 2, description: 'Choose two of your skill proficiencies. Your proficiency bonus is doubled for any ability check you make that uses either of the chosen proficiencies.', expertiseGrant: { count: 2 } },
       { name: 'Jack of All Trades', level: 2, description: 'You can add half your proficiency bonus, rounded down, to any ability check you make that does not already include your proficiency bonus.' },
-      { name: 'Bard College', level: 3, description: 'Choose a Bard College that shapes your bardic abilities: College of Dance, College of Glamour, College of Lore, or College of Valor.' },
+      { name: 'Bard College', level: 3, description: 'Choose a Bard College that shapes your bardic abilities: College of Dance, College of Glamour, College of Lore, College of Swords, or College of Valor.' },
       { name: 'Ability Score Improvement', level: 4, description: 'Increase one ability score by 2, or two ability scores by 1 each. Alternatively, choose a feat.' },
       { name: 'Font of Inspiration', level: 5, description: 'You regain all expended uses of Bardic Inspiration when you finish a Short or Long Rest.' },
       { name: 'Subclass Feature', level: 6, description: 'You gain a feature from your Bard College subclass.' },
@@ -202,10 +239,29 @@ export const CLASSES: ClassData[] = [
         description: 'Bards of the College of Valor are daring skalds whose tales keep alive the memory of the great heroes of the past.',
         features: [
           { name: 'Combat Inspiration', level: 3, description: 'A creature that has a Bardic Inspiration die from you can roll that die and add the number rolled to a weapon damage roll it just made, or add it to their AC until the start of your next turn.' },
-          { name: 'Martial Training', level: 3, description: 'You gain proficiency with Medium armor and with Martial weapons.' },
+          { name: 'Martial Training', level: 3, description: 'You gain proficiency with Medium armor, Shields, and Martial weapons.' },
           { name: 'Extra Attack', level: 6, description: 'You can attack twice, instead of once, whenever you take the Attack action on your turn.' },
           { name: 'Battle Magic', level: 14, description: 'When you use your action to cast a Bard spell, you can make one weapon attack as a Bonus Action.' },
         ],
+        proficiencies: {
+          armor: ['Medium Armor', 'Shields'],
+          weapons: ['Martial Weapons'],
+        },
+      },
+      {
+        name: 'College of Swords',
+        description: 'Bards of the College of Swords are called blades, and they entertain through daring feats of weapon prowess. They perform stunts such as sword swallowing, knife throwing, and mock combats.',
+        features: [
+          { name: 'Bonus Proficiencies', level: 3, description: 'You gain proficiency with Medium armor and the Scimitar. If you are proficient with a Simple or Martial melee weapon, you can use it as a spellcasting focus for your Bard spells.' },
+          { name: 'Fighting Style', level: 3, description: 'You adopt a particular style of fighting as your specialty. Choose one of the following options: Dueling or Two-Weapon Fighting.' },
+          { name: 'Blade Flourish', level: 3, description: 'Whenever you take the Attack action on your turn, your walking speed increases by 10 feet until the end of the turn, and if you deal damage with a weapon attack, you can expend one use of Bardic Inspiration to use one Blade Flourish option: Defensive Flourish, Slashing Flourish, or Mobile Flourish.' },
+          { name: 'Extra Attack', level: 6, description: 'You can attack twice, instead of once, whenever you take the Attack action on your turn.' },
+          { name: "Master's Flourish", level: 14, description: 'Whenever you use a Blade Flourish option, you can roll a d6 and use it instead of expending a Bardic Inspiration die.' },
+        ],
+        proficiencies: {
+          armor: ['Medium Armor'],
+          weapons: ['Scimitar'],
+        },
       },
     ],
     startingEquipment: [
@@ -216,6 +272,15 @@ export const CLASSES: ClassData[] = [
       { items: [{ item: 'Dagger', quantity: 1 }] },
     ],
     startingGold: '5d4 x 10',
+    resources: [
+      {
+        name: 'Bardic Inspiration',
+        maxUses: 'ability',
+        ability: 'charisma',
+        resetOn: 'long',
+        resetOnShortAtLevel: 5,  // Font of Inspiration at level 5
+      },
+    ],
   },
   {
     name: 'Cleric',
@@ -311,6 +376,10 @@ export const CLASSES: ClassData[] = [
           { level: 7, spells: ["Crusader's Mantle", 'Spirit Guardians'] },
           { level: 9, spells: ['Freedom of Movement', 'Stoneskin'] },
         ],
+        proficiencies: {
+          armor: ['Heavy Armor'],
+          weapons: ['Martial Weapons'],
+        },
       },
     ],
     startingEquipment: [
@@ -331,6 +400,15 @@ export const CLASSES: ClassData[] = [
       {
         name: 'Thaumaturge',
         description: 'Grants one extra cantrip from the Cleric spell list and proficiency in the Religion skill.',
+      },
+    ],
+    resources: [
+      {
+        name: 'Channel Divinity',
+        maxUses: 1,
+        resetOn: 'short',
+        minLevel: 2,
+        levelScaling: { 2: 1, 6: 2, 18: 3 },
       },
     ],
   },
@@ -442,6 +520,14 @@ export const CLASSES: ClassData[] = [
         description: 'Grants proficiency with Martial weapons and training with Medium armor.',
       },
     ],
+    resources: [
+      {
+        name: 'Wild Shape',
+        maxUses: 2,
+        resetOn: 'short',
+        minLevel: 2,
+      },
+    ],
   },
   {
     name: 'Fighter',
@@ -537,6 +623,28 @@ export const CLASSES: ClassData[] = [
       { choice: ["Dungeoneer's Pack", "Explorer's Pack"] },
     ],
     startingGold: '5d4 x 10',
+    resources: [
+      {
+        name: 'Second Wind',
+        maxUses: 1,
+        resetOn: 'short',
+        minLevel: 1,
+      },
+      {
+        name: 'Action Surge',
+        maxUses: 1,
+        resetOn: 'short',
+        minLevel: 2,
+        levelScaling: { 2: 1, 17: 2 },
+      },
+      {
+        name: 'Indomitable',
+        maxUses: 1,
+        resetOn: 'long',
+        minLevel: 9,
+        levelScaling: { 9: 1, 13: 2, 17: 3 },
+      },
+    ],
   },
   {
     name: 'Monk',
@@ -852,6 +960,15 @@ export const CLASSES: ClassData[] = [
       { items: [{ item: 'Arrows', quantity: 20 }] },
     ],
     startingGold: '5d4 x 10',
+    resources: [
+      {
+        name: "Hunter's Mark",
+        maxUses: 'ability',
+        ability: 'wisdom',
+        resetOn: 'long',
+        minLevel: 1,
+      },
+    ],
   },
   {
     name: 'Rogue',
@@ -1003,12 +1120,17 @@ export const CLASSES: ClassData[] = [
         name: 'Draconic Sorcery',
         description: 'Your innate magic comes from the gift of a dragon. Perhaps an ancient dragon facing death bequeathed some of its magical power to you or your ancestor. You might have absorbed magic from being in a dragon\'s presence or location, or perhaps you have dragon blood in your veins.',
         features: [
-          { name: 'Draconic Resilience', level: 3, description: 'The magic in your body manifests physical traits of your draconic ancestors. Your Hit Point maximum increases by 3 and increases by 1 again whenever you gain another Sorcerer level. Parts of you are also covered by dragon-like scales. While you aren\'t wearing armor, your base AC equals 10 + your Dexterity modifier + your Charisma modifier.' },
+          { name: 'Draconic Resilience', level: 3, description: 'The magic in your body manifests physical traits of your draconic ancestors. Your Hit Point maximum increases by 3 and increases by 1 again whenever you gain another Sorcerer level. Parts of you are also covered by dragon-like scales. While you aren\'t wearing armor, your base AC equals 13 + your Dexterity modifier.' },
           { name: 'Dragon Speech', level: 3, description: 'You can speak, read, and write Draconic. In addition, your speech can be understood by all Dragons.' },
           { name: 'Elemental Affinity', level: 6, description: 'Your draconic magic has an affinity with a damage type associated with dragons. Choose one of the following damage types: Acid, Cold, Fire, Lightning, or Poison. You have Resistance to that damage type, and when you cast a spell that deals damage of that type, you can add your Charisma modifier to one damage roll of that spell.' },
           { name: 'Dragon Wings', level: 14, description: 'You can manifest spectral dragon wings. As a Bonus Action, you gain a Fly Speed equal to your Speed. These wings last until you dismiss them (no action required), you have the Incapacitated condition, or you don armor. You can manifest the wings while wearing light armor if it is made to accommodate them.' },
           { name: 'Draconic Presence', level: 18, description: 'You can channel the dread presence of the greatest dragons. As a Magic action, you can spend 5 Sorcery Points to draw on this power and exude an aura of awe or fear (your choice) in a 60-foot Emanation for 1 minute or until you have the Incapacitated condition. Each creature of your choice that starts its turn in this aura must succeed on a Wisdom saving throw against your spell save DC or have the Charmed condition (if you chose awe) or the Frightened condition (if you chose fear) until the start of its next turn.' },
         ],
+        acCalculation: {
+          type: 'unarmored',
+          base: 13,
+          abilities: ['dexterity'],
+        },
       },
       {
         name: 'Wild Magic Sorcery',
@@ -1228,6 +1350,14 @@ export const CLASSES: ClassData[] = [
       { items: [{ item: 'Spellbook', quantity: 1 }] },
     ],
     startingGold: '4d4 x 10',
+    resources: [
+      {
+        name: 'Arcane Recovery',
+        maxUses: 1,
+        resetOn: 'long',
+        minLevel: 1,
+      },
+    ],
   },
 ]
 

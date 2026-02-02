@@ -159,6 +159,8 @@ export interface Character {
   }
   // Class order choice (e.g., Divine Order for Cleric, Primal Order for Druid)
   classOrder?: { name: string; description: string }
+  // Class resource tracking (e.g., Rage uses, Channel Divinity uses)
+  resources?: Record<string, number> // Resource name -> current uses remaining
 }
 
 // Damage types

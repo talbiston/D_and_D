@@ -4,7 +4,7 @@ import { getSpeciesNames } from '../data/species'
 import { getClassNames } from '../data/classes'
 import type { AbilityScores, AbilityName, Skill, SkillName, Weapon, InventoryItem, Currency, ImageStyle } from '../types'
 import { DEFAULT_ABILITY_SCORES, SKILL_ABILITIES, createDefaultSkills } from '../types'
-import { getAbilityModifier, formatModifier, getProficiencyBonus, getSkillBonus, getPassivePerception, getPactMagicSlots } from '../utils/calculations'
+import { getAbilityModifier, formatModifier, getProficiencyBonus, getSkillBonus, getPassivePerception, getPactMagicSlots, initializeClassResources } from '../utils/calculations'
 import { createCharacter } from '../utils/api'
 import { getClassByName, getClassFeaturesForLevel, getSubclassNames } from '../data/classes'
 import type { StartingEquipmentChoice } from '../data/classes'
@@ -845,6 +845,7 @@ export default function CharacterCreatePage() {
       armor: startingArmor,
       inventory: startingInventory,
       toolProficiencies: [],
+      resources: initializeClassResources(characterClass, level, finalAbilityScores),
     }
 
     try {

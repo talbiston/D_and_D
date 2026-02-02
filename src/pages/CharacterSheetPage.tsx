@@ -3,12 +3,12 @@ import { useParams, Link } from 'react-router-dom'
 import type { Character } from '../types'
 import { exportCharacterAsJson } from '../utils/storage'
 import { getCharacter, updateCharacter as updateCharacterApi, ApiError } from '../utils/api'
-import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties, calculateToolCheckBonus } from '../utils/calculations'
+import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateACWithSource, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties, calculateToolCheckBonus } from '../utils/calculations'
 import { getWeaponByName } from '../data/weapons'
 import { getArmorByName } from '../data/armor'
 import { GEAR, type GearData, type GearCategory } from '../data/gear'
 import { TOOLS, getToolByName, type ToolCategory } from '../data/tools'
-import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel } from '../data/classes'
+import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel, getSubclass } from '../data/classes'
 import { getSpeciesByName } from '../data/species'
 import { getSpellSaveDC, getSpellAttackBonus, XP_THRESHOLDS } from '../utils/calculations'
 import { getSpellsByClass, getSpellByName } from '../data/spells'
@@ -29,7 +29,7 @@ import { MANEUVERS, getManeuversKnown, getSuperiorityDice } from '../data/maneuv
 import { METAMAGIC_OPTIONS, getMetamagicKnown } from '../data/metamagic'
 import MetamagicPickerModal from '../components/MetamagicPickerModal'
 import LevelUpSpellPickerModal from '../components/LevelUpSpellPickerModal'
-import { getSorceryPoints, isKnownCaster } from '../utils/calculations'
+import { getSorceryPoints, isKnownCaster, getResourceMax, getResourceResetType, initializeClassResources } from '../utils/calculations'
 import WeaponPickerModal from '../components/WeaponPickerModal'
 import ArmorPickerModal from '../components/ArmorPickerModal'
 import ClassIcon from '../components/ClassIcon'
@@ -133,6 +133,7 @@ export default function CharacterSheetPage() {
   const [pendingExpertiseGrant, setPendingExpertiseGrant] = useState<{ feature: ClassFeature; grant: ExpertiseGrant } | null>(null)
   const [showSubclassPickerModal, setShowSubclassPickerModal] = useState(false)
   const [isRequiredSubclassSelection, setIsRequiredSubclassSelection] = useState(false) // True when selecting subclass for existing L3+ character
+  const [subclassProficiencyNotification, setSubclassProficiencyNotification] = useState<string | null>(null) // Shows granted proficiencies
   const [pendingLevelUp, setPendingLevelUp] = useState<{
     levelUpResult: LevelUpResult
     hpGain: number
@@ -150,6 +151,7 @@ export default function CharacterSheetPage() {
     asiChoice?: ASIChoice
     selectedSubclass?: string
     newSubclassSpells?: Spell[]
+    resourceChanges?: { name: string; oldMax: number | null; newMax: number }[]
   } | null>(null)
   // Equipment state
   const [showACOverride, setShowACOverride] = useState(false)
@@ -1118,6 +1120,81 @@ export default function CharacterSheetPage() {
     return grants
   }
 
+  // Helper to apply subclass proficiencies to a character
+  // Returns the updated character and a list of granted proficiencies for notification
+  const applySubclassProficiencies = (
+    char: Character,
+    className: string,
+    subclassName: string
+  ): { updatedCharacter: Character; grantedProficiencies: string[] } => {
+    const subclass = getSubclass(className, subclassName)
+    if (!subclass?.proficiencies) {
+      return { updatedCharacter: char, grantedProficiencies: [] }
+    }
+
+    const grantedProficiencies: string[] = []
+    let updatedCharacter = { ...char }
+
+    // Add armor proficiencies (avoid duplicates)
+    if (subclass.proficiencies.armor && subclass.proficiencies.armor.length > 0) {
+      const newArmorProfs = subclass.proficiencies.armor.filter(
+        prof => !updatedCharacter.proficiencies.armor.some(
+          existing => existing.toLowerCase() === prof.toLowerCase()
+        )
+      )
+      if (newArmorProfs.length > 0) {
+        updatedCharacter = {
+          ...updatedCharacter,
+          proficiencies: {
+            ...updatedCharacter.proficiencies,
+            armor: [...updatedCharacter.proficiencies.armor, ...newArmorProfs],
+          },
+        }
+        grantedProficiencies.push(...newArmorProfs)
+      }
+    }
+
+    // Add weapon proficiencies (avoid duplicates)
+    if (subclass.proficiencies.weapons && subclass.proficiencies.weapons.length > 0) {
+      const newWeaponProfs = subclass.proficiencies.weapons.filter(
+        prof => !updatedCharacter.proficiencies.weapons.some(
+          existing => existing.toLowerCase() === prof.toLowerCase()
+        )
+      )
+      if (newWeaponProfs.length > 0) {
+        updatedCharacter = {
+          ...updatedCharacter,
+          proficiencies: {
+            ...updatedCharacter.proficiencies,
+            weapons: [...updatedCharacter.proficiencies.weapons, ...newWeaponProfs],
+          },
+        }
+        grantedProficiencies.push(...newWeaponProfs)
+      }
+    }
+
+    // Add tool proficiencies (avoid duplicates)
+    if (subclass.proficiencies.tools && subclass.proficiencies.tools.length > 0) {
+      const newToolProfs = subclass.proficiencies.tools.filter(
+        prof => !updatedCharacter.proficiencies.tools.some(
+          existing => existing.toLowerCase() === prof.toLowerCase()
+        )
+      )
+      if (newToolProfs.length > 0) {
+        updatedCharacter = {
+          ...updatedCharacter,
+          proficiencies: {
+            ...updatedCharacter.proficiencies,
+            tools: [...updatedCharacter.proficiencies.tools, ...newToolProfs],
+          },
+        }
+        grantedProficiencies.push(...newToolProfs)
+      }
+    }
+
+    return { updatedCharacter, grantedProficiencies }
+  }
+
   // Helper to complete the level-up and show summary
   const completeLevelUp = (
     levelUpResult: LevelUpResult,
@@ -1132,9 +1209,26 @@ export default function CharacterSheetPage() {
     const newMaxHp = character.maxHp + hpGain
     let updatedCharacter = { ...levelUpResult.character }
 
-    // Apply subclass choice if present
+    // Apply subclass choice if present (including proficiencies)
     if (selectedSubclass) {
       updatedCharacter = { ...updatedCharacter, subclass: selectedSubclass }
+
+      // Apply subclass proficiencies
+      const { updatedCharacter: charWithProfs, grantedProficiencies } = applySubclassProficiencies(
+        updatedCharacter,
+        character.class,
+        selectedSubclass
+      )
+      updatedCharacter = charWithProfs
+
+      // Show notification for granted proficiencies
+      if (grantedProficiencies.length > 0) {
+        setSubclassProficiencyNotification(
+          `${selectedSubclass} grants: ${grantedProficiencies.join(', ')}`
+        )
+        // Auto-hide after 5 seconds
+        setTimeout(() => setSubclassProficiencyNotification(null), 5000)
+      }
     }
 
     // Apply ASI choice if present
@@ -1214,6 +1308,41 @@ export default function CharacterSheetPage() {
       currentHp: Math.min(character.currentHp + hpGain, newMaxHp)
     }
 
+    // Update class resources for new level
+    // Get the new max for each resource at the new level
+    const classData = getClassByName(character.class)
+    const resourceChanges: { name: string; oldMax: number | null; newMax: number }[] = []
+
+    if (classData?.resources) {
+      const newLevel = levelUpResult.character.level
+      const pb = getProficiencyBonus(newLevel)
+      const newResources: Record<string, number> = { ...updatedCharacter.resources }
+
+      for (const resource of classData.resources) {
+        const oldMax = getResourceMax(resource, character.level, character.abilityScores, getProficiencyBonus(character.level))
+        const newMax = getResourceMax(resource, newLevel, updatedCharacter.abilityScores, pb)
+
+        if (newMax !== null) {
+          const currentValue = character.resources?.[resource.name] ?? oldMax ?? 0
+
+          // If the max increased, give the character the extra uses
+          if (oldMax !== null && newMax > oldMax) {
+            newResources[resource.name] = currentValue + (newMax - oldMax)
+            resourceChanges.push({ name: resource.name, oldMax, newMax })
+          } else if (oldMax === null && newMax !== null) {
+            // Resource became available at this level (e.g., Channel Divinity at L2)
+            newResources[resource.name] = newMax
+            resourceChanges.push({ name: resource.name, oldMax: null, newMax })
+          } else {
+            // Keep current value, but ensure it doesn't exceed new max
+            newResources[resource.name] = Math.min(currentValue, newMax)
+          }
+        }
+      }
+
+      updatedCharacter = { ...updatedCharacter, resources: newResources }
+    }
+
     updateCharacter(updatedCharacter)
 
     // Show level-up summary
@@ -1226,6 +1355,7 @@ export default function CharacterSheetPage() {
       asiChoice,
       selectedSubclass,
       newSubclassSpells: subclassSpells.length > 0 ? subclassSpells : undefined,
+      resourceChanges: resourceChanges.length > 0 ? resourceChanges : undefined,
     })
 
     setPendingLevelUp(null)
@@ -1420,14 +1550,30 @@ export default function CharacterSheetPage() {
       character.level
     )
 
-    // Update character with subclass and spells
+    // Apply subclass proficiencies
+    const { updatedCharacter: charWithProfs, grantedProficiencies } = applySubclassProficiencies(
+      character,
+      character.class,
+      subclassName
+    )
+
+    // Update character with subclass, spells, and proficiencies
     const updatedCharacter = {
-      ...character,
+      ...charWithProfs,
       subclass: subclassName,
-      spells: [...character.spells, ...subclassSpells],
+      spells: [...charWithProfs.spells, ...subclassSpells],
     }
 
     updateCharacter(updatedCharacter)
+
+    // Show notification for granted proficiencies
+    if (grantedProficiencies.length > 0) {
+      setSubclassProficiencyNotification(
+        `${subclassName} grants: ${grantedProficiencies.join(', ')}`
+      )
+      // Auto-hide after 5 seconds
+      setTimeout(() => setSubclassProficiencyNotification(null), 5000)
+    }
   }
 
   if (loading) {
@@ -1514,6 +1660,24 @@ export default function CharacterSheetPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 md:p-8">
+      {/* Subclass Proficiency Notification */}
+      {subclassProficiencyNotification && (
+        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{subclassProficiencyNotification}</span>
+          <button
+            onClick={() => setSubclassProficiencyNotification(null)}
+            className="ml-2 hover:bg-emerald-700 rounded-full p-1"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto">
         {/* Back link */}
         <Link
@@ -1903,49 +2067,64 @@ export default function CharacterSheetPage() {
               const dexMod = getAbilityModifier(character.abilityScores.dexterity)
               const conMod = getAbilityModifier(character.abilityScores.constitution)
               const wisMod = getAbilityModifier(character.abilityScores.wisdom)
+              const chaMod = getAbilityModifier(character.abilityScores.charisma)
 
               // Calculate AC components for breakdown
               const armorData = equippedArmor ? getArmorByName(equippedArmor.name) : null
-              const className = character.class.toLowerCase()
 
-              // Calculate AC using the utility function
-              const calculatedAC = calculateAC(
+              // Calculate AC using the utility function (with subclass support)
+              const acResult = calculateACWithSource(
                 equippedArmor?.name ?? null,
                 !!equippedShield,
                 dexMod,
                 conMod,
                 wisMod,
                 character.class,
-                character.manualACOverride
+                character.manualACOverride,
+                character.subclass,
+                chaMod
               )
+              const calculatedAC = acResult.ac
+              const acDescription = acResult.source
 
-              // Determine AC breakdown components
+              // Determine AC breakdown components for detailed display
               let baseAC = 10
               let dexBonus = dexMod
               const shieldBonus = equippedShield ? 2 : 0
               let otherBonus = 0
-              let acDescription = 'Unarmored'
 
               if (armorData) {
                 baseAC = armorData.baseAC
                 if (armorData.dexBonus === true) {
                   dexBonus = dexMod
-                  acDescription = `${armorData.name} (Light)`
                 } else if (armorData.dexBonus === 'max2') {
                   dexBonus = Math.min(dexMod, 2)
-                  acDescription = `${armorData.name} (Medium)`
                 } else {
                   dexBonus = 0
-                  acDescription = `${armorData.name} (Heavy)`
                 }
               } else if (!equippedArmor) {
-                // Unarmored defense
+                // Handle unarmored defense breakdown
+                const className = character.class.toLowerCase()
                 if (className === 'barbarian') {
                   otherBonus = conMod
-                  acDescription = 'Unarmored Defense (Barbarian)'
                 } else if (className === 'monk') {
                   otherBonus = wisMod
-                  acDescription = 'Unarmored Defense (Monk)'
+                } else if (acDescription === 'Draconic Resilience') {
+                  // Draconic Resilience: 13 + DEX
+                  baseAC = 13
+                } else if (character.subclass) {
+                  // Check for other subclass AC calculations
+                  const subclass = getSubclass(character.class, character.subclass)
+                  if (subclass?.acCalculation) {
+                    baseAC = subclass.acCalculation.base
+                    // Add any additional ability modifiers beyond DEX
+                    for (const ability of subclass.acCalculation.abilities) {
+                      if (ability === 'constitution') otherBonus += conMod
+                      if (ability === 'wisdom') otherBonus += wisMod
+                      if (ability === 'charisma') otherBonus += chaMod
+                      // DEX is already added to dexBonus
+                    }
+                  }
                 }
               }
 
@@ -2271,6 +2450,250 @@ export default function CharacterSheetPage() {
             )}
           </div>
         </div>
+
+        {/* Class Resources */}
+        {(() => {
+          const classData = getClassByName(character.class)
+          const resources = classData?.resources?.filter(r =>
+            !r.minLevel || character.level >= r.minLevel
+          )
+
+          if (!resources || resources.length === 0) return null
+
+          // Helper to perform short rest
+          const performShortRest = () => {
+            const pb = getProficiencyBonus(character.level)
+            const newResources: Record<string, number> = { ...character.resources }
+
+            for (const resource of resources) {
+              const resetType = getResourceResetType(resource, character.level)
+              if (resetType === 'short') {
+                const maxUses = getResourceMax(resource, character.level, character.abilityScores, pb)
+                if (maxUses !== null) {
+                  newResources[resource.name] = maxUses
+                }
+              }
+            }
+
+            updateCharacter({ resources: newResources })
+            setSubclassProficiencyNotification('Short Rest complete! Resources restored.')
+            setTimeout(() => setSubclassProficiencyNotification(null), 3000)
+          }
+
+          // Helper to perform long rest
+          const performLongRest = () => {
+            const pb = getProficiencyBonus(character.level)
+            const newResources: Record<string, number> = { ...character.resources }
+
+            // Reset ALL resources on long rest
+            for (const resource of resources) {
+              const maxUses = getResourceMax(resource, character.level, character.abilityScores, pb)
+              if (maxUses !== null) {
+                newResources[resource.name] = maxUses
+              }
+            }
+
+            // Restore HP to max
+            const hpUpdate = { currentHp: character.maxHp }
+
+            // Reset spell slots to max
+            const spellSlotUpdate: typeof character.spellSlots = {}
+            for (const [levelStr, slot] of Object.entries(character.spellSlots)) {
+              const level = parseInt(levelStr, 10)
+              if (!isNaN(level) && slot.total > 0) {
+                spellSlotUpdate[level as keyof typeof character.spellSlots] = {
+                  ...slot,
+                  used: 0,
+                }
+              }
+            }
+
+            // Reset Pact Magic if applicable
+            const pactMagicUpdate = character.pactMagic
+              ? { pactMagic: { ...character.pactMagic, expended: 0 } }
+              : {}
+
+            updateCharacter({
+              resources: newResources,
+              ...hpUpdate,
+              spellSlots: { ...character.spellSlots, ...spellSlotUpdate },
+              ...pactMagicUpdate,
+            })
+
+            setSubclassProficiencyNotification('Long Rest complete! All resources, HP, and spell slots restored.')
+            setTimeout(() => setSubclassProficiencyNotification(null), 3000)
+          }
+
+          // Get list of resources that reset on short rest for confirmation
+          const shortRestResources = resources
+            .filter(r => getResourceResetType(r, character.level) === 'short')
+            .map(r => r.name)
+
+          return (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Class Resources
+                </h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (shortRestResources.length > 0) {
+                        if (window.confirm(`Short Rest will restore:\n• ${shortRestResources.join('\n• ')}\n\nProceed?`)) {
+                          performShortRest()
+                        }
+                      } else {
+                        setSubclassProficiencyNotification('No resources reset on Short Rest.')
+                        setTimeout(() => setSubclassProficiencyNotification(null), 2000)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900 rounded-lg transition-colors"
+                    title="Take a Short Rest"
+                  >
+                    Short Rest
+                  </button>
+                  <button
+                    onClick={() => {
+                      const allResources = resources.map(r => r.name)
+                      if (window.confirm(`Long Rest will restore:\n• All class resources (${allResources.join(', ')})\n• HP to maximum\n• All spell slots\n\nProceed?`)) {
+                        performLongRest()
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900 rounded-lg transition-colors"
+                    title="Take a Long Rest"
+                  >
+                    Long Rest
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {resources.map((resource) => {
+                  const maxUses = getResourceMax(
+                    resource,
+                    character.level,
+                    character.abilityScores,
+                    getProficiencyBonus(character.level)
+                  )
+                  if (maxUses === null) return null
+
+                  const currentUses = character.resources?.[resource.name] ?? maxUses
+                  const resetType = getResourceResetType(resource, character.level)
+                  const isUnlimited = maxUses === 999
+
+                  return (
+                    <div
+                      key={resource.name}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {resource.name}
+                        </span>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            resetType === 'short'
+                              ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                              : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300'
+                          }`}
+                          title={resetType === 'short' ? 'Resets on Short Rest' : 'Resets on Long Rest'}
+                        >
+                          {resetType === 'short' ? 'SR' : 'LR'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {/* - Button (Use resource) */}
+                        {!isUnlimited && (
+                          <button
+                            onClick={() => {
+                              const newValue = Math.max(0, currentUses - 1)
+                              updateCharacter({
+                                resources: {
+                                  ...character.resources,
+                                  [resource.name]: newValue,
+                                },
+                              })
+                            }}
+                            disabled={currentUses <= 0}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-lg font-bold transition-colors ${
+                              currentUses <= 0
+                                ? 'bg-gray-200 dark:bg-gray-600 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                                : 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900'
+                            }`}
+                            title="Use resource"
+                          >
+                            −
+                          </button>
+                        )}
+
+                        {isUnlimited ? (
+                          <span className="text-lg font-bold text-amber-600 dark:text-amber-400">∞</span>
+                        ) : (
+                          <>
+                            {/* Pips for resources with 6 or fewer max uses */}
+                            {maxUses <= 6 ? (
+                              <div className="flex gap-1">
+                                {Array.from({ length: maxUses }).map((_, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={() => {
+                                      // Toggle this pip: if filled, set to this index; if empty, fill up to this
+                                      const newValue = i < currentUses ? i : i + 1
+                                      updateCharacter({
+                                        resources: {
+                                          ...character.resources,
+                                          [resource.name]: newValue,
+                                        },
+                                      })
+                                    }}
+                                    className={`w-4 h-4 rounded-full border-2 transition-colors ${
+                                      i < currentUses
+                                        ? 'bg-indigo-500 border-indigo-500 hover:bg-indigo-400'
+                                        : 'bg-transparent border-gray-300 dark:border-gray-500 hover:border-indigo-400'
+                                    }`}
+                                    title={i < currentUses ? 'Click to use' : 'Click to restore'}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              // Numeric display for resources with more than 6 max uses
+                              <span className="text-lg font-bold text-gray-900 dark:text-white min-w-[60px] text-center">
+                                {currentUses}/{maxUses}
+                              </span>
+                            )}
+                          </>
+                        )}
+
+                        {/* + Button (Restore resource) */}
+                        {!isUnlimited && (
+                          <button
+                            onClick={() => {
+                              const newValue = Math.min(maxUses, currentUses + 1)
+                              updateCharacter({
+                                resources: {
+                                  ...character.resources,
+                                  [resource.name]: newValue,
+                                },
+                              })
+                            }}
+                            disabled={currentUses >= maxUses}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-lg font-bold transition-colors ${
+                              currentUses >= maxUses
+                                ? 'bg-gray-200 dark:bg-gray-600 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                                : 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900'
+                            }`}
+                            title="Restore resource"
+                          >
+                            +
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Class Features */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
@@ -4914,6 +5337,7 @@ export default function CharacterSheetPage() {
           asiChoice={levelUpSummary.asiChoice}
           selectedSubclass={levelUpSummary.selectedSubclass}
           newSubclassSpells={levelUpSummary.newSubclassSpells}
+          resourceChanges={levelUpSummary.resourceChanges}
           onClose={() => setLevelUpSummary(null)}
         />
       )}
