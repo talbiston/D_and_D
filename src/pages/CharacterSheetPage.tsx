@@ -148,6 +148,8 @@ export default function CharacterSheetPage() {
     newMaxHp: number
     levelUpResult: LevelUpResult
     asiChoice?: ASIChoice
+    selectedSubclass?: string
+    newSubclassSpells?: Spell[]
   } | null>(null)
   // Equipment state
   const [showACOverride, setShowACOverride] = useState(false)
@@ -1173,11 +1175,12 @@ export default function CharacterSheetPage() {
     // Apply subclass spells if applicable
     // Use selectedSubclass if newly chosen, or character's existing subclass for level-up grants
     const subclassForSpells = selectedSubclass || character.subclass
+    let subclassSpells: Spell[] = []
     if (subclassForSpells) {
       // If selecting a new subclass, get all spells up to current level (previousLevel = 0)
       // If already have subclass, get newly available spells from leveling up
       const previousLevelForSubclass = selectedSubclass ? 0 : character.level
-      const subclassSpells = getSubclassSpellsForLevelUp(
+      subclassSpells = getSubclassSpellsForLevelUp(
         { ...character, spells: updatedCharacter.spells }, // Use updated spells to avoid duplicates
         character.class,
         subclassForSpells,
@@ -1221,6 +1224,8 @@ export default function CharacterSheetPage() {
       newMaxHp,
       levelUpResult,
       asiChoice,
+      selectedSubclass,
+      newSubclassSpells: subclassSpells.length > 0 ? subclassSpells : undefined,
     })
 
     setPendingLevelUp(null)
@@ -4907,6 +4912,8 @@ export default function CharacterSheetPage() {
           oldSpellSlots={character.spellSlots}
           newSpellSlots={levelUpSummary.levelUpResult.character.spellSlots}
           asiChoice={levelUpSummary.asiChoice}
+          selectedSubclass={levelUpSummary.selectedSubclass}
+          newSubclassSpells={levelUpSummary.newSubclassSpells}
           onClose={() => setLevelUpSummary(null)}
         />
       )}

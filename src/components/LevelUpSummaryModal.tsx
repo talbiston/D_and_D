@@ -1,4 +1,4 @@
-import type { ClassFeature, SpellSlots, AbilityName } from '../types'
+import type { ClassFeature, SpellSlots, AbilityName, Spell } from '../types'
 import type { ASIChoice } from './ASIModal'
 
 interface SpellSlotChange {
@@ -18,6 +18,8 @@ interface LevelUpSummaryModalProps {
   oldSpellSlots?: SpellSlots
   newSpellSlots?: SpellSlots
   asiChoice?: ASIChoice
+  selectedSubclass?: string // Subclass chosen this level (if level 3)
+  newSubclassSpells?: Spell[] // Subclass spells granted this level
   onClose: () => void
 }
 
@@ -41,6 +43,8 @@ export default function LevelUpSummaryModal({
   oldSpellSlots,
   newSpellSlots,
   asiChoice,
+  selectedSubclass,
+  newSubclassSpells,
   onClose,
 }: LevelUpSummaryModalProps) {
   // Calculate spell slot changes
@@ -96,6 +100,55 @@ export default function LevelUpSummaryModal({
               </span>
             </div>
           </div>
+
+          {/* Subclass Choice */}
+          {selectedSubclass && (
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400 uppercase tracking-wide mb-2">
+                Subclass Chosen
+              </h3>
+              <div className="font-medium text-gray-900 dark:text-white text-lg">
+                {selectedSubclass}
+              </div>
+              {newSubclassSpells && newSubclassSpells.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-sm font-medium text-purple-600 dark:text-purple-300 mb-1">
+                    Subclass Spells (Always Prepared)
+                  </div>
+                  <ul className="space-y-1">
+                    {newSubclassSpells.map((spell) => (
+                      <li key={spell.name} className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                        <span className="text-xs px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded">
+                          {spell.level === 0 ? 'Cantrip' : `Lvl ${spell.level}`}
+                        </span>
+                        {spell.name}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* New Subclass Spells (for level-up grants, not subclass choice) */}
+          {!selectedSubclass && newSubclassSpells && newSubclassSpells.length > 0 && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">
+                New Subclass Spells
+              </h3>
+              <ul className="space-y-1">
+                {newSubclassSpells.map((spell) => (
+                  <li key={spell.name} className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <span className="text-xs px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded">
+                      {spell.level === 0 ? 'Cantrip' : `Lvl ${spell.level}`}
+                    </span>
+                    {spell.name}
+                    <span className="text-xs text-gray-500 dark:text-gray-400">(Always Prepared)</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* New Class Features */}
           {hasNewFeatures && (

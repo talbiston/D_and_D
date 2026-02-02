@@ -154,3 +154,22 @@ Started: Sun Feb  2 12:00:00 AM CST 2026
   - Pattern: return early from cancel handler for required modals
 
 ---
+
+## 2026-02-01 - US-010: Add subclass to level-up summary
+- Updated LevelUpSummaryModal with selectedSubclass and newSubclassSpells props
+- Added purple "Subclass Chosen" section showing:
+  - Subclass name
+  - Subclass spells with level badges (when chosen this level)
+- Added amber "New Subclass Spells" section for level-up grants (when already has subclass)
+- Updated levelUpSummary state type in CharacterSheetPage
+- Tracked subclassSpells in completeLevelUp for inclusion in summary
+- Passed new props to LevelUpSummaryModal render
+- Files changed: src/components/LevelUpSummaryModal.tsx, src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Track computed values (like subclassSpells) for display even if already applied
+  - Use different colors to distinguish contexts (purple for subclass choice, amber for spell grants)
+  - Move variable declarations outside if blocks when needed for later use
+
+---
+
+## PRD COMPLETE - All 10 user stories implemented and passing!
