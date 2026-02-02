@@ -46,6 +46,17 @@ export interface ClassOrder {
   description: string
 }
 
+// Class resource (e.g., Rage, Channel Divinity, Wild Shape)
+export interface ClassResource {
+  name: string
+  maxUses: number | 'level' | 'proficiency' | 'ability'  // Fixed number, equal to level, PB, or ability modifier
+  ability?: AbilityName  // Which ability modifier to use (for 'ability' type)
+  resetOn: 'short' | 'long'  // When the resource resets
+  levelScaling?: Record<number, number>  // Level -> max uses mapping (overrides maxUses when character reaches that level)
+  minLevel?: number  // Minimum level to gain this resource (default 1)
+  resetOnShortAtLevel?: number  // Level at which resetOn changes from 'long' to 'short' (e.g., Bardic Inspiration at L5)
+}
+
 export interface ClassData {
   name: string
   hitDie: number
@@ -62,6 +73,7 @@ export interface ClassData {
   startingGold?: string // Dice formula for starting gold (e.g., "5d4 x 10")
   classOrders?: ClassOrder[] // Level 1 class order choices (e.g., Divine Order, Primal Order)
   classOrderName?: string // Display name for the order choice (e.g., "Divine Order", "Primal Order")
+  resources?: ClassResource[] // Class resources that can be tracked (e.g., Rage, Channel Divinity)
 }
 
 export const CLASSES: ClassData[] = [
@@ -152,6 +164,14 @@ export const CLASSES: ClassData[] = [
       { items: [{ item: 'Javelin', quantity: 4 }] },
     ],
     startingGold: '2d4 x 10',
+    resources: [
+      {
+        name: 'Rage',
+        maxUses: 2,
+        resetOn: 'long',
+        levelScaling: { 1: 2, 3: 3, 6: 4, 12: 5, 17: 6, 20: Infinity },
+      },
+    ],
   },
   {
     name: 'Bard',
@@ -252,6 +272,15 @@ export const CLASSES: ClassData[] = [
       { items: [{ item: 'Dagger', quantity: 1 }] },
     ],
     startingGold: '5d4 x 10',
+    resources: [
+      {
+        name: 'Bardic Inspiration',
+        maxUses: 'ability',
+        ability: 'charisma',
+        resetOn: 'long',
+        resetOnShortAtLevel: 5,  // Font of Inspiration at level 5
+      },
+    ],
   },
   {
     name: 'Cleric',
@@ -373,6 +402,15 @@ export const CLASSES: ClassData[] = [
         description: 'Grants one extra cantrip from the Cleric spell list and proficiency in the Religion skill.',
       },
     ],
+    resources: [
+      {
+        name: 'Channel Divinity',
+        maxUses: 1,
+        resetOn: 'short',
+        minLevel: 2,
+        levelScaling: { 2: 1, 6: 2, 18: 3 },
+      },
+    ],
   },
   {
     name: 'Druid',
@@ -482,6 +520,14 @@ export const CLASSES: ClassData[] = [
         description: 'Grants proficiency with Martial weapons and training with Medium armor.',
       },
     ],
+    resources: [
+      {
+        name: 'Wild Shape',
+        maxUses: 2,
+        resetOn: 'short',
+        minLevel: 2,
+      },
+    ],
   },
   {
     name: 'Fighter',
@@ -577,6 +623,28 @@ export const CLASSES: ClassData[] = [
       { choice: ["Dungeoneer's Pack", "Explorer's Pack"] },
     ],
     startingGold: '5d4 x 10',
+    resources: [
+      {
+        name: 'Second Wind',
+        maxUses: 1,
+        resetOn: 'short',
+        minLevel: 1,
+      },
+      {
+        name: 'Action Surge',
+        maxUses: 1,
+        resetOn: 'short',
+        minLevel: 2,
+        levelScaling: { 2: 1, 17: 2 },
+      },
+      {
+        name: 'Indomitable',
+        maxUses: 1,
+        resetOn: 'long',
+        minLevel: 9,
+        levelScaling: { 9: 1, 13: 2, 17: 3 },
+      },
+    ],
   },
   {
     name: 'Monk',
@@ -892,6 +960,15 @@ export const CLASSES: ClassData[] = [
       { items: [{ item: 'Arrows', quantity: 20 }] },
     ],
     startingGold: '5d4 x 10',
+    resources: [
+      {
+        name: "Hunter's Mark",
+        maxUses: 'ability',
+        ability: 'wisdom',
+        resetOn: 'long',
+        minLevel: 1,
+      },
+    ],
   },
   {
     name: 'Rogue',
@@ -1273,6 +1350,14 @@ export const CLASSES: ClassData[] = [
       { items: [{ item: 'Spellbook', quantity: 1 }] },
     ],
     startingGold: '4d4 x 10',
+    resources: [
+      {
+        name: 'Arcane Recovery',
+        maxUses: 1,
+        resetOn: 'long',
+        minLevel: 1,
+      },
+    ],
   },
 ]
 
