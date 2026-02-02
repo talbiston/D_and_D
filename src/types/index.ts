@@ -64,6 +64,7 @@ export interface Skill {
   ability: AbilityName
   proficient: boolean
   expertise: boolean
+  expertiseSource?: string // Tracks which feature granted expertise (e.g., 'Scholar', 'Manual')
 }
 
 // Character sizes

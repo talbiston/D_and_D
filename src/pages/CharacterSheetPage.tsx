@@ -1590,23 +1590,44 @@ export default function CharacterSheetPage() {
                           const isProficient = skill?.proficient ?? false
                           const hasExpertise = skill?.expertise ?? false
 
+                          // Toggle expertise handler for proficient skills
+                          const handleExpertiseToggle = () => {
+                            if (!isProficient) return
+                            const updatedSkills = character.skills.map(s =>
+                              s.name === skillName
+                                ? { ...s, expertise: !hasExpertise, expertiseSource: hasExpertise ? undefined : 'Manual' }
+                                : s
+                            )
+                            // If skill doesn't exist in array, add it
+                            if (!skill) {
+                              updatedSkills.push({ name: skillName, proficient: true, expertise: true, expertiseSource: 'Manual' })
+                            }
+                            const updatedCharacter = { ...character, skills: updatedSkills }
+                            setCharacter(updatedCharacter)
+                            pendingCharacterRef.current = updatedCharacter
+                            saveToApi(updatedCharacter)
+                          }
+
                           return (
                             <div
                               key={skillName}
                               className="flex items-center justify-between bg-gray-50 dark:bg-gray-700 rounded px-3 py-2"
                             >
                               <div className="flex items-center gap-2">
-                                <span
-                                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center text-xs ${
+                                <button
+                                  onClick={handleExpertiseToggle}
+                                  disabled={!isProficient}
+                                  title={isProficient ? (hasExpertise ? 'Remove expertise' : 'Add expertise') : 'Must be proficient to add expertise'}
+                                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center text-xs transition-colors ${
                                     hasExpertise
-                                      ? 'bg-indigo-600 border-indigo-600 text-white'
+                                      ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700 hover:border-indigo-700'
                                       : isProficient
-                                      ? 'bg-indigo-600 border-indigo-600'
-                                      : 'border-gray-400 dark:border-gray-500'
+                                      ? 'bg-indigo-600 border-indigo-600 hover:bg-indigo-500 hover:border-indigo-500'
+                                      : 'border-gray-400 dark:border-gray-500 cursor-not-allowed'
                                   }`}
                                 >
                                   {hasExpertise && 'E'}
-                                </span>
+                                </button>
                                 <span className="text-sm text-gray-900 dark:text-white">
                                   {SKILL_LABELS[skillName]}
                                 </span>
