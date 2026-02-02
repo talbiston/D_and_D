@@ -122,3 +122,18 @@ Started: Sun Feb  2 12:00:00 AM CST 2026
   - Consider combining stories that are really the same feature in different contexts
 
 ---
+
+## 2026-02-01 - US-008: Display subclass spells distinctly in spell list
+- Added isSubclassSpell, isLineageSpell, isProtectedSpell checks in spell list render
+- Subclass spells show amber "Always Prepared" badge with tooltip:
+  - "This spell is granted by your [subclass name] and is always prepared"
+- Lineage spells continue to show emerald "Lineage" badge
+- Remove button now conditionally rendered: hidden for protected spells (Subclass/Lineage)
+- Other sources still show generic emerald badge
+- Files changed: src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Use title attribute for simple tooltips (cursor-help class for cursor)
+  - Conditional rendering with && for hiding elements (vs disabled state)
+  - Badge colors: indigo for level, amber for subclass, emerald for lineage/other
+
+---

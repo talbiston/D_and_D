@@ -2852,6 +2852,9 @@ export default function CharacterSheetPage() {
                 <div className="space-y-2">
                   {character.spells.map((spell) => {
                     const isExpanded = expandedFeatures.has(`spell-${spell.name}`)
+                    const isSubclassSpell = spell.source === 'Subclass'
+                    const isLineageSpell = spell.source === 'Lineage'
+                    const isProtectedSpell = isSubclassSpell || isLineageSpell
                     return (
                       <div
                         key={spell.name}
@@ -2866,7 +2869,20 @@ export default function CharacterSheetPage() {
                               <span className="text-xs px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 rounded">
                                 {spell.level === 0 ? 'Cantrip' : `Lvl ${spell.level}`}
                               </span>
-                              {spell.source && (
+                              {isSubclassSpell && (
+                                <span
+                                  className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 rounded cursor-help"
+                                  title={`This spell is granted by your ${character.subclass || 'subclass'} and is always prepared`}
+                                >
+                                  Always Prepared
+                                </span>
+                              )}
+                              {isLineageSpell && (
+                                <span className="text-xs px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded">
+                                  Lineage
+                                </span>
+                              )}
+                              {spell.source && !isSubclassSpell && !isLineageSpell && (
                                 <span className="text-xs px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded">
                                   {spell.source}
                                 </span>
@@ -2886,15 +2902,17 @@ export default function CharacterSheetPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </button>
-                          <button
-                            onClick={() => removeSpell(spell.name)}
-                            className="px-3 py-2 text-gray-400 hover:text-red-500 transition-colors"
-                            title="Remove spell"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
+                          {!isProtectedSpell && (
+                            <button
+                              onClick={() => removeSpell(spell.name)}
+                              className="px-3 py-2 text-gray-400 hover:text-red-500 transition-colors"
+                              title="Remove spell"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
                         {isExpanded && (
                           <div className="px-4 pb-3 text-sm">

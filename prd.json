@@ -121,8 +121,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added amber 'Always Prepared' badge for subclass spells with tooltip. Remove button hidden for both Subclass and Lineage spells."
     },
     {
       "id": "US-009",
