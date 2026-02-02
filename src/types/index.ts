@@ -64,6 +64,7 @@ export interface Skill {
   ability: AbilityName
   proficient: boolean
   expertise: boolean
+  expertiseSource?: string // Tracks which feature granted expertise (e.g., 'Scholar', 'Manual')
 }
 
 // Character sizes
@@ -261,11 +262,18 @@ export interface Equipment {
   description?: string
 }
 
+// Expertise grant configuration for class features
+export interface ExpertiseGrant {
+  count: number
+  skills?: SkillName[] // If specified, expertise can only be chosen from these skills
+}
+
 // Class feature type
 export interface ClassFeature {
   name: string
   level: number
   description: string
+  expertiseGrant?: ExpertiseGrant
 }
 
 // Feat type

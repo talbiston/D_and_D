@@ -1,17 +1,21 @@
 {
   "project": "D&D Character Sheet",
-  "branchName": "ralph/elven-lineages",
-  "description": "Elven Lineages - Add Drow, High Elf, and Wood Elf lineage options to the Elf species with unique traits, cantrips, and leveled spells",
+  "branchName": "ralph/skill-expertise",
+  "description": "Skill Expertise Selection - Add UI to select and manage skill expertise for features like Scholar, Expertise, and Deft Explorer",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Update SpeciesAncestryOption type for lineage features",
-      "description": "As a developer, I need the type system to support lineage-specific overrides (speed, darkvision) and leveled spells so Elven Lineages can be properly defined.",
+      "title": "Define expertise-granting features with metadata",
+      "description": "As a developer, I need to define which class features grant expertise and what skill restrictions they have.",
       "acceptanceCriteria": [
-        "Add optional `speedOverride?: number` field to SpeciesAncestryOption interface in src/types/index.ts",
-        "Add optional `darkvisionOverride?: number` field to SpeciesAncestryOption interface",
-        "Add optional `cantrip?: string` field to SpeciesAncestryOption interface",
-        "Add optional `leveledSpells?: { level: number; spell: string }[]` field to SpeciesAncestryOption interface",
+        "Add optional `expertiseGrant` field to ClassFeature type: { count: number, skills?: SkillName[] }",
+        "Update Scholar (Wizard L2): expertiseGrant: { count: 1, skills: ['arcana', 'history', 'investigation', 'medicine', 'nature', 'religion'] }",
+        "Update Expertise (Rogue L1): expertiseGrant: { count: 2 }",
+        "Update Expertise (Rogue L6): expertiseGrant: { count: 2 }",
+        "Update Expertise (Bard L2): expertiseGrant: { count: 2 }",
+        "Update Expertise (Bard L9): expertiseGrant: { count: 2 }",
+        "Update Deft Explorer (Ranger L2): expertiseGrant: { count: 1 }",
+        "Update Expertise (Ranger L9): expertiseGrant: { count: 2 }",
         "Typecheck passes"
       ],
       "priority": 1,
@@ -20,15 +24,16 @@
     },
     {
       "id": "US-002",
-      "title": "Add Elven Lineage ancestry data to Elf species",
-      "description": "As a developer, I need to add the three Elven Lineages (Drow, High Elf, Wood Elf) to the Elf species data with their unique traits.",
+      "title": "Add expertise toggle to character sheet skills section",
+      "description": "As a player, I want to toggle expertise on my proficient skills from the character sheet so I can manage my expertise choices anytime.",
       "acceptanceCriteria": [
-        "Add `ancestry` field to Elf species in src/data/species.ts with choiceName 'Elven Lineage'",
-        "Drow option: darkvisionOverride=120, cantrip='Dancing Lights', leveledSpells for Faerie Fire (L3) and Darkness (L5)",
-        "High Elf option: cantrip='Prestidigitation', leveledSpells for Detect Magic (L3) and Misty Step (L5)",
-        "Wood Elf option: speedOverride=35, cantrip='Druidcraft', leveledSpells for Longstrider (L3) and Pass Without Trace (L5)",
-        "Each lineage has a clear description explaining its benefits",
-        "Typecheck passes"
+        "Each proficient skill row has a clickable expertise toggle (small button or checkbox)",
+        "Non-proficient skills cannot have expertise toggled (toggle hidden or disabled)",
+        "Clicking toggle sets skill.expertise = true/false and saves character",
+        "Skill bonus display updates immediately when expertise is toggled",
+        "Expertise toggle only appears for proficient skills",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 2,
       "passes": true,
@@ -36,13 +41,15 @@
     },
     {
       "id": "US-003",
-      "title": "Apply lineage speed and darkvision overrides",
-      "description": "As a player, when I select Drow or Wood Elf lineage, my character's stats should update accordingly (Drow: 120ft Darkvision, Wood Elf: 35ft speed).",
+      "title": "Create ExpertisePickerModal component",
+      "description": "As a player, I want a modal to select expertise skills when leveling up or when I need to choose multiple at once.",
       "acceptanceCriteria": [
-        "In CharacterCreatePage, when Elf ancestry is selected, check for speedOverride and apply to character speed",
-        "In CharacterCreatePage, when Elf ancestry is selected, check for darkvisionOverride and update Darkvision trait",
-        "Character sheet displays correct speed (35ft for Wood Elf, 30ft for others)",
-        "Character sheet displays correct Darkvision range (120ft for Drow, 60ft for others)",
+        "Create ExpertisePickerModal component in src/components/",
+        "Props: isOpen, onClose, onConfirm, title, availableSkills (SkillName[]), count (number to select), currentSkills (character's skills array)",
+        "Shows only proficient skills from availableSkills that don't already have expertise",
+        "Allows selecting exactly `count` skills",
+        "Confirm button disabled until correct number selected",
+        "Shows skill name and current bonus, plus preview bonus with expertise",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
@@ -52,13 +59,15 @@
     },
     {
       "id": "US-004",
-      "title": "Add lineage cantrip to character spells",
-      "description": "As a player, when I select an Elven Lineage, the lineage cantrip should be added to my character's known spells.",
+      "title": "Integrate expertise picker into level-up flow",
+      "description": "As a player, when I level up and gain a feature with expertiseGrant, I want to be prompted to select my expertise skills.",
       "acceptanceCriteria": [
-        "In CharacterCreatePage, when Elf ancestry is selected, add the lineage cantrip to character's spells array",
-        "Cantrip is marked with source 'Lineage' or similar indicator (not class)",
-        "Dancing Lights added for Drow, Prestidigitation for High Elf, Druidcraft for Wood Elf",
-        "Cantrip appears in character sheet Spells section",
+        "During level-up in CharacterSheetPage, check if any new features have expertiseGrant",
+        "If expertiseGrant found, show ExpertisePickerModal after other level-up modals",
+        "Pass restricted skills from expertiseGrant.skills (or all proficient if not specified)",
+        "Pass count from expertiseGrant.count",
+        "On confirm, update character.skills with expertise: true for selected skills",
+        "Add expertise choices to level-up summary",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
@@ -68,50 +77,17 @@
     },
     {
       "id": "US-005",
-      "title": "Add lineage spells when character reaches levels 3 and 5",
-      "description": "As a player with an Elf character, when I level up to 3 or 5, the appropriate lineage spell should be added to my known spells.",
+      "title": "Add expertise source tracking",
+      "description": "As a player, I want to see which feature granted each expertise when I hover over the expertise indicator.",
       "acceptanceCriteria": [
-        "Create utility function to get lineage spells for a given Elf ancestry and character level",
-        "When leveling up to level 3, add the level 3 lineage spell (Faerie Fire/Detect Magic/Longstrider)",
-        "When leveling up to level 5, add the level 5 lineage spell (Darkness/Misty Step/Pass Without Trace)",
-        "Lineage spells are marked with source 'Lineage' and note about once per Long Rest casting",
+        "Add optional expertiseSource?: string field to Skill type in types/index.ts",
+        "When expertise is granted via level-up modal, set expertiseSource to feature name",
+        "When expertise is toggled manually on character sheet, set expertiseSource to 'Manual'",
+        "Add tooltip to expertise indicator showing the source (e.g., 'Expertise from: Scholar')",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 5,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-006",
-      "title": "Update Keen Senses trait to allow skill choice",
-      "description": "As a player, I want to choose between Insight, Perception, or Survival proficiency for my Elf's Keen Senses trait.",
-      "acceptanceCriteria": [
-        "Update Keen Senses trait description in species.ts to mention choice of Insight, Perception, or Survival",
-        "Add optional `keenSensesSkill?: string` field to Character type (or use existing mechanism)",
-        "In CharacterCreatePage, show dropdown for Keen Senses skill choice when Elf is selected",
-        "Selected skill is added to character's skill proficiencies on creation",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 6,
-      "passes": true,
-      "notes": ""
-    },
-    {
-      "id": "US-007",
-      "title": "Add migration modal for existing Elf characters",
-      "description": "As a player with an existing Elf character, I want to be prompted to select a lineage when I open my character sheet.",
-      "acceptanceCriteria": [
-        "In CharacterSheetPage, detect if character is Elf without speciesAncestry",
-        "Show blocking modal with lineage selection (Drow, High Elf, Wood Elf) and descriptions",
-        "Modal cannot be dismissed without making a selection",
-        "On selection, update character with chosen lineage, apply overrides, and add appropriate spells",
-        "Also prompt for Keen Senses skill choice in the migration modal",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
-      ],
-      "priority": 7,
       "passes": true,
       "notes": ""
     }
