@@ -107,3 +107,18 @@ Started: Sun Feb  2 12:00:00 AM CST 2026
   - getSubclass returns undefined if subclass not found, so check for spells field explicitly
 
 ---
+
+## 2026-02-01 - US-007: Auto-add subclass spells during level-up
+- Already implemented in US-006's completeLevelUp logic
+- When character has existing subclass and levels up:
+  - subclassForSpells = character.subclass (existing)
+  - previousLevelForSubclass = character.level (current level before level-up)
+  - newLevel = levelUpResult.character.level (new level after)
+- getSubclassSpellsForLevelUp compares levels to find newly available spells
+- Works for all classes with subclass spells (Cleric, Warlock, Paladin, Druid, Ranger)
+- Files changed: prd.json (marked complete)
+- **Learnings for future iterations:**
+  - US-006 and US-007 were essentially the same feature, just different scenarios
+  - Consider combining stories that are really the same feature in different contexts
+
+---
