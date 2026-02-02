@@ -23,7 +23,7 @@ import ASIModal, { type ASIChoice } from '../components/ASIModal'
 import LevelUpSummaryModal from '../components/LevelUpSummaryModal'
 import InvocationPickerModal from '../components/InvocationPickerModal'
 import ManeuverPickerModal from '../components/ManeuverPickerModal'
-import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel, getPactMagicSlots } from '../utils/calculations'
+import { levelUp, type LevelUpResult, getFeatureDisplayName, getCantripsKnown, getSpellSlotsForLevel, getPactMagicSlots, getLineageSpellsForLevelUp } from '../utils/calculations'
 import { INVOCATIONS, getInvocationsKnown } from '../data/invocations'
 import { MANEUVERS, getManeuversKnown, getSuperiorityDice } from '../data/maneuvers'
 import { METAMAGIC_OPTIONS, getMetamagicKnown } from '../data/metamagic'
@@ -960,6 +960,15 @@ export default function CharacterSheetPage() {
       updatedCharacter = {
         ...updatedCharacter,
         spells: [...updatedCharacter.spells, ...newSpells]
+      }
+    }
+
+    // Apply lineage spells if leveling up grants any (e.g., Elven Lineage spells at level 3 and 5)
+    const lineageSpells = getLineageSpellsForLevelUp(character, character.level, levelUpResult.character.level)
+    if (lineageSpells.length > 0) {
+      updatedCharacter = {
+        ...updatedCharacter,
+        spells: [...updatedCharacter.spells, ...lineageSpells]
       }
     }
 
@@ -2533,6 +2542,9 @@ export default function CharacterSheetPage() {
                               <span>School: {spell.school}</span>
                             </div>
                             <p className="text-gray-600 dark:text-gray-300">{spell.description}</p>
+                            {spell.notes && (
+                              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 italic">{spell.notes}</p>
+                            )}
                           </div>
                         )}
                       </div>

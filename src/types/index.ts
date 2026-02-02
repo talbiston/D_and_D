@@ -250,6 +250,7 @@ export interface Spell {
   description: string
   classes: string[] // Class names that can cast this spell
   source?: string // Origin of the spell (e.g., 'Lineage', 'Class', 'Feat')
+  notes?: string // Additional notes (e.g., 'Once per Long Rest without a spell slot')
 }
 
 // Equipment type
