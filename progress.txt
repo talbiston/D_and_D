@@ -6,6 +6,8 @@ Started: Sun Feb  1 08:46:04 PM CST 2026
 - Lint using `npm run lint` - pre-existing lint errors in DiceRoller.tsx and DarkModeContext.tsx are known issues
 - SpeciesAncestryOption in src/types/index.ts is used for species-specific choices (e.g., Dragonborn draconic ancestry, Elven Lineage)
 - To add spells with a source, use: `{ ...getSpellByName('SpellName'), source: 'Lineage' }` - the source field is optional and displayed in CharacterSheetPage
+- Spell interface has optional `notes` field for special rules (e.g., 'Once per Long Rest without a spell slot') - displayed in amber/italic below description
+- Use `getLineageSpellsForLevelUp(character, prevLevel, newLevel)` to get lineage spells granted on level-up
 ---
 
 ## 2026-02-01 20:46 CST - US-001
@@ -47,4 +49,16 @@ Started: Sun Feb  1 08:46:04 PM CST 2026
   - Lineage cantrips are added in `handleCreateCharacter` using `getSpellByName` to look up spell data
   - CharacterSheetPage displays spell source as an emerald-colored badge next to the level badge
   - Pattern for adding lineage spells: get spell data with `getSpellByName`, spread it, add source field
+---
+
+## 2026-02-01 21:30 CST - US-005
+- What was implemented: Added lineage spells when character levels up to 3 or 5
+- Files changed: src/utils/calculations.ts, src/pages/CharacterSheetPage.tsx, src/types/index.ts
+- **Learnings for future iterations:**
+  - Created `getLineageSpellsForLevelUp(character, previousLevel, newLevel)` utility in calculations.ts
+  - The function looks up species ancestry, finds the selected option, and returns spells for threshold levels
+  - Lineage spells are added in `completeLevelUp` function in CharacterSheetPage.tsx after class spells
+  - Added `notes` optional field to Spell interface for special casting rules (e.g., "Once per Long Rest without a spell slot")
+  - Notes are displayed in amber/italic below the spell description in the expanded spell view
+  - To integrate with level-up, call `getLineageSpellsForLevelUp` and add results to character's spells array
 ---
