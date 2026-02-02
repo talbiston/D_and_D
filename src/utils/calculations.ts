@@ -1121,7 +1121,15 @@ export function getFeatureDisplayName(featureName: string, className: string, le
 }
 
 /**
- * Calculate Armor Class (AC) based on equipped armor, modifiers, and class features
+ * Result of AC calculation including source information
+ */
+export interface ACCalculationResult {
+  ac: number
+  source: string  // e.g., 'Unarmored', 'Leather (Light)', 'Draconic Resilience'
+}
+
+/**
+ * Calculate Armor Class (AC) based on equipped armor, modifiers, and class/subclass features
  *
  * @param equippedArmorName - The name of equipped body armor (null if none)
  * @param hasShield - Whether a shield is equipped
@@ -1130,6 +1138,8 @@ export function getFeatureDisplayName(featureName: string, className: string, le
  * @param wisMod - Wisdom modifier (for Monk unarmored defense)
  * @param characterClass - The character's class name (for unarmored defense calculations)
  * @param manualOverride - Optional manual AC override
+ * @param subclassName - Optional subclass name (for subclass AC calculations like Draconic Resilience)
+ * @param chaMod - Optional Charisma modifier (for subclass calculations)
  * @returns The calculated AC
  */
 export function calculateAC(
@@ -1139,14 +1149,46 @@ export function calculateAC(
   conMod: number,
   wisMod: number,
   characterClass: string,
-  manualOverride?: number
+  manualOverride?: number,
+  subclassName?: string,
+  chaMod?: number
 ): number {
+  const result = calculateACWithSource(
+    equippedArmorName,
+    hasShield,
+    dexMod,
+    conMod,
+    wisMod,
+    characterClass,
+    manualOverride,
+    subclassName,
+    chaMod
+  )
+  return result.ac
+}
+
+/**
+ * Calculate Armor Class (AC) with source information
+ * Returns both the AC value and its source for display in tooltips/breakdowns
+ */
+export function calculateACWithSource(
+  equippedArmorName: string | null,
+  hasShield: boolean,
+  dexMod: number,
+  conMod: number,
+  wisMod: number,
+  characterClass: string,
+  manualOverride?: number,
+  subclassName?: string,
+  chaMod?: number
+): ACCalculationResult {
   // If manual override is set, use it
   if (manualOverride !== undefined) {
-    return manualOverride
+    return { ac: manualOverride, source: 'Manual Override' }
   }
 
   let baseAC: number
+  let source: string
 
   if (equippedArmorName) {
     // Wearing armor
@@ -1159,29 +1201,83 @@ export function calculateAC(
       if (armor.dexBonus === true) {
         // Light armor: full Dex bonus
         baseAC += dexMod
+        source = `${armor.name} (Light)`
       } else if (armor.dexBonus === 'max2') {
         // Medium armor: Dex bonus capped at +2
         baseAC += Math.min(dexMod, 2)
+        source = `${armor.name} (Medium)`
+      } else {
+        // Heavy armor (dexBonus === false): no Dex bonus added
+        source = `${armor.name} (Heavy)`
       }
-      // Heavy armor (dexBonus === false): no Dex bonus added
     } else {
       // Armor not found in database, fall back to unarmored
       baseAC = 10 + dexMod
+      source = 'Unarmored'
     }
   } else {
-    // No armor equipped - check for unarmored defense class features
+    // No armor equipped - check for unarmored defense class features and subclass
     const className = characterClass.toLowerCase()
 
+    // Calculate all possible unarmored AC values and pick the highest
+    const acOptions: { ac: number; source: string }[] = []
+
+    // Base unarmored: 10 + Dex
+    acOptions.push({ ac: 10 + dexMod, source: 'Unarmored' })
+
+    // Class unarmored defenses
     if (className === 'barbarian') {
       // Barbarian Unarmored Defense: 10 + Dex + Con
-      baseAC = 10 + dexMod + conMod
+      acOptions.push({ ac: 10 + dexMod + conMod, source: 'Unarmored Defense (Barbarian)' })
     } else if (className === 'monk') {
       // Monk Unarmored Defense: 10 + Dex + Wis
-      baseAC = 10 + dexMod + wisMod
-    } else {
-      // Standard unarmored: 10 + Dex
-      baseAC = 10 + dexMod
+      acOptions.push({ ac: 10 + dexMod + wisMod, source: 'Unarmored Defense (Monk)' })
     }
+
+    // Subclass unarmored defense (e.g., Draconic Resilience)
+    if (subclassName) {
+      const subclass = getSubclass(characterClass, subclassName)
+      if (subclass?.acCalculation && subclass.acCalculation.type === 'unarmored') {
+        const { base, abilities } = subclass.acCalculation
+        let subclassAC = base
+
+        // Add ability modifiers
+        for (const ability of abilities) {
+          switch (ability) {
+            case 'dexterity':
+              subclassAC += dexMod
+              break
+            case 'constitution':
+              subclassAC += conMod
+              break
+            case 'wisdom':
+              subclassAC += wisMod
+              break
+            case 'charisma':
+              subclassAC += chaMod ?? 0
+              break
+            // strength and intelligence could be added if needed
+          }
+        }
+
+        // Find the feature name for the AC calculation (e.g., "Draconic Resilience")
+        const acFeature = subclass.features.find(f =>
+          f.description.toLowerCase().includes('base ac') ||
+          f.description.toLowerCase().includes('your ac equals')
+        )
+        const featureName = acFeature?.name ?? subclassName
+
+        acOptions.push({ ac: subclassAC, source: featureName })
+      }
+    }
+
+    // Find the highest AC option
+    const bestOption = acOptions.reduce((best, current) =>
+      current.ac > best.ac ? current : best
+    )
+
+    baseAC = bestOption.ac
+    source = bestOption.source
   }
 
   // Add shield bonus if equipped
@@ -1189,7 +1285,7 @@ export function calculateAC(
     baseAC += 2
   }
 
-  return baseAC
+  return { ac: baseAC, source }
 }
 
 /**

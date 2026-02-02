@@ -3,12 +3,12 @@ import { useParams, Link } from 'react-router-dom'
 import type { Character } from '../types'
 import { exportCharacterAsJson } from '../utils/storage'
 import { getCharacter, updateCharacter as updateCharacterApi, ApiError } from '../utils/api'
-import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties, calculateToolCheckBonus } from '../utils/calculations'
+import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateACWithSource, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties, calculateToolCheckBonus } from '../utils/calculations'
 import { getWeaponByName } from '../data/weapons'
 import { getArmorByName } from '../data/armor'
 import { GEAR, type GearData, type GearCategory } from '../data/gear'
 import { TOOLS, getToolByName, type ToolCategory } from '../data/tools'
-import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel } from '../data/classes'
+import { getClassByName, getClassFeaturesForLevel, isSpellcaster, getSubclassFeaturesForLevel, getSubclass } from '../data/classes'
 import { getSpeciesByName } from '../data/species'
 import { getSpellSaveDC, getSpellAttackBonus, XP_THRESHOLDS } from '../utils/calculations'
 import { getSpellsByClass, getSpellByName } from '../data/spells'
@@ -1903,49 +1903,64 @@ export default function CharacterSheetPage() {
               const dexMod = getAbilityModifier(character.abilityScores.dexterity)
               const conMod = getAbilityModifier(character.abilityScores.constitution)
               const wisMod = getAbilityModifier(character.abilityScores.wisdom)
+              const chaMod = getAbilityModifier(character.abilityScores.charisma)
 
               // Calculate AC components for breakdown
               const armorData = equippedArmor ? getArmorByName(equippedArmor.name) : null
-              const className = character.class.toLowerCase()
 
-              // Calculate AC using the utility function
-              const calculatedAC = calculateAC(
+              // Calculate AC using the utility function (with subclass support)
+              const acResult = calculateACWithSource(
                 equippedArmor?.name ?? null,
                 !!equippedShield,
                 dexMod,
                 conMod,
                 wisMod,
                 character.class,
-                character.manualACOverride
+                character.manualACOverride,
+                character.subclass,
+                chaMod
               )
+              const calculatedAC = acResult.ac
+              const acDescription = acResult.source
 
-              // Determine AC breakdown components
+              // Determine AC breakdown components for detailed display
               let baseAC = 10
               let dexBonus = dexMod
               const shieldBonus = equippedShield ? 2 : 0
               let otherBonus = 0
-              let acDescription = 'Unarmored'
 
               if (armorData) {
                 baseAC = armorData.baseAC
                 if (armorData.dexBonus === true) {
                   dexBonus = dexMod
-                  acDescription = `${armorData.name} (Light)`
                 } else if (armorData.dexBonus === 'max2') {
                   dexBonus = Math.min(dexMod, 2)
-                  acDescription = `${armorData.name} (Medium)`
                 } else {
                   dexBonus = 0
-                  acDescription = `${armorData.name} (Heavy)`
                 }
               } else if (!equippedArmor) {
-                // Unarmored defense
+                // Handle unarmored defense breakdown
+                const className = character.class.toLowerCase()
                 if (className === 'barbarian') {
                   otherBonus = conMod
-                  acDescription = 'Unarmored Defense (Barbarian)'
                 } else if (className === 'monk') {
                   otherBonus = wisMod
-                  acDescription = 'Unarmored Defense (Monk)'
+                } else if (acDescription === 'Draconic Resilience') {
+                  // Draconic Resilience: 13 + DEX
+                  baseAC = 13
+                } else if (character.subclass) {
+                  // Check for other subclass AC calculations
+                  const subclass = getSubclass(character.class, character.subclass)
+                  if (subclass?.acCalculation) {
+                    baseAC = subclass.acCalculation.base
+                    // Add any additional ability modifiers beyond DEX
+                    for (const ability of subclass.acCalculation.abilities) {
+                      if (ability === 'constitution') otherBonus += conMod
+                      if (ability === 'wisdom') otherBonus += wisMod
+                      if (ability === 'charisma') otherBonus += chaMod
+                      // DEX is already added to dexBonus
+                    }
+                  }
                 }
               }
 
