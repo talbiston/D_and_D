@@ -5,6 +5,7 @@ Started: Sun Feb  1 08:46:04 PM CST 2026
 - Typecheck using `npx tsc -b` (no typecheck script in package.json)
 - Lint using `npm run lint` - pre-existing lint errors in DiceRoller.tsx and DarkModeContext.tsx are known issues
 - SpeciesAncestryOption in src/types/index.ts is used for species-specific choices (e.g., Dragonborn draconic ancestry, Elven Lineage)
+- To add spells with a source, use: `{ ...getSpellByName('SpellName'), source: 'Lineage' }` - the source field is optional and displayed in CharacterSheetPage
 ---
 
 ## 2026-02-01 20:46 CST - US-001
@@ -35,4 +36,15 @@ Started: Sun Feb  1 08:46:04 PM CST 2026
   - `finalSpeed` is calculated from `speedOverride` if present, otherwise from species default
   - `finalSpeciesTraits` maps over species traits and updates Darkvision description if `darkvisionOverride` is present
   - The pattern for modifying traits: map over the array and replace matching trait with updated description
+---
+
+## 2026-02-01 21:15 CST - US-004
+- What was implemented: Added lineage cantrip to character's spells array during character creation
+- Files changed: src/types/index.ts, src/data/spells.ts, src/pages/CharacterCreatePage.tsx, src/pages/CharacterSheetPage.tsx
+- **Learnings for future iterations:**
+  - Spell interface now has optional `source` field to track origin (e.g., 'Lineage', 'Class', 'Feat')
+  - Dancing Lights cantrip was added to spells.ts (was missing from spell data)
+  - Lineage cantrips are added in `handleCreateCharacter` using `getSpellByName` to look up spell data
+  - CharacterSheetPage displays spell source as an emerald-colored badge next to the level badge
+  - Pattern for adding lineage spells: get spell data with `getSpellByName`, spread it, add source field
 ---
