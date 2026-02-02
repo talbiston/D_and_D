@@ -2462,7 +2462,31 @@ export default function CharacterSheetPage() {
                           {resetType === 'short' ? 'SR' : 'LR'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
+                        {/* - Button (Use resource) */}
+                        {!isUnlimited && (
+                          <button
+                            onClick={() => {
+                              const newValue = Math.max(0, currentUses - 1)
+                              updateCharacter({
+                                resources: {
+                                  ...character.resources,
+                                  [resource.name]: newValue,
+                                },
+                              })
+                            }}
+                            disabled={currentUses <= 0}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-lg font-bold transition-colors ${
+                              currentUses <= 0
+                                ? 'bg-gray-200 dark:bg-gray-600 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                                : 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900'
+                            }`}
+                            title="Use resource"
+                          >
+                            −
+                          </button>
+                        )}
+
                         {isUnlimited ? (
                           <span className="text-lg font-bold text-amber-600 dark:text-amber-400">∞</span>
                         ) : (
@@ -2471,23 +2495,58 @@ export default function CharacterSheetPage() {
                             {maxUses <= 6 ? (
                               <div className="flex gap-1">
                                 {Array.from({ length: maxUses }).map((_, i) => (
-                                  <div
+                                  <button
                                     key={i}
-                                    className={`w-4 h-4 rounded-full border-2 ${
+                                    onClick={() => {
+                                      // Toggle this pip: if filled, set to this index; if empty, fill up to this
+                                      const newValue = i < currentUses ? i : i + 1
+                                      updateCharacter({
+                                        resources: {
+                                          ...character.resources,
+                                          [resource.name]: newValue,
+                                        },
+                                      })
+                                    }}
+                                    className={`w-4 h-4 rounded-full border-2 transition-colors ${
                                       i < currentUses
-                                        ? 'bg-indigo-500 border-indigo-500'
-                                        : 'bg-transparent border-gray-300 dark:border-gray-500'
+                                        ? 'bg-indigo-500 border-indigo-500 hover:bg-indigo-400'
+                                        : 'bg-transparent border-gray-300 dark:border-gray-500 hover:border-indigo-400'
                                     }`}
+                                    title={i < currentUses ? 'Click to use' : 'Click to restore'}
                                   />
                                 ))}
                               </div>
                             ) : (
                               // Numeric display for resources with more than 6 max uses
-                              <span className="text-lg font-bold text-gray-900 dark:text-white">
+                              <span className="text-lg font-bold text-gray-900 dark:text-white min-w-[60px] text-center">
                                 {currentUses}/{maxUses}
                               </span>
                             )}
                           </>
+                        )}
+
+                        {/* + Button (Restore resource) */}
+                        {!isUnlimited && (
+                          <button
+                            onClick={() => {
+                              const newValue = Math.min(maxUses, currentUses + 1)
+                              updateCharacter({
+                                resources: {
+                                  ...character.resources,
+                                  [resource.name]: newValue,
+                                },
+                              })
+                            }}
+                            disabled={currentUses >= maxUses}
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-lg font-bold transition-colors ${
+                              currentUses >= maxUses
+                                ? 'bg-gray-200 dark:bg-gray-600 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                                : 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900'
+                            }`}
+                            title="Restore resource"
+                          >
+                            +
+                          </button>
                         )}
                       </div>
                     </div>
