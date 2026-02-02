@@ -51,8 +51,15 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-8 relative">
+      {/* Background image with overlay */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10 dark:opacity-15"
+        style={{ backgroundImage: 'url(/images/image.jpg)' }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-100/80 via-gray-100/60 to-gray-100/90 dark:from-gray-900/80 dark:via-gray-900/60 dark:to-gray-900/90" />
+
+      <div className="max-w-6xl mx-auto relative z-10">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             D&D Character Sheet
