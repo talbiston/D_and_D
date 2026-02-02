@@ -133,6 +133,7 @@ export default function CharacterSheetPage() {
   const [pendingExpertiseGrant, setPendingExpertiseGrant] = useState<{ feature: ClassFeature; grant: ExpertiseGrant } | null>(null)
   const [showSubclassPickerModal, setShowSubclassPickerModal] = useState(false)
   const [isRequiredSubclassSelection, setIsRequiredSubclassSelection] = useState(false) // True when selecting subclass for existing L3+ character
+  const [subclassProficiencyNotification, setSubclassProficiencyNotification] = useState<string | null>(null) // Shows granted proficiencies
   const [pendingLevelUp, setPendingLevelUp] = useState<{
     levelUpResult: LevelUpResult
     hpGain: number
@@ -1118,6 +1119,81 @@ export default function CharacterSheetPage() {
     return grants
   }
 
+  // Helper to apply subclass proficiencies to a character
+  // Returns the updated character and a list of granted proficiencies for notification
+  const applySubclassProficiencies = (
+    char: Character,
+    className: string,
+    subclassName: string
+  ): { updatedCharacter: Character; grantedProficiencies: string[] } => {
+    const subclass = getSubclass(className, subclassName)
+    if (!subclass?.proficiencies) {
+      return { updatedCharacter: char, grantedProficiencies: [] }
+    }
+
+    const grantedProficiencies: string[] = []
+    let updatedCharacter = { ...char }
+
+    // Add armor proficiencies (avoid duplicates)
+    if (subclass.proficiencies.armor && subclass.proficiencies.armor.length > 0) {
+      const newArmorProfs = subclass.proficiencies.armor.filter(
+        prof => !updatedCharacter.proficiencies.armor.some(
+          existing => existing.toLowerCase() === prof.toLowerCase()
+        )
+      )
+      if (newArmorProfs.length > 0) {
+        updatedCharacter = {
+          ...updatedCharacter,
+          proficiencies: {
+            ...updatedCharacter.proficiencies,
+            armor: [...updatedCharacter.proficiencies.armor, ...newArmorProfs],
+          },
+        }
+        grantedProficiencies.push(...newArmorProfs)
+      }
+    }
+
+    // Add weapon proficiencies (avoid duplicates)
+    if (subclass.proficiencies.weapons && subclass.proficiencies.weapons.length > 0) {
+      const newWeaponProfs = subclass.proficiencies.weapons.filter(
+        prof => !updatedCharacter.proficiencies.weapons.some(
+          existing => existing.toLowerCase() === prof.toLowerCase()
+        )
+      )
+      if (newWeaponProfs.length > 0) {
+        updatedCharacter = {
+          ...updatedCharacter,
+          proficiencies: {
+            ...updatedCharacter.proficiencies,
+            weapons: [...updatedCharacter.proficiencies.weapons, ...newWeaponProfs],
+          },
+        }
+        grantedProficiencies.push(...newWeaponProfs)
+      }
+    }
+
+    // Add tool proficiencies (avoid duplicates)
+    if (subclass.proficiencies.tools && subclass.proficiencies.tools.length > 0) {
+      const newToolProfs = subclass.proficiencies.tools.filter(
+        prof => !updatedCharacter.proficiencies.tools.some(
+          existing => existing.toLowerCase() === prof.toLowerCase()
+        )
+      )
+      if (newToolProfs.length > 0) {
+        updatedCharacter = {
+          ...updatedCharacter,
+          proficiencies: {
+            ...updatedCharacter.proficiencies,
+            tools: [...updatedCharacter.proficiencies.tools, ...newToolProfs],
+          },
+        }
+        grantedProficiencies.push(...newToolProfs)
+      }
+    }
+
+    return { updatedCharacter, grantedProficiencies }
+  }
+
   // Helper to complete the level-up and show summary
   const completeLevelUp = (
     levelUpResult: LevelUpResult,
@@ -1132,9 +1208,26 @@ export default function CharacterSheetPage() {
     const newMaxHp = character.maxHp + hpGain
     let updatedCharacter = { ...levelUpResult.character }
 
-    // Apply subclass choice if present
+    // Apply subclass choice if present (including proficiencies)
     if (selectedSubclass) {
       updatedCharacter = { ...updatedCharacter, subclass: selectedSubclass }
+
+      // Apply subclass proficiencies
+      const { updatedCharacter: charWithProfs, grantedProficiencies } = applySubclassProficiencies(
+        updatedCharacter,
+        character.class,
+        selectedSubclass
+      )
+      updatedCharacter = charWithProfs
+
+      // Show notification for granted proficiencies
+      if (grantedProficiencies.length > 0) {
+        setSubclassProficiencyNotification(
+          `${selectedSubclass} grants: ${grantedProficiencies.join(', ')}`
+        )
+        // Auto-hide after 5 seconds
+        setTimeout(() => setSubclassProficiencyNotification(null), 5000)
+      }
     }
 
     // Apply ASI choice if present
@@ -1420,14 +1513,30 @@ export default function CharacterSheetPage() {
       character.level
     )
 
-    // Update character with subclass and spells
+    // Apply subclass proficiencies
+    const { updatedCharacter: charWithProfs, grantedProficiencies } = applySubclassProficiencies(
+      character,
+      character.class,
+      subclassName
+    )
+
+    // Update character with subclass, spells, and proficiencies
     const updatedCharacter = {
-      ...character,
+      ...charWithProfs,
       subclass: subclassName,
-      spells: [...character.spells, ...subclassSpells],
+      spells: [...charWithProfs.spells, ...subclassSpells],
     }
 
     updateCharacter(updatedCharacter)
+
+    // Show notification for granted proficiencies
+    if (grantedProficiencies.length > 0) {
+      setSubclassProficiencyNotification(
+        `${subclassName} grants: ${grantedProficiencies.join(', ')}`
+      )
+      // Auto-hide after 5 seconds
+      setTimeout(() => setSubclassProficiencyNotification(null), 5000)
+    }
   }
 
   if (loading) {
@@ -1514,6 +1623,24 @@ export default function CharacterSheetPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 md:p-8">
+      {/* Subclass Proficiency Notification */}
+      {subclassProficiencyNotification && (
+        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{subclassProficiencyNotification}</span>
+          <button
+            onClick={() => setSubclassProficiencyNotification(null)}
+            className="ml-2 hover:bg-emerald-700 rounded-full p-1"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       <div className="max-w-6xl mx-auto">
         {/* Back link */}
         <Link
