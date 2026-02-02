@@ -1,94 +1,157 @@
 {
   "project": "D&D Character Sheet",
-  "branchName": "ralph/skill-expertise",
-  "description": "Skill Expertise Selection - Add UI to select and manage skill expertise for features like Scholar, Expertise, and Deft Explorer",
+  "branchName": "ralph/subclass-overhaul",
+  "description": "Comprehensive Subclass System Overhaul - Enforce subclass selection at level 3, auto-add subclass spells, show descriptions during selection",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Define expertise-granting features with metadata",
-      "description": "As a developer, I need to define which class features grant expertise and what skill restrictions they have.",
+      "title": "Add subclass spell data to class definitions",
+      "description": "As a developer, I need subclass spell data stored in the class definitions so the app can auto-grant spells.",
       "acceptanceCriteria": [
-        "Add optional `expertiseGrant` field to ClassFeature type: { count: number, skills?: SkillName[] }",
-        "Update Scholar (Wizard L2): expertiseGrant: { count: 1, skills: ['arcana', 'history', 'investigation', 'medicine', 'nature', 'religion'] }",
-        "Update Expertise (Rogue L1): expertiseGrant: { count: 2 }",
-        "Update Expertise (Rogue L6): expertiseGrant: { count: 2 }",
-        "Update Expertise (Bard L2): expertiseGrant: { count: 2 }",
-        "Update Expertise (Bard L9): expertiseGrant: { count: 2 }",
-        "Update Deft Explorer (Ranger L2): expertiseGrant: { count: 1 }",
-        "Update Expertise (Ranger L9): expertiseGrant: { count: 2 }",
+        "Add `spells?: { level: number; spells: string[] }[]` field to Subclass interface in src/types/index.ts",
+        "Add Cleric domain spells for Life, Light, Trickery, War (levels 3, 5, 7, 9) in src/data/classes.ts",
+        "Add Warlock patron spells for Fiend, Great Old One, Celestial (levels 3, 5, 7, 9)",
+        "Add Paladin oath spells for Devotion, Vengeance (levels 3, 5, 9, 13, 17)",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": ""
+      "notes": "Added SubclassSpellGrant interface to classes.ts. Added spells to Cleric domains (Life, Light, Trickery, War), Warlock patrons (Archfey, Celestial, Fiend, Great Old One), and Paladin oaths (Devotion, Glory, Ancients, Vengeance)."
     },
     {
       "id": "US-002",
-      "title": "Add expertise toggle to character sheet skills section",
-      "description": "As a player, I want to toggle expertise on my proficient skills from the character sheet so I can manage my expertise choices anytime.",
+      "title": "Add Druid and Ranger subclass spells",
+      "description": "As a developer, I need Druid circle spells and Ranger conclave spells in the class definitions.",
       "acceptanceCriteria": [
-        "Each proficient skill row has a clickable expertise toggle (small button or checkbox)",
-        "Non-proficient skills cannot have expertise toggled (toggle hidden or disabled)",
-        "Clicking toggle sets skill.expertise = true/false and saves character",
-        "Skill bonus display updates immediately when expertise is toggled",
-        "Expertise toggle only appears for proficient skills",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Add Druid circle spells for Moon, Sea (levels 3, 5, 7, 9)",
+        "Add Ranger subclass spells for Gloom Stalker, Fey Wanderer (levels 3, 5, 9, 13, 17)",
+        "Hunter and Beast Master have no subclass spells (verify no spells field needed)",
+        "Typecheck passes"
       ],
       "priority": 2,
       "passes": true,
-      "notes": ""
+      "notes": "Added spells to Circle of Moon, Circle of Sea, Fey Wanderer, and Gloom Stalker. Hunter and Beast Master verified to have no subclass spells per PHB 2024."
     },
     {
       "id": "US-003",
-      "title": "Create ExpertisePickerModal component",
-      "description": "As a player, I want a modal to select expertise skills when leveling up or when I need to choose multiple at once.",
+      "title": "Add missing subclass spells to spells database",
+      "description": "As a developer, I need all subclass-granted spells to exist in the spells database.",
       "acceptanceCriteria": [
-        "Create ExpertisePickerModal component in src/components/",
-        "Props: isOpen, onClose, onConfirm, title, availableSkills (SkillName[]), count (number to select), currentSkills (character's skills array)",
-        "Shows only proficient skills from availableSkills that don't already have expertise",
-        "Allows selecting exactly `count` skills",
-        "Confirm button disabled until correct number selected",
-        "Shows skill name and current bonus, plus preview bonus with expertise",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Check Cleric domain spells exist in SPELLS array, add any missing",
+        "Check Warlock patron spells exist, add any missing",
+        "Check Paladin oath spells exist, add any missing (Steel Wind Strike, etc.)",
+        "Check Druid/Ranger spells exist, add any missing",
+        "Typecheck passes"
       ],
       "priority": 3,
       "passes": true,
-      "notes": ""
+      "notes": "Added 26 missing spells: Bane, Heroism, Shield of Faith, Detect Thoughts, Phantasmal Force, Rope Trick, Beacon of Hope, Blink, Clairvoyance, Daylight, Fear, Nondetection, Stinking Cloud, Water Breathing, Fount of Moonlight, Commune, Conjure Elemental, Geas, Insect Plague, Legend Lore, Mislead, Modify Memory, Scrying, Seeming, Summon Celestial, Yolande's Regal Presence."
     },
     {
       "id": "US-004",
-      "title": "Integrate expertise picker into level-up flow",
-      "description": "As a player, when I level up and gain a feature with expertiseGrant, I want to be prompted to select my expertise skills.",
+      "title": "Create SubclassPickerModal component",
+      "description": "As a developer, I need a reusable modal for selecting subclass during level-up.",
       "acceptanceCriteria": [
-        "During level-up in CharacterSheetPage, check if any new features have expertiseGrant",
-        "If expertiseGrant found, show ExpertisePickerModal after other level-up modals",
-        "Pass restricted skills from expertiseGrant.skills (or all proficient if not specified)",
-        "Pass count from expertiseGrant.count",
-        "On confirm, update character.skills with expertise: true for selected skills",
-        "Add expertise choices to level-up summary",
+        "Create SubclassPickerModal component in src/components/",
+        "Props: characterClass, onConfirm, onCancel",
+        "Shows all subclasses for the class with name and description",
+        "Shows subclass spells list if applicable",
+        "Confirm button disabled until selection made",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-005",
-      "title": "Add expertise source tracking",
-      "description": "As a player, I want to see which feature granted each expertise when I hover over the expertise indicator.",
+      "title": "Prompt for subclass selection during level-up to level 3",
+      "description": "As a player, when I level up to level 3, I want to be prompted to choose my subclass.",
       "acceptanceCriteria": [
-        "Add optional expertiseSource?: string field to Skill type in types/index.ts",
-        "When expertise is granted via level-up modal, set expertiseSource to feature name",
-        "When expertise is toggled manually on character sheet, set expertiseSource to 'Manual'",
-        "Add tooltip to expertise indicator showing the source (e.g., 'Expertise from: Scholar')",
+        "During level-up from 2->3, show SubclassPickerModal after HP roll",
+        "Selection is required - cannot proceed without choosing",
+        "Selected subclass is saved to character.subclass",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 5,
-      "passes": true,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Auto-add subclass spells when subclass is chosen",
+      "description": "As a player, when I choose my subclass, I want the subclass-granted spells to be automatically added.",
+      "acceptanceCriteria": [
+        "Create helper function getSubclassSpellsForLevel(className, subclassName, level) in calculations.ts",
+        "When subclass is selected, get subclass spells for current level",
+        "Add spells to character.spells with source: 'Subclass'",
+        "Don't add duplicates if spell already exists",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Auto-add subclass spells during level-up",
+      "description": "As a player, when I level up and my subclass grants new spells, I want them automatically added.",
+      "acceptanceCriteria": [
+        "During level-up in completeLevelUp, check if new level grants subclass spells",
+        "Add newly available subclass spells to character.spells with source: 'Subclass'",
+        "Works for Cleric, Warlock, Paladin, Druid, Ranger",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Display subclass spells distinctly in spell list",
+      "description": "As a player, I want to see which spells are from my subclass so I know they're always prepared.",
+      "acceptanceCriteria": [
+        "Spells with source: 'Subclass' show badge (e.g., 'Domain' or 'Always Prepared')",
+        "Subclass spells cannot be removed (remove button hidden for these spells)",
+        "Tooltip explains 'This spell is granted by your subclass and is always prepared'",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Validate existing characters need subclass at level 3+",
+      "description": "As a player with an existing level 3+ character without a subclass, I want to be prompted to select one.",
+      "acceptanceCriteria": [
+        "When loading character sheet, check if level >= 3 and subclass is empty",
+        "If missing, show SubclassPickerModal automatically",
+        "Cannot dismiss modal without selecting",
+        "After selection, save character and apply subclass spells",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Add subclass to level-up summary",
+      "description": "As a player, I want the level-up summary to show my subclass choice and new subclass spells.",
+      "acceptanceCriteria": [
+        "LevelUpSummaryModal shows 'Subclass: [Name]' if chosen this level",
+        "Shows new subclass spells granted at this level",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
       "notes": ""
     }
   ]

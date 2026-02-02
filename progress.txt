@@ -1,48 +1,55 @@
 # Ralph Progress Log
-Started: Sun Feb  1 10:55:03 PM CST 2026
+Started: Sun Feb  2 12:00:00 AM CST 2026
 ---
 
 ## Codebase Patterns
 - Level-up flow in CharacterSheetPage uses pendingLevelUp state to track multi-step modals
-- Class features are defined in src/data/classes.ts with optional expertiseGrant field
-- Skill type includes optional expertiseSource field for tracking origin of expertise
+- Class features are defined in src/data/classes.ts with Subclass interface
+- Spell type includes optional source field for tracking origin (e.g., 'Lineage', 'Subclass')
+- Subclass data includes features array and spells?: SubclassSpellGrant[] field
+- SubclassSpellGrant interface: { level: number; spells: string[] }
+- Spells database in src/data/spells.ts uses Spell interface with name, level, school, etc.
 
 ---
 
-## 2026-02-01 - US-001 through US-005 (Skill Expertise Feature)
+## 2026-02-01 - US-001: Add subclass spell data to class definitions
+- Added SubclassSpellGrant interface to src/data/classes.ts
+- Added spells field to Subclass interface
+- Added Cleric domain spells for Life, Light, Trickery, War (levels 3, 5, 7, 9)
+- Added Warlock patron spells for Archfey, Celestial, Fiend, Great Old One (levels 3, 5, 7, 9)
+- Added Paladin oath spells for Devotion, Glory, Ancients, Vengeance (levels 3, 5, 9, 13, 17)
+- Files changed: src/data/classes.ts
+- **Learnings for future iterations:**
+  - Subclass spells follow PHB 2024 format with character level thresholds
+  - Clerics, Warlocks get spells at levels 3, 5, 7, 9 (matches spell slot progression)
+  - Paladins get oath spells at 3, 5, 9, 13, 17 (every other paladin level from 3)
 
-### US-001: Define expertise-granting features with metadata
-- Added ExpertiseGrant interface to types/index.ts
-- Added expertiseGrant field to ClassFeature type
-- Updated class features for Bard (L2, L9), Ranger (L2, L9), Rogue (L1, L6), Wizard (L2)
-- Files: src/types/index.ts, src/data/classes.ts
+---
 
-### US-002: Add expertise toggle to character sheet
-- Changed proficiency indicator from span to button for proficient skills
-- Click toggles expertise on/off with immediate save
-- Added expertiseSource field to Skill type
-- Files: src/pages/CharacterSheetPage.tsx, src/types/index.ts
+## 2026-02-01 - US-002: Add Druid and Ranger subclass spells
+- Added Druid circle spells for Circle of Moon, Circle of Sea (levels 3, 5, 7, 9)
+- Added Ranger subclass spells for Fey Wanderer, Gloom Stalker (levels 3, 5, 9, 13, 17)
+- Verified Hunter and Beast Master have no subclass spells per PHB 2024
+- Files changed: src/data/classes.ts
+- **Learnings for future iterations:**
+  - Not all subclasses have spells - Hunter and Beast Master rangers don't
+  - Druid circles follow same pattern as Cleric domains (3, 5, 7, 9)
+  - Ranger conclaves follow same pattern as Paladin oaths (3, 5, 9, 13, 17)
 
-### US-003: Create ExpertisePickerModal component
-- New modal for selecting expertise skills during level-up
-- Shows proficient skills without existing expertise
-- Displays current and preview bonus with expertise
-- Files: src/components/ExpertisePickerModal.tsx
+---
 
-### US-004: Integrate expertise picker into level-up flow
-- Modified handleLevelUpHPConfirm, handleASIConfirm, handleLevelUpSpellsConfirm
-- Check for expertise-granting features and show picker if needed
-- Support multiple expertise grants in sequence
-- Files: src/pages/CharacterSheetPage.tsx
-
-### US-005: Add expertise source tracking with tooltip
-- Track expertiseSource when expertise is set
-- Display source in tooltip on hover
-- Files: src/pages/CharacterSheetPage.tsx
-
-**Learnings for future iterations:**
-- The level-up flow uses a chain of modal handlers with pendingLevelUp state
-- ClassFeature interface can be extended with optional fields for new functionality
-- Skills are stored in character.skills array with name, proficient, expertise, expertiseSource
+## 2026-02-01 - US-003: Add missing subclass spells to spells database
+- Audited all subclass-granted spells against SPELLS array
+- Added 26 missing spells to src/data/spells.ts:
+  - Level 1: Bane, Heroism, Shield of Faith
+  - Level 2: Detect Thoughts, Phantasmal Force, Rope Trick
+  - Level 3: Beacon of Hope, Blink, Clairvoyance, Daylight, Fear, Nondetection, Stinking Cloud, Water Breathing
+  - Level 4: Fount of Moonlight (2024 PHB)
+  - Level 5: Commune, Conjure Elemental, Geas, Insect Plague, Legend Lore, Mislead, Modify Memory, Scrying, Seeming, Summon Celestial, Yolande's Regal Presence (2024 PHB)
+- Files changed: src/data/spells.ts
+- **Learnings for future iterations:**
+  - Many PHB 2024 spells were already in the database
+  - New 2024 PHB spells include Fount of Moonlight and Yolande's Regal Presence
+  - Spell entries need all fields: name, level, school, castingTime, range, components, duration, concentration, ritual, description, classes
 
 ---
