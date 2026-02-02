@@ -80,8 +80,9 @@ export default function CharacterImageInput({
   }
 
   const handleClear = () => {
+    // Only call onChange - parent component should handle clearing imageStyle
+    // when imageUrl is cleared (to avoid race conditions with separate calls)
     onChange(undefined)
-    onStyleChange?.(undefined)
     setUrlInput('')
     setError(null)
     if (fileInputRef.current) {

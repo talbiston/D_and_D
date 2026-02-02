@@ -882,7 +882,10 @@ export default function CharacterCreatePage() {
             <CharacterImageInput
               value={imageUrl}
               imageStyle={imageStyle}
-              onChange={setImageUrl}
+              onChange={(url) => {
+                setImageUrl(url)
+                if (!url) setImageStyle(undefined)
+              }}
               onStyleChange={setImageStyle}
               size="medium"
             />
