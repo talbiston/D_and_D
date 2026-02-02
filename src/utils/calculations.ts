@@ -6,8 +6,8 @@ import { getArmorByName, type ArmorData } from '../data/armor'
 import { getWeaponByName, type WeaponData } from '../data/weapons'
 import { getSpeciesByName } from '../data/species'
 import { getSpellByName } from '../data/spells'
-import { getSubclass } from '../data/classes'
-import type { Weapon, DamageType, CharacterArmor, InventoryItem, Spell, Character, ClassFeature } from '../types'
+import { getSubclass, getClassByName, type ClassResource } from '../data/classes'
+import type { Weapon, DamageType, CharacterArmor, InventoryItem, Spell, Character, ClassFeature, AbilityScores } from '../types'
 
 /**
  * Calculate ability modifier from ability score
@@ -1585,4 +1585,94 @@ export function getEncumbrancePenalties(status: EncumbranceStatus): EncumbranceP
         description: 'No encumbrance penalties',
       }
   }
+}
+
+/**
+ * Calculate the maximum uses for a class resource
+ *
+ * @param resource - The class resource definition
+ * @param level - The character's class level
+ * @param abilityScores - The character's ability scores (for ability-based resources)
+ * @param proficiencyBonus - The character's proficiency bonus (for PB-based resources)
+ * @returns The maximum number of uses for this resource, or null if not yet available
+ */
+export function getResourceMax(
+  resource: ClassResource,
+  level: number,
+  abilityScores?: AbilityScores,
+  proficiencyBonus?: number
+): number | null {
+  // Check minimum level requirement
+  if (resource.minLevel && level < resource.minLevel) {
+    return null
+  }
+
+  // Check for level scaling override
+  if (resource.levelScaling) {
+    // Find the highest level threshold that we've reached
+    let maxUses = typeof resource.maxUses === 'number' ? resource.maxUses : 1
+    for (const [thresholdStr, uses] of Object.entries(resource.levelScaling)) {
+      const threshold = parseInt(thresholdStr, 10)
+      if (level >= threshold) {
+        maxUses = uses
+      }
+    }
+    return maxUses === Infinity ? 999 : maxUses  // Use 999 for "unlimited" (Barbarian L20 Rage)
+  }
+
+  // Calculate based on maxUses type
+  if (typeof resource.maxUses === 'number') {
+    return resource.maxUses
+  } else if (resource.maxUses === 'level') {
+    return level
+  } else if (resource.maxUses === 'proficiency') {
+    return proficiencyBonus ?? getProficiencyBonus(level)
+  } else if (resource.maxUses === 'ability' && resource.ability && abilityScores) {
+    return Math.max(1, getAbilityModifier(abilityScores[resource.ability]))
+  }
+
+  return 1  // Default fallback
+}
+
+/**
+ * Initialize class resources for a character
+ * Returns a Record<string, number> mapping resource names to their max uses
+ *
+ * @param className - The character's class name
+ * @param level - The character's level
+ * @param abilityScores - The character's ability scores
+ * @returns The initialized resources object, or undefined if no resources
+ */
+export function initializeClassResources(
+  className: string,
+  level: number,
+  abilityScores: AbilityScores
+): Record<string, number> | undefined {
+  const classData = getClassByName(className)
+  if (!classData?.resources || classData.resources.length === 0) {
+    return undefined
+  }
+
+  const resources: Record<string, number> = {}
+  const pb = getProficiencyBonus(level)
+
+  for (const resource of classData.resources) {
+    const maxUses = getResourceMax(resource, level, abilityScores, pb)
+    if (maxUses !== null) {
+      resources[resource.name] = maxUses
+    }
+  }
+
+  return Object.keys(resources).length > 0 ? resources : undefined
+}
+
+/**
+ * Get the reset type for a resource at a given level
+ * Some resources change reset type at certain levels (e.g., Bardic Inspiration)
+ */
+export function getResourceResetType(resource: ClassResource, level: number): 'short' | 'long' {
+  if (resource.resetOnShortAtLevel && level >= resource.resetOnShortAtLevel) {
+    return 'short'
+  }
+  return resource.resetOn
 }
