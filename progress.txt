@@ -95,3 +95,22 @@ Started: Sun Feb  1 05:14:48 PM CST 2026
   - ClassIcon was already imported from US-005
   - Manual browser verification needed (no browser tools available)
 ---
+
+## 2026-02-01 - Character Image Feature
+- **What was implemented:** Added character portrait/image support with URL input and file upload
+- **Files changed:**
+  - src/types/index.ts - Added `imageUrl?: string` to Character interface
+  - src/utils/api.ts - Added `imageUrl?: string` to CharacterSummary interface
+  - src/components/CharacterImageInput.tsx - New reusable component for image URL/upload
+  - src/pages/CharacterCreatePage.tsx - Added image input after character name
+  - src/pages/CharacterSheetPage.tsx - Added portrait in header with edit modal
+  - src/pages/HomePage.tsx - Added thumbnail on character cards
+- **Learnings for future iterations:**
+  - Character data object is built around line 688-754 in CharacterCreatePage.tsx
+  - CharacterSheetPage header structure starts around line 1142
+  - Use FileReader.readAsDataURL() to convert files to base64 for storage
+  - Limit file size to 500KB to avoid database bloat
+  - Use `no-print` class to hide interactive elements when printing
+  - Show separate print-only portrait without click handler for print stylesheet
+  - Use flex layout with items-start gap-4 for thumbnail + content alignment on cards
+---

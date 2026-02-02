@@ -7,6 +7,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 export interface CharacterSummary {
   id: string
   name: string
+  imageUrl?: string
   class: string
   level: number
   species: string

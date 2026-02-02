@@ -27,6 +27,7 @@ import { EQUIPMENT_PACKS, getPackByName } from '../data/equipmentPacks'
 import type { EquipmentPack } from '../data/equipmentPacks'
 import { getGearByName } from '../data/gear'
 import ClassIcon from '../components/ClassIcon'
+import CharacterImageInput from '../components/CharacterImageInput'
 
 const ABILITY_LABELS: Record<AbilityName, string> = {
   strength: 'Strength',
@@ -83,6 +84,7 @@ type AbilityIncreaseMode = 'standard' | 'balanced'
 export default function CharacterCreatePage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined)
   const [species, setSpecies] = useState('')
   const [speciesAncestry, setSpeciesAncestry] = useState('')
   const [characterClass, setCharacterClass] = useState('')
@@ -739,6 +741,7 @@ export default function CharacterCreatePage() {
     // Build character data object (without id - server generates it)
     const characterData = {
       name: name.trim(),
+      imageUrl,
       species,
       class: characterClass,
       subclass,
@@ -864,6 +867,20 @@ export default function CharacterCreatePage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter character name"
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Character Portrait */}
+          <div>
+            <label
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Character Portrait
+            </label>
+            <CharacterImageInput
+              value={imageUrl}
+              onChange={setImageUrl}
+              size="medium"
             />
           </div>
 
