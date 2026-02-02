@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import type { Character } from '../types'
 import { exportCharacterAsJson } from '../utils/storage'
 import { getCharacter, updateCharacter as updateCharacterApi, ApiError } from '../utils/api'
-import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateAC, calculateACWithSource, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties, calculateToolCheckBonus } from '../utils/calculations'
+import { getAbilityModifier, getProficiencyBonus, getPassivePerception, formatModifier, getSavingThrowBonus, getSkillBonus, calculateAttackBonus, calculateDamageBonus, calculateACWithSource, calculateCarryingCapacity, calculateCurrentWeight, getEncumbranceStatus, getEncumbrancePenalties, calculateToolCheckBonus } from '../utils/calculations'
 import { getWeaponByName } from '../data/weapons'
 import { getArmorByName } from '../data/armor'
 import { GEAR, type GearData, type GearCategory } from '../data/gear'
@@ -29,7 +29,7 @@ import { MANEUVERS, getManeuversKnown, getSuperiorityDice } from '../data/maneuv
 import { METAMAGIC_OPTIONS, getMetamagicKnown } from '../data/metamagic'
 import MetamagicPickerModal from '../components/MetamagicPickerModal'
 import LevelUpSpellPickerModal from '../components/LevelUpSpellPickerModal'
-import { getSorceryPoints, isKnownCaster, getResourceMax, getResourceResetType, initializeClassResources } from '../utils/calculations'
+import { getSorceryPoints, isKnownCaster, getResourceMax, getResourceResetType } from '../utils/calculations'
 import WeaponPickerModal from '../components/WeaponPickerModal'
 import ArmorPickerModal from '../components/ArmorPickerModal'
 import ClassIcon from '../components/ClassIcon'
@@ -2186,7 +2186,7 @@ export default function CharacterSheetPage() {
                         )}
                         {otherBonus !== 0 && (
                           <div className="flex justify-between">
-                            <span>{className === 'barbarian' ? 'Con Modifier:' : className === 'monk' ? 'Wis Modifier:' : 'Other:'}</span>
+                            <span>{character.class.toLowerCase() === 'barbarian' ? 'Con Modifier:' : character.class.toLowerCase() === 'monk' ? 'Wis Modifier:' : 'Other:'}</span>
                             <span className="font-mono">{formatModifier(otherBonus)}</span>
                           </div>
                         )}
@@ -2497,13 +2497,13 @@ export default function CharacterSheetPage() {
             const hpUpdate = { currentHp: character.maxHp }
 
             // Reset spell slots to max
-            const spellSlotUpdate: typeof character.spellSlots = {}
+            const spellSlotUpdate: Partial<typeof character.spellSlots> = {}
             for (const [levelStr, slot] of Object.entries(character.spellSlots)) {
               const level = parseInt(levelStr, 10)
               if (!isNaN(level) && slot.total > 0) {
                 spellSlotUpdate[level as keyof typeof character.spellSlots] = {
                   ...slot,
-                  used: 0,
+                  expended: 0,
                 }
               }
             }
