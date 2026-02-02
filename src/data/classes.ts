@@ -5,11 +5,19 @@ export interface SubclassSpellGrant {
   spells: string[]  // Spell names
 }
 
+// AC calculation for subclasses with unarmored defense variants (e.g., Draconic Resilience)
+export interface SubclassACCalculation {
+  type: 'unarmored'
+  base: number  // Base AC (e.g., 13 for Draconic Resilience)
+  abilities: AbilityName[]  // Abilities to add modifiers from (e.g., ['dexterity'])
+}
+
 export interface Subclass {
   name: string
   description: string
   features: ClassFeature[]
   spells?: SubclassSpellGrant[]  // Subclass-granted spells (domain spells, patron spells, etc.)
+  acCalculation?: SubclassACCalculation  // Subclass-specific AC calculation (e.g., Draconic Resilience)
 }
 
 /**
@@ -1003,12 +1011,17 @@ export const CLASSES: ClassData[] = [
         name: 'Draconic Sorcery',
         description: 'Your innate magic comes from the gift of a dragon. Perhaps an ancient dragon facing death bequeathed some of its magical power to you or your ancestor. You might have absorbed magic from being in a dragon\'s presence or location, or perhaps you have dragon blood in your veins.',
         features: [
-          { name: 'Draconic Resilience', level: 3, description: 'The magic in your body manifests physical traits of your draconic ancestors. Your Hit Point maximum increases by 3 and increases by 1 again whenever you gain another Sorcerer level. Parts of you are also covered by dragon-like scales. While you aren\'t wearing armor, your base AC equals 10 + your Dexterity modifier + your Charisma modifier.' },
+          { name: 'Draconic Resilience', level: 3, description: 'The magic in your body manifests physical traits of your draconic ancestors. Your Hit Point maximum increases by 3 and increases by 1 again whenever you gain another Sorcerer level. Parts of you are also covered by dragon-like scales. While you aren\'t wearing armor, your base AC equals 13 + your Dexterity modifier.' },
           { name: 'Dragon Speech', level: 3, description: 'You can speak, read, and write Draconic. In addition, your speech can be understood by all Dragons.' },
           { name: 'Elemental Affinity', level: 6, description: 'Your draconic magic has an affinity with a damage type associated with dragons. Choose one of the following damage types: Acid, Cold, Fire, Lightning, or Poison. You have Resistance to that damage type, and when you cast a spell that deals damage of that type, you can add your Charisma modifier to one damage roll of that spell.' },
           { name: 'Dragon Wings', level: 14, description: 'You can manifest spectral dragon wings. As a Bonus Action, you gain a Fly Speed equal to your Speed. These wings last until you dismiss them (no action required), you have the Incapacitated condition, or you don armor. You can manifest the wings while wearing light armor if it is made to accommodate them.' },
           { name: 'Draconic Presence', level: 18, description: 'You can channel the dread presence of the greatest dragons. As a Magic action, you can spend 5 Sorcery Points to draw on this power and exude an aura of awe or fear (your choice) in a 60-foot Emanation for 1 minute or until you have the Incapacitated condition. Each creature of your choice that starts its turn in this aura must succeed on a Wisdom saving throw against your spell save DC or have the Charmed condition (if you chose awe) or the Frightened condition (if you chose fear) until the start of its next turn.' },
         ],
+        acCalculation: {
+          type: 'unarmored',
+          base: 13,
+          abilities: ['dexterity'],
+        },
       },
       {
         name: 'Wild Magic Sorcery',
