@@ -55,6 +55,43 @@ export const SPECIES: Species[] = [
       },
     ],
     languages: ['Common', 'Elvish'],
+    ancestry: {
+      choiceName: 'Elven Lineage',
+      options: [
+        {
+          name: 'Drow',
+          description:
+            'The Drow are Elves who long ago chose to follow the god Lolth. Adapted to the lightless depths of the Underdark, you have superior darkvision (120 feet). You know the Dancing Lights cantrip. At 3rd level, you learn Faerie Fire, and at 5th level, you learn Darkness. You can cast each lineage spell once per Long Rest without expending a spell slot.',
+          darkvisionOverride: 120,
+          cantrip: 'Dancing Lights',
+          leveledSpells: [
+            { level: 3, spell: 'Faerie Fire' },
+            { level: 5, spell: 'Darkness' },
+          ],
+        },
+        {
+          name: 'High Elf',
+          description:
+            'High Elves are Elves with a strong connection to the arcane. You know the Prestidigitation cantrip. At 3rd level, you learn Detect Magic, and at 5th level, you learn Misty Step. You can cast each lineage spell once per Long Rest without expending a spell slot.',
+          cantrip: 'Prestidigitation',
+          leveledSpells: [
+            { level: 3, spell: 'Detect Magic' },
+            { level: 5, spell: 'Misty Step' },
+          ],
+        },
+        {
+          name: 'Wood Elf',
+          description:
+            'Wood Elves are Elves at home in the forests of the world. Your base Speed is 35 feet. You know the Druidcraft cantrip. At 3rd level, you learn Longstrider, and at 5th level, you learn Pass Without Trace. You can cast each lineage spell once per Long Rest without expending a spell slot.',
+          speedOverride: 35,
+          cantrip: 'Druidcraft',
+          leveledSpells: [
+            { level: 3, spell: 'Longstrider' },
+            { level: 5, spell: 'Pass Without Trace' },
+          ],
+        },
+      ],
+    },
   },
   {
     name: 'Dwarf',
