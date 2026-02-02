@@ -4459,7 +4459,11 @@ export default function CharacterSheetPage() {
             <CharacterImageInput
               value={character.imageUrl}
               imageStyle={character.imageStyle}
-              onChange={(url) => updateCharacter({ imageUrl: url, imageStyle: url ? character.imageStyle : undefined })}
+              onChange={(url) => updateCharacter({
+                imageUrl: url,
+                // Reset style if clearing image OR uploading a different image
+                imageStyle: !url ? undefined : (url !== character.imageUrl ? undefined : character.imageStyle)
+              })}
               onStyleChange={(style) => updateCharacter({ imageStyle: style })}
               size="large"
             />

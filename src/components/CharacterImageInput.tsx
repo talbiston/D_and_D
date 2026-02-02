@@ -70,8 +70,6 @@ export default function CharacterImageInput({
     reader.onload = () => {
       const base64 = reader.result as string
       onChange(base64)
-      // Reset style for new image
-      onStyleChange?.(undefined)
     }
     reader.onerror = () => {
       setError('Failed to read file')
