@@ -210,7 +210,7 @@ export default function CharacterImageInput({
               <img
                 src={value}
                 alt="Character preview"
-                className="w-full h-full object-cover pointer-events-none"
+                className="w-full h-full object-cover object-top pointer-events-none"
                 style={imageTransformStyle}
                 draggable={false}
                 onError={(e) => {

@@ -1153,7 +1153,7 @@ export default function CharacterSheetPage() {
                   <img
                     src={character.imageUrl}
                     alt={character.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-top"
                     style={character.imageStyle && (character.imageStyle.zoom !== 1 || character.imageStyle.x !== 0 || character.imageStyle.y !== 0) ? {
                       transform: `scale(${character.imageStyle.zoom}) translate(${character.imageStyle.x / character.imageStyle.zoom}%, ${character.imageStyle.y / character.imageStyle.zoom}%)`,
                       transformOrigin: 'center center',
@@ -1173,7 +1173,7 @@ export default function CharacterSheetPage() {
                   <img
                     src={character.imageUrl}
                     alt={character.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-top"
                     style={character.imageStyle && (character.imageStyle.zoom !== 1 || character.imageStyle.x !== 0 || character.imageStyle.y !== 0) ? {
                       transform: `scale(${character.imageStyle.zoom}) translate(${character.imageStyle.x / character.imageStyle.zoom}%, ${character.imageStyle.y / character.imageStyle.zoom}%)`,
                       transformOrigin: 'center center',
