@@ -1707,7 +1707,7 @@ export default function CharacterSheetPage() {
                             )
                             // If skill doesn't exist in array, add it
                             if (!skill) {
-                              updatedSkills.push({ name: skillName, proficient: true, expertise: true, expertiseSource: 'Manual' })
+                              updatedSkills.push({ name: skillName, ability: SKILL_ABILITIES[skillName], proficient: true, expertise: true, expertiseSource: 'Manual' })
                             }
                             const updatedCharacter = { ...character, skills: updatedSkills }
                             setCharacter(updatedCharacter)

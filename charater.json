@@ -1,0 +1,486 @@
+{
+    "id": "kWXYlQECc6IlJyeT7u9NP",
+    "name": "Alrodor Sylvaeren",
+    "imageUrl": "https://www.dndbeyond.com/avatars/54508/911/1581111423-160474237.jpeg?width=150&height=150&fit=crop&quality=95&auto=webp",
+    "species": "Elf",
+    "class": "Wizard",
+    "subclass": "",
+    "background": "Sage",
+    "level": 2,
+    "xp": 350,
+    "abilityScores": {
+        "strength": 6,
+        "dexterity": 13,
+        "constitution": 11,
+        "intelligence": 15,
+        "wisdom": 15,
+        "charisma": 13
+    },
+    "skills": [
+        {
+            "name": "athletics",
+            "ability": "strength",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "acrobatics",
+            "ability": "dexterity",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "sleightOfHand",
+            "ability": "dexterity",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "stealth",
+            "ability": "dexterity",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "arcana",
+            "ability": "intelligence",
+            "proficient": true,
+            "expertise": false
+        },
+        {
+            "name": "history",
+            "ability": "intelligence",
+            "proficient": true,
+            "expertise": false
+        },
+        {
+            "name": "investigation",
+            "ability": "intelligence",
+            "proficient": true,
+            "expertise": false
+        },
+        {
+            "name": "nature",
+            "ability": "intelligence",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "religion",
+            "ability": "intelligence",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "animalHandling",
+            "ability": "wisdom",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "insight",
+            "ability": "wisdom",
+            "proficient": true,
+            "expertise": false
+        },
+        {
+            "name": "medicine",
+            "ability": "wisdom",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "perception",
+            "ability": "wisdom",
+            "proficient": true,
+            "expertise": false
+        },
+        {
+            "name": "survival",
+            "ability": "wisdom",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "deception",
+            "ability": "charisma",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "intimidation",
+            "ability": "charisma",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "performance",
+            "ability": "charisma",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "persuasion",
+            "ability": "charisma",
+            "proficient": false,
+            "expertise": false
+        }
+    ],
+    "maxHp": 12,
+    "currentHp": 12,
+    "tempHp": 0,
+    "armorClass": 11,
+    "speed": 30,
+    "size": "medium",
+    "weapons": [
+        {
+            "name": "Quarterstaff",
+            "damage": "1d6",
+            "damageType": "bludgeoning",
+            "properties": [
+                "versatile"
+            ],
+            "isEquipped": true,
+            "isTwoHanding": false
+        }
+    ],
+    "equipment": [
+        {
+            "name": "Backpack",
+            "quantity": 1,
+            "weight": 5,
+            "category": "container"
+        },
+        {
+            "name": "Book",
+            "quantity": 1,
+            "weight": 5,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Ink (1 ounce bottle)",
+            "quantity": 1,
+            "weight": 0,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Ink Pen",
+            "quantity": 1,
+            "weight": 0,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Parchment (one sheet)",
+            "quantity": 10,
+            "weight": 0,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Little Bag of Sand",
+            "quantity": 1,
+            "weight": 0,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Small Knife",
+            "quantity": 1,
+            "weight": 0,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Spellbook",
+            "quantity": 1,
+            "weight": 3,
+            "category": "adventuring gear"
+        }
+    ],
+    "spells": [
+        {
+            "name": "Prestidigitation",
+            "level": 0,
+            "school": "transmutation",
+            "castingTime": "1 action",
+            "range": "10 feet",
+            "components": {
+                "verbal": true,
+                "somatic": true,
+                "material": false
+            },
+            "duration": "Up to 1 hour",
+            "concentration": false,
+            "ritual": false,
+            "description": "This spell is a minor magical trick that novice spellcasters use for practice. You create one of the following magical effects within range: a harmless sensory effect, light or snuff out a small flame, clean or soil a small object, chill/warm/flavor nonliving material, make a small mark or symbol appear, or create a trinket or illusory image that fits in your hand.",
+            "classes": [
+                "Bard",
+                "Sorcerer",
+                "Warlock",
+                "Wizard"
+            ],
+            "source": "Lineage"
+        },
+        {
+            "name": "Fire Bolt",
+            "level": 0,
+            "school": "evocation",
+            "castingTime": "1 action",
+            "range": "120 feet",
+            "components": {
+                "verbal": true,
+                "somatic": true,
+                "material": false
+            },
+            "duration": "Instantaneous",
+            "concentration": false,
+            "ritual": false,
+            "description": "You hurl a mote of fire at a creature or object within range. Make a ranged spell attack against the target. On a hit, the target takes 1d10 fire damage. A flammable object hit by this spell ignites if it isn't being worn or carried. This spell's damage increases by 1d10 when you reach 5th level (2d10), 11th level (3d10), and 17th level (4d10).",
+            "classes": [
+                "Sorcerer",
+                "Wizard"
+            ]
+        },
+        {
+            "name": "Ray of Frost",
+            "level": 0,
+            "school": "evocation",
+            "castingTime": "1 action",
+            "range": "60 feet",
+            "components": {
+                "verbal": true,
+                "somatic": true,
+                "material": false
+            },
+            "duration": "Instantaneous",
+            "concentration": false,
+            "ritual": false,
+            "description": "A frigid beam of blue-white light streaks toward a creature within range. Make a ranged spell attack. On a hit, it takes 1d8 cold damage and its speed is reduced by 10 feet until the start of your next turn.",
+            "classes": [
+                "Sorcerer",
+                "Wizard"
+            ]
+        },
+        {
+            "name": "Thunderwave",
+            "level": 1,
+            "school": "evocation",
+            "castingTime": "1 action",
+            "range": "Self (15-foot cube)",
+            "components": {
+                "verbal": true,
+                "somatic": true,
+                "material": false
+            },
+            "duration": "Instantaneous",
+            "concentration": false,
+            "ritual": false,
+            "description": "A wave of thunderous force sweeps out from you. Each creature in a 15-foot cube originating from you must make a Constitution saving throw. On a failed save, a creature takes 2d8 thunder damage and is pushed 10 feet away from you. On a successful save, the creature takes half as much damage and isn't pushed. At Higher Levels: When you cast this spell using a spell slot of 2nd level or higher, the damage increases by 1d8 for each slot level above 1st.",
+            "classes": [
+                "Bard",
+                "Druid",
+                "Sorcerer",
+                "Wizard"
+            ]
+        },
+        {
+            "name": "Acid Splash",
+            "level": 0,
+            "school": "evocation",
+            "castingTime": "1 action",
+            "range": "60 feet",
+            "components": {
+                "verbal": true,
+                "somatic": true,
+                "material": false
+            },
+            "duration": "Instantaneous",
+            "concentration": false,
+            "ritual": false,
+            "description": "You create an acidic bubble at a point within range, where it explodes in a 5-foot-radius Sphere. Each creature in that Sphere must succeed on a Dexterity saving throw or take 1d6 Acid damage. This spell's damage increases by 1d6 when you reach 5th level (2d6), 11th level (3d6), and 17th level (4d6).",
+            "classes": [
+                "Sorcerer",
+                "Wizard"
+            ]
+        }
+    ],
+    "spellSlots": {
+        "1": {
+            "total": 3,
+            "expended": 0
+        },
+        "2": {
+            "total": 0,
+            "expended": 0
+        },
+        "3": {
+            "total": 0,
+            "expended": 0
+        },
+        "4": {
+            "total": 0,
+            "expended": 0
+        },
+        "5": {
+            "total": 0,
+            "expended": 0
+        },
+        "6": {
+            "total": 0,
+            "expended": 0
+        },
+        "7": {
+            "total": 0,
+            "expended": 0
+        },
+        "8": {
+            "total": 0,
+            "expended": 0
+        },
+        "9": {
+            "total": 0,
+            "expended": 0
+        }
+    },
+    "spellcastingAbility": "intelligence",
+    "classFeatures": [
+        {
+            "name": "Arcane Recovery",
+            "level": 1,
+            "description": "You have learned to regain some of your magical energy by studying your spellbook. Once per day when you finish a Short Rest, you can choose expended spell slots to recover. The spell slots can have a combined level that is equal to or less than half your Wizard level (rounded up)."
+        },
+        {
+            "name": "Ritual Adept",
+            "level": 1,
+            "description": "You can cast any spell as a Ritual if that spell has the Ritual tag and the spell is in your spellbook. You don't need to have the spell prepared."
+        },
+        {
+            "name": "Spellcasting",
+            "level": 1,
+            "description": "As a student of arcane magic, you have a spellbook containing spells that show the first glimmerings of your true power. Intelligence is your spellcasting ability."
+        },
+        {
+            "name": "Scholar",
+            "level": 2,
+            "description": "You gain Expertise in one of the following skills: Arcana, History, Investigation, Medicine, Nature, or Religion."
+        }
+    ],
+    "feats": [
+        {
+            "name": "Magic Initiate (Wizard)",
+            "description": "You learn two cantrips and one 1st-level spell from the Wizard spell list. You can cast the 1st-level spell once per long rest without expending a spell slot, or by using spell slots. Intelligence is your spellcasting ability for these spells."
+        }
+    ],
+    "speciesTraits": [
+        {
+            "name": "Darkvision",
+            "description": "You have Darkvision with a range of 60 feet."
+        },
+        {
+            "name": "Fey Ancestry",
+            "description": "You have Advantage on saving throws you make to avoid or end the Charmed condition."
+        },
+        {
+            "name": "Keen Senses",
+            "description": "You have proficiency in the Insight, Perception, or Survival skill (your choice)."
+        },
+        {
+            "name": "Trance",
+            "description": "You don't need to sleep, and magic can't put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness."
+        }
+    ],
+    "speciesAncestry": {
+        "choiceName": "Elven Lineage",
+        "selectedOption": "High Elf"
+    },
+    "currency": {
+        "cp": 0,
+        "sp": 0,
+        "ep": 0,
+        "gp": 0,
+        "pp": 0
+    },
+    "deathSaves": {
+        "successes": 0,
+        "failures": 0
+    },
+    "hitDice": {
+        "total": 2,
+        "spent": 0
+    },
+    "backstory": {
+        "appearance": "",
+        "personality": "",
+        "ideals": "",
+        "bonds": "",
+        "flaws": "",
+        "backstory": "Alrodor Sylvaeren was born into a venerable High Elf lineage known more for record-keeping and historical stewardship than heroics. His family served for generations as curators of memory—maintaining chronicles, star charts, and spell indices that stretched back millennia. From his earliest years, Therenel was taught that knowledge itself is a sacred duty, not merely a tool for power.\n\nWhile other elven youths trained with blade and bow, Therenel gravitated toward quiet halls and dust-heavy archives. He learned early how fragile truth could be—how history changed depending on who held the pen. This realization sparked a lifelong fixation: what had been forgotten, erased, or deliberately hidden.\n\nLife as a Scholar\n\nTherenel was formally inducted into the Aetheryn Conclave, a prestigious arcane institution devoted to cataloging magical phenomena. His role was not to innovate spells, but to understand their origins—to annotate, compare, and cross-reference magic across cultures and eras.\n\nYears of disciplined study honed his intellect and patience. He became adept at:\n\nIdentifying obscure symbols and languages\n\nReconstructing incomplete rituals\n\nTracking conflicting historical accounts\n\nYet his greatest discovery came not from brilliance, but from persistence.\n\nThe Unanswered Question\n\nWhile researching pre-Elven magical practices, Therenel uncovered repeated references to a “Foundational Error”—a supposed flaw in early arcane theory that modern spellcasting quietly compensated for, but never corrected. Every source mentioning it ended abruptly, redacted or destroyed.\n\nWhen Therenel presented his findings, the Conclave dismissed them as apocrypha. Some senior scholars advised him—kindly, but firmly—to let dead questions remain buried.\n\nTherenel could not.\n\nDeparture from the Archives\n\nDenied official funding and access, Therenel chose a different path. He left the Conclave not in disgrace, but in professional isolation—still respected, quietly ignored. Armed with copied notes, a meticulously maintained spellbook, and a mind sharpened by centuries of study, he turned to the wider world.\n\nAncient ruins, lost libraries, and forgotten civilizations offered what institutions would not: raw, unfiltered truth.\n\nPersonality & Scholar Traits (2024-Friendly)\n\nPersonality: Thoughtful, precise, and habitually curious; tends to narrate his own reasoning aloud.\n\nIdeal: Knowledge should be preserved and shared, not controlled.\n\nBond: His research notes—organized, indexed, and guarded with his life.\n\nFlaw: Has difficulty abandoning a line of inquiry, even when it puts him at risk.\n\nWhy He Adventures\n\nTherenel adventures not for glory, but for answers. Each dungeon is a library waiting to be cataloged. Each artifact is a footnote in a story unfinished.\n\nHe believes the world is built atop forgotten assumptions—and if the Foundational Error truly exists, correcting it could reshape magic itself… or unravel it.\n\nEither way, someone must finish the work.",
+        "alignment": "lawful-good",
+        "languages": [
+            "Common",
+            "Dwarvish",
+            "Elvish"
+        ]
+    },
+    "proficiencies": {
+        "armor": [],
+        "weapons": [
+            "Simple"
+        ],
+        "tools": [
+            "Calligrapher's Supplies"
+        ]
+    },
+    "pendingASI": 0,
+    "armor": [],
+    "inventory": [
+        {
+            "name": "Backpack",
+            "quantity": 1,
+            "weight": 5,
+            "category": "container"
+        },
+        {
+            "name": "Book",
+            "quantity": 1,
+            "weight": 5,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Ink (1 ounce bottle)",
+            "quantity": 1,
+            "weight": 0,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Ink Pen",
+            "quantity": 1,
+            "weight": 0,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Parchment (one sheet)",
+            "quantity": 10,
+            "weight": 0,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Little Bag of Sand",
+            "quantity": 1,
+            "weight": 0,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Small Knife",
+            "quantity": 1,
+            "weight": 0,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Spellbook",
+            "quantity": 1,
+            "weight": 3,
+            "category": "adventuring gear"
+        }
+    ],
+    "toolProficiencies": [
+        "Calligrapher's Supplies"
+    ]
+}

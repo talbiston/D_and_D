@@ -1,8 +1,29 @@
 import { useState, useMemo } from 'react'
 import type { SkillName, Skill, AbilityScores } from '../types'
-import { SKILL_LABELS, SKILL_ABILITIES } from '../utils/constants'
-import { getAbilityModifier, getSkillBonus } from '../utils/calculations'
-import { formatModifier } from '../utils/helpers'
+import { SKILL_ABILITIES } from '../types'
+import { getAbilityModifier, getSkillBonus, formatModifier } from '../utils/calculations'
+
+// Skill labels for display
+const SKILL_LABELS: Record<SkillName, string> = {
+  athletics: 'Athletics',
+  acrobatics: 'Acrobatics',
+  sleightOfHand: 'Sleight of Hand',
+  stealth: 'Stealth',
+  arcana: 'Arcana',
+  history: 'History',
+  investigation: 'Investigation',
+  nature: 'Nature',
+  religion: 'Religion',
+  animalHandling: 'Animal Handling',
+  insight: 'Insight',
+  medicine: 'Medicine',
+  perception: 'Perception',
+  survival: 'Survival',
+  deception: 'Deception',
+  intimidation: 'Intimidation',
+  performance: 'Performance',
+  persuasion: 'Persuasion',
+}
 
 interface ExpertisePickerModalProps {
   isOpen: boolean
