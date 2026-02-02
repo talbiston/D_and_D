@@ -1,22 +1,32 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
+import type { ImageStyle } from '../types'
 
 interface CharacterImageInputProps {
   value?: string
+  imageStyle?: ImageStyle
   onChange: (url: string | undefined) => void
+  onStyleChange?: (style: ImageStyle) => void
   size?: 'small' | 'medium' | 'large'
 }
 
 const MAX_FILE_SIZE = 500 * 1024 // 500KB
 
+const DEFAULT_STYLE: ImageStyle = { zoom: 1, x: 0, y: 0 }
+
 export default function CharacterImageInput({
   value,
+  imageStyle = DEFAULT_STYLE,
   onChange,
+  onStyleChange,
   size = 'medium',
 }: CharacterImageInputProps) {
   const [mode, setMode] = useState<'url' | 'upload'>('url')
   const [urlInput, setUrlInput] = useState(value?.startsWith('data:') ? '' : value || '')
   const [error, setError] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const previewRef = useRef<HTMLDivElement>(null)
 
   const imageSizeClasses = {
     small: 'w-16 h-16',
@@ -66,12 +76,50 @@ export default function CharacterImageInput({
 
   const handleClear = () => {
     onChange(undefined)
+    onStyleChange?.(DEFAULT_STYLE)
     setUrlInput('')
     setError(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
   }
+
+  const handleZoomChange = (zoom: number) => {
+    onStyleChange?.({ ...imageStyle, zoom })
+  }
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!value) return
+    e.preventDefault()
+    setIsDragging(true)
+    setDragStart({ x: e.clientX - imageStyle.x, y: e.clientY - imageStyle.y })
+  }, [value, imageStyle.x, imageStyle.y])
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging) return
+    const newX = Math.max(-50, Math.min(50, e.clientX - dragStart.x))
+    const newY = Math.max(-50, Math.min(50, e.clientY - dragStart.y))
+    onStyleChange?.({ ...imageStyle, x: newX, y: newY })
+  }, [isDragging, dragStart, imageStyle, onStyleChange])
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  const resetPosition = () => {
+    onStyleChange?.({ ...imageStyle, x: 0, y: 0 })
+  }
+
+  const resetZoom = () => {
+    onStyleChange?.({ ...imageStyle, zoom: 1 })
+  }
+
+  // Calculate transform style for the image
+  const imageTransform = `scale(${imageStyle.zoom}) translate(${imageStyle.x / imageStyle.zoom}%, ${imageStyle.y / imageStyle.zoom}%)`
 
   return (
     <div className="space-y-3">
@@ -137,31 +185,88 @@ export default function CharacterImageInput({
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       )}
 
-      {/* Preview */}
+      {/* Preview with zoom/pan controls */}
       {value && (
-        <div className="flex items-center gap-4">
-          <div className={`${imageSizeClasses[size]} rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0`}>
-            <img
-              src={value}
-              alt="Character preview"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-                setError('Failed to load image')
-              }}
-              onLoad={(e) => {
-                e.currentTarget.style.display = 'block'
-                setError(null)
-              }}
-            />
+        <div className="space-y-3">
+          <div className="flex items-start gap-4">
+            {/* Draggable preview */}
+            <div
+              ref={previewRef}
+              className={`${imageSizeClasses[size]} rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 cursor-move select-none`}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+              title="Drag to reposition"
+            >
+              <img
+                src={value}
+                alt="Character preview"
+                className="w-full h-full object-cover pointer-events-none"
+                style={{ transform: imageTransform }}
+                draggable={false}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                  setError('Failed to load image')
+                }}
+                onLoad={(e) => {
+                  e.currentTarget.style.display = 'block'
+                  setError(null)
+                }}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={handleClear}
+                className="px-3 py-1 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors text-left"
+              >
+                Remove
+              </button>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Drag image to reposition
+              </p>
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="px-3 py-1 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
-          >
-            Remove
-          </button>
+
+          {/* Zoom control */}
+          {onStyleChange && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <label className="text-sm text-gray-600 dark:text-gray-400 w-12">
+                  Zoom
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="0.1"
+                  value={imageStyle.zoom}
+                  onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
+                  className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <span className="text-sm text-gray-600 dark:text-gray-400 w-12 text-right">
+                  {Math.round(imageStyle.zoom * 100)}%
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={resetZoom}
+                  className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Reset Zoom
+                </button>
+                <button
+                  type="button"
+                  onClick={resetPosition}
+                  className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Reset Position
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

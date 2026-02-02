@@ -1154,6 +1154,9 @@ export default function CharacterSheetPage() {
                     src={character.imageUrl}
                     alt={character.name}
                     className="w-full h-full object-cover"
+                    style={character.imageStyle ? {
+                      transform: `scale(${character.imageStyle.zoom}) translate(${character.imageStyle.x / character.imageStyle.zoom}%, ${character.imageStyle.y / character.imageStyle.zoom}%)`
+                    } : undefined}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
@@ -1170,6 +1173,9 @@ export default function CharacterSheetPage() {
                     src={character.imageUrl}
                     alt={character.name}
                     className="w-full h-full object-cover"
+                    style={character.imageStyle ? {
+                      transform: `scale(${character.imageStyle.zoom}) translate(${character.imageStyle.x / character.imageStyle.zoom}%, ${character.imageStyle.y / character.imageStyle.zoom}%)`
+                    } : undefined}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -4450,7 +4456,9 @@ export default function CharacterSheetPage() {
             </h3>
             <CharacterImageInput
               value={character.imageUrl}
+              imageStyle={character.imageStyle}
               onChange={(url) => updateCharacter({ imageUrl: url })}
+              onStyleChange={(style) => updateCharacter({ imageStyle: style })}
               size="large"
             />
             <div className="mt-6 flex justify-end">

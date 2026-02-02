@@ -1,0 +1,398 @@
+{
+    "id": "UxUXCzmX2KQsjQzfoeaSZ",
+    "name": "Cahal",
+    "species": "Human",
+    "class": "Ranger",
+    "subclass": "",
+    "background": "Farmer",
+    "level": 1,
+    "xp": 0,
+    "abilityScores": {
+        "strength": 14,
+        "dexterity": 17,
+        "constitution": 13,
+        "intelligence": 13,
+        "wisdom": 18,
+        "charisma": 6
+    },
+    "skills": [
+        {
+            "name": "athletics",
+            "ability": "strength",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "acrobatics",
+            "ability": "dexterity",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "sleightOfHand",
+            "ability": "dexterity",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "stealth",
+            "ability": "dexterity",
+            "proficient": true,
+            "expertise": false
+        },
+        {
+            "name": "arcana",
+            "ability": "intelligence",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "history",
+            "ability": "intelligence",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "investigation",
+            "ability": "intelligence",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "nature",
+            "ability": "intelligence",
+            "proficient": true,
+            "expertise": false
+        },
+        {
+            "name": "religion",
+            "ability": "intelligence",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "animalHandling",
+            "ability": "wisdom",
+            "proficient": true,
+            "expertise": false
+        },
+        {
+            "name": "insight",
+            "ability": "wisdom",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "medicine",
+            "ability": "wisdom",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "perception",
+            "ability": "wisdom",
+            "proficient": true,
+            "expertise": false
+        },
+        {
+            "name": "survival",
+            "ability": "wisdom",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "deception",
+            "ability": "charisma",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "intimidation",
+            "ability": "charisma",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "performance",
+            "ability": "charisma",
+            "proficient": false,
+            "expertise": false
+        },
+        {
+            "name": "persuasion",
+            "ability": "charisma",
+            "proficient": false,
+            "expertise": false
+        }
+    ],
+    "maxHp": 11,
+    "currentHp": 11,
+    "tempHp": 0,
+    "armorClass": 14,
+    "speed": 30,
+    "size": "medium",
+    "weapons": [
+        {
+            "name": "Shortsword",
+            "damage": "1d6",
+            "damageType": "piercing",
+            "properties": [
+                "finesse",
+                "light"
+            ],
+            "isEquipped": true,
+            "isTwoHanding": false
+        },
+        {
+            "name": "Longbow",
+            "damage": "1d8",
+            "damageType": "piercing",
+            "properties": [
+                "ammunition",
+                "heavy",
+                "two-handed"
+            ],
+            "isEquipped": true,
+            "isTwoHanding": false
+        }
+    ],
+    "equipment": [
+        {
+            "name": "Backpack",
+            "quantity": 1,
+            "weight": 5,
+            "category": "container"
+        },
+        {
+            "name": "Bedroll",
+            "quantity": 1,
+            "weight": 7,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Mess Kit",
+            "quantity": 1,
+            "weight": 1,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Tinderbox",
+            "quantity": 1,
+            "weight": 1,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Torch",
+            "quantity": 10,
+            "weight": 1,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Rations (1 day)",
+            "quantity": 10,
+            "weight": 2,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Waterskin",
+            "quantity": 1,
+            "weight": 5,
+            "category": "container"
+        },
+        {
+            "name": "Rope, Hempen (50 feet)",
+            "quantity": 1,
+            "weight": 10,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Arrows (20)",
+            "quantity": 20,
+            "weight": 1,
+            "category": "ammunition"
+        }
+    ],
+    "spells": [],
+    "spellSlots": {
+        "1": {
+            "total": 0,
+            "expended": 0
+        },
+        "2": {
+            "total": 0,
+            "expended": 0
+        },
+        "3": {
+            "total": 0,
+            "expended": 0
+        },
+        "4": {
+            "total": 0,
+            "expended": 0
+        },
+        "5": {
+            "total": 0,
+            "expended": 0
+        },
+        "6": {
+            "total": 0,
+            "expended": 0
+        },
+        "7": {
+            "total": 0,
+            "expended": 0
+        },
+        "8": {
+            "total": 0,
+            "expended": 0
+        },
+        "9": {
+            "total": 0,
+            "expended": 0
+        }
+    },
+    "spellcastingAbility": "wisdom",
+    "classFeatures": [
+        {
+            "name": "Favored Enemy",
+            "level": 1,
+            "description": "You can cast Hunter's Mark a number of times equal to your Wisdom modifier without expending a spell slot."
+        },
+        {
+            "name": "Spellcasting",
+            "level": 1,
+            "description": "You have learned to use the magical essence of nature to cast spells. Wisdom is your spellcasting ability."
+        },
+        {
+            "name": "Weapon Mastery",
+            "level": 1,
+            "description": "You have achieved a degree of mastery with weapons. Choose 2 weapons with Mastery properties to gain their Mastery benefits."
+        }
+    ],
+    "feats": [
+        {
+            "name": "Tough",
+            "description": "Your hit point maximum increases by an amount equal to twice your level when you gain this feat. Whenever you gain a level thereafter, your hit point maximum increases by an additional 2 hit points."
+        }
+    ],
+    "speciesTraits": [
+        {
+            "name": "Resourceful",
+            "description": "You gain Heroic Inspiration whenever you finish a Long Rest."
+        },
+        {
+            "name": "Skillful",
+            "description": "You gain proficiency in one skill of your choice."
+        },
+        {
+            "name": "Versatile",
+            "description": "You gain an Origin feat of your choice."
+        }
+    ],
+    "currency": {
+        "cp": 0,
+        "sp": 0,
+        "ep": 0,
+        "gp": 0,
+        "pp": 0
+    },
+    "deathSaves": {
+        "successes": 0,
+        "failures": 0
+    },
+    "hitDice": {
+        "total": 1,
+        "spent": 0
+    },
+    "backstory": {
+        "appearance": "",
+        "personality": "",
+        "ideals": "",
+        "bonds": "",
+        "flaws": "",
+        "backstory": "",
+        "alignment": "true-neutral",
+        "languages": [
+            "Common"
+        ]
+    },
+    "proficiencies": {
+        "armor": [
+            "Light",
+            "Medium",
+            "Shields"
+        ],
+        "weapons": [
+            "Simple",
+            "Martial"
+        ],
+        "tools": [
+            "Carpenter's Tools"
+        ]
+    },
+    "pendingASI": 0,
+    "armor": [
+        {
+            "name": "Leather",
+            "isEquipped": true,
+            "isShield": false
+        }
+    ],
+    "inventory": [
+        {
+            "name": "Backpack",
+            "quantity": 1,
+            "weight": 5,
+            "category": "container"
+        },
+        {
+            "name": "Bedroll",
+            "quantity": 1,
+            "weight": 7,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Mess Kit",
+            "quantity": 1,
+            "weight": 1,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Tinderbox",
+            "quantity": 1,
+            "weight": 1,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Torch",
+            "quantity": 10,
+            "weight": 1,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Rations (1 day)",
+            "quantity": 10,
+            "weight": 2,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Waterskin",
+            "quantity": 1,
+            "weight": 5,
+            "category": "container"
+        },
+        {
+            "name": "Rope, Hempen (50 feet)",
+            "quantity": 1,
+            "weight": 10,
+            "category": "adventuring gear"
+        },
+        {
+            "name": "Arrows (20)",
+            "quantity": 20,
+            "weight": 1,
+            "category": "ammunition"
+        }
+    ],
+    "toolProficiencies": []
+}

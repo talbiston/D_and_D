@@ -86,11 +86,19 @@ export interface SpeciesAncestryData {
   options: SpeciesAncestryOption[]
 }
 
+// Character image style for zoom/pan adjustments
+export interface ImageStyle {
+  zoom: number // Scale factor (1 = 100%)
+  x: number // X offset percentage (-50 to 50)
+  y: number // Y offset percentage (-50 to 50)
+}
+
 // Main Character interface
 export interface Character {
   id: string
   name: string
   imageUrl?: string // URL or base64 data URL for character portrait
+  imageStyle?: ImageStyle // Zoom and position adjustments for the portrait
   species: string
   class: string
   subclass: string

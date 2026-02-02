@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getSpeciesNames } from '../data/species'
 import { getClassNames } from '../data/classes'
-import type { AbilityScores, AbilityName, Skill, SkillName, Weapon, InventoryItem, Currency } from '../types'
+import type { AbilityScores, AbilityName, Skill, SkillName, Weapon, InventoryItem, Currency, ImageStyle } from '../types'
 import { DEFAULT_ABILITY_SCORES, SKILL_ABILITIES, createDefaultSkills } from '../types'
 import { getAbilityModifier, formatModifier, getProficiencyBonus, getSkillBonus, getPassivePerception, getPactMagicSlots } from '../utils/calculations'
 import { createCharacter } from '../utils/api'
@@ -85,6 +85,7 @@ export default function CharacterCreatePage() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined)
+  const [imageStyle, setImageStyle] = useState<ImageStyle>({ zoom: 1, x: 0, y: 0 })
   const [species, setSpecies] = useState('')
   const [speciesAncestry, setSpeciesAncestry] = useState('')
   const [characterClass, setCharacterClass] = useState('')
@@ -742,6 +743,7 @@ export default function CharacterCreatePage() {
     const characterData = {
       name: name.trim(),
       imageUrl,
+      imageStyle: imageUrl ? imageStyle : undefined,
       species,
       class: characterClass,
       subclass,
@@ -879,7 +881,9 @@ export default function CharacterCreatePage() {
             </label>
             <CharacterImageInput
               value={imageUrl}
+              imageStyle={imageStyle}
               onChange={setImageUrl}
+              onStyleChange={setImageStyle}
               size="medium"
             />
           </div>

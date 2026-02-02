@@ -59,6 +59,7 @@ app.get('/api/characters', (_req, res) => {
       id: row.id,
       name: row.name,
       imageUrl: characterData.imageUrl || null,
+      imageStyle: characterData.imageStyle || null,
       class: characterData.class || null,
       level: characterData.level || null,
       species: characterData.species || null,
