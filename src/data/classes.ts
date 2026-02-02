@@ -387,6 +387,12 @@ export const CLASSES: ClassData[] = [
           { name: 'Elemental Wild Shape', level: 10, description: 'You can expend two uses of Wild Shape at the same time to transform into an Air Elemental, Earth Elemental, Fire Elemental, or Water Elemental.' },
           { name: 'Thousand Forms', level: 14, description: 'You have learned to use magic to alter your physical form in subtler ways. You can cast Alter Self at will without expending a spell slot.' },
         ],
+        spells: [
+          { level: 3, spells: ['Cure Wounds', 'Moonbeam'] },
+          { level: 5, spells: ['Conjure Animals'] },
+          { level: 7, spells: ['Fount of Moonlight'] },
+          { level: 9, spells: ['Mass Cure Wounds'] },
+        ],
       },
       {
         name: 'Circle of the Sea',
@@ -397,6 +403,12 @@ export const CLASSES: ClassData[] = [
           { name: 'Aquatic Affinity', level: 6, description: 'You can breathe underwater, and you have Resistance to Cold damage. In addition, you can communicate simple ideas to any Beast that has a Swim speed.' },
           { name: 'Stormborn', level: 10, description: 'You have Resistance to Lightning and Thunder damage. In addition, you can expend a use of Wild Shape to become incorporeal for 10 minutes. During that time, you have a Fly speed equal to your walking speed, you can hover, and you can move through creatures and objects as if they were Difficult Terrain. If you end your turn inside a creature or object, you take 1d10 Force damage.' },
           { name: 'Oceanic Gift', level: 14, description: 'Once on each of your turns when you deal Cold, Lightning, or Thunder damage to a creature with a spell of 1st level or higher, you can cause the creature to have the Stunned condition until the end of your next turn. Once you use this feature, you can\'t use it again until you finish a Short or Long Rest.' },
+        ],
+        spells: [
+          { level: 3, spells: ['Fog Cloud', 'Gust of Wind', 'Thunderwave'] },
+          { level: 5, spells: ['Shatter', 'Lightning Bolt'] },
+          { level: 7, spells: ['Water Breathing', 'Control Water'] },
+          { level: 9, spells: ['Ice Storm', 'Conjure Elemental'] },
         ],
       },
       {
@@ -794,6 +806,13 @@ export const CLASSES: ClassData[] = [
           { name: 'Fey Reinforcements', level: 11, description: 'You can call on the Feywild for aid. You always have Summon Fey prepared, and you can cast it without a Material component. You can also cast it once without expending a spell slot, and you regain the ability to do so when you finish a Long Rest. Whenever you start casting the spell, you can modify it so that it doesn\'t require Concentration. If you do so, the spell\'s duration becomes 1 minute for that casting.' },
           { name: 'Misty Wanderer', level: 15, description: 'You can slip through the Feywild to move in the blink of an eye. You can cast Misty Step without expending a spell slot. You can do so a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a Long Rest. In addition, whenever you cast Misty Step, you can bring along one willing creature you can see within 5 feet of you. That creature teleports to an unoccupied space of your choice within 5 feet of your destination space.' },
         ],
+        spells: [
+          { level: 3, spells: ['Charm Person'] },
+          { level: 5, spells: ['Misty Step'] },
+          { level: 9, spells: ['Dispel Magic'] },
+          { level: 13, spells: ['Dimension Door'] },
+          { level: 17, spells: ['Mislead'] },
+        ],
       },
       {
         name: 'Gloom Stalker',
@@ -805,6 +824,13 @@ export const CLASSES: ClassData[] = [
           { name: 'Iron Mind', level: 7, description: 'You have honed your ability to resist the mind-altering powers of your prey. You gain proficiency in Wisdom saving throws. If you already have this proficiency, you instead gain proficiency in Intelligence or Charisma saving throws (your choice).' },
           { name: 'Stalker\'s Flurry', level: 11, description: 'You have learned to attack with such unexpected speed that you can turn a miss into another strike. Once per turn when you miss with a weapon attack, you can make another weapon attack as part of the same action.' },
           { name: 'Shadowy Dodge', level: 15, description: 'You can dodge in unforeseen ways, with wisps of supernatural shadow around you. When a creature makes an attack roll against you and doesn\'t have Advantage on the roll, you can use your Reaction to impose Disadvantage on it. You must use this feature before you know the outcome of the attack roll.' },
+        ],
+        spells: [
+          { level: 3, spells: ['Disguise Self'] },
+          { level: 5, spells: ['Rope Trick'] },
+          { level: 9, spells: ['Fear'] },
+          { level: 13, spells: ['Greater Invisibility'] },
+          { level: 17, spells: ['Seeming'] },
         ],
       },
       {
