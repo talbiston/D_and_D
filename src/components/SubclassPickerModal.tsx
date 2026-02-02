@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getSubclassesByClass, getClassByName, type Subclass } from '../data/classes'
+import { getSubclassesByClass, getClassByName } from '../data/classes'
 
 interface SubclassPickerModalProps {
   isOpen: boolean
