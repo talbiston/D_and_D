@@ -2423,11 +2423,112 @@ export default function CharacterSheetPage() {
 
           if (!resources || resources.length === 0) return null
 
+          // Helper to perform short rest
+          const performShortRest = () => {
+            const pb = getProficiencyBonus(character.level)
+            const newResources: Record<string, number> = { ...character.resources }
+
+            for (const resource of resources) {
+              const resetType = getResourceResetType(resource, character.level)
+              if (resetType === 'short') {
+                const maxUses = getResourceMax(resource, character.level, character.abilityScores, pb)
+                if (maxUses !== null) {
+                  newResources[resource.name] = maxUses
+                }
+              }
+            }
+
+            updateCharacter({ resources: newResources })
+            setSubclassProficiencyNotification('Short Rest complete! Resources restored.')
+            setTimeout(() => setSubclassProficiencyNotification(null), 3000)
+          }
+
+          // Helper to perform long rest
+          const performLongRest = () => {
+            const pb = getProficiencyBonus(character.level)
+            const newResources: Record<string, number> = { ...character.resources }
+
+            // Reset ALL resources on long rest
+            for (const resource of resources) {
+              const maxUses = getResourceMax(resource, character.level, character.abilityScores, pb)
+              if (maxUses !== null) {
+                newResources[resource.name] = maxUses
+              }
+            }
+
+            // Restore HP to max
+            const hpUpdate = { currentHp: character.maxHp }
+
+            // Reset spell slots to max
+            const spellSlotUpdate: typeof character.spellSlots = {}
+            for (const [levelStr, slot] of Object.entries(character.spellSlots)) {
+              const level = parseInt(levelStr, 10)
+              if (!isNaN(level) && slot.total > 0) {
+                spellSlotUpdate[level as keyof typeof character.spellSlots] = {
+                  ...slot,
+                  used: 0,
+                }
+              }
+            }
+
+            // Reset Pact Magic if applicable
+            const pactMagicUpdate = character.pactMagic
+              ? { pactMagic: { ...character.pactMagic, expended: 0 } }
+              : {}
+
+            updateCharacter({
+              resources: newResources,
+              ...hpUpdate,
+              spellSlots: { ...character.spellSlots, ...spellSlotUpdate },
+              ...pactMagicUpdate,
+            })
+
+            setSubclassProficiencyNotification('Long Rest complete! All resources, HP, and spell slots restored.')
+            setTimeout(() => setSubclassProficiencyNotification(null), 3000)
+          }
+
+          // Get list of resources that reset on short rest for confirmation
+          const shortRestResources = resources
+            .filter(r => getResourceResetType(r, character.level) === 'short')
+            .map(r => r.name)
+
           return (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Class Resources
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Class Resources
+                </h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (shortRestResources.length > 0) {
+                        if (window.confirm(`Short Rest will restore:\n• ${shortRestResources.join('\n• ')}\n\nProceed?`)) {
+                          performShortRest()
+                        }
+                      } else {
+                        setSubclassProficiencyNotification('No resources reset on Short Rest.')
+                        setTimeout(() => setSubclassProficiencyNotification(null), 2000)
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900 rounded-lg transition-colors"
+                    title="Take a Short Rest"
+                  >
+                    Short Rest
+                  </button>
+                  <button
+                    onClick={() => {
+                      const allResources = resources.map(r => r.name)
+                      if (window.confirm(`Long Rest will restore:\n• All class resources (${allResources.join(', ')})\n• HP to maximum\n• All spell slots\n\nProceed?`)) {
+                        performLongRest()
+                      }
+                    }}
+                    className="px-3 py-1.5 text-sm font-medium bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900 rounded-lg transition-colors"
+                    title="Take a Long Rest"
+                  >
+                    Long Rest
+                  </button>
+                </div>
+              </div>
               <div className="space-y-4">
                 {resources.map((resource) => {
                   const maxUses = getResourceMax(
