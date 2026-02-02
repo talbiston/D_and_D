@@ -26,3 +26,13 @@ Started: Sun Feb  1 08:46:04 PM CST 2026
   - Wood Elf: speedOverride=35, cantrip='Druidcraft', leveledSpells=[{level:3, Longstrider}, {level:5, Pass Without Trace}]
   - Follow existing ancestry patterns in species.ts (e.g., Dragonborn, Gnome, Tiefling, Goliath, Aasimar)
 ---
+
+## 2026-02-01 21:05 CST - US-003
+- What was implemented: Applied lineage speed and darkvision overrides during character creation
+- Files changed: src/pages/CharacterCreatePage.tsx
+- **Learnings for future iterations:**
+  - Character creation applies ancestry overrides in `handleCreateCharacter` function around line 740
+  - `finalSpeed` is calculated from `speedOverride` if present, otherwise from species default
+  - `finalSpeciesTraits` maps over species traits and updates Darkvision description if `darkvisionOverride` is present
+  - The pattern for modifying traits: map over the array and replace matching trait with updated description
+---
