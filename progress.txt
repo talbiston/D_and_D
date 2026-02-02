@@ -62,3 +62,15 @@ Started: Sun Feb  1 08:46:04 PM CST 2026
   - Notes are displayed in amber/italic below the spell description in the expanded spell view
   - To integrate with level-up, call `getLineageSpellsForLevelUp` and add results to character's spells array
 ---
+
+## 2026-02-01 21:45 CST - US-006
+- What was implemented: Updated Keen Senses trait to allow choice of Insight, Perception, or Survival proficiency
+- Files changed: src/data/species.ts, src/pages/CharacterCreatePage.tsx
+- **Learnings for future iterations:**
+  - Keen Senses trait description now mentions all three skill options
+  - Added `keenSensesSkill` state in CharacterCreatePage for Elves
+  - Dropdown appears when Elf species is selected, alongside the Elven Lineage selection
+  - Skill proficiency is applied in `finalSkills` during character creation, similar to background skills
+  - Validation ensures Keen Senses skill is selected before allowing character creation for Elves
+  - Pattern for species-specific skill choices: add state, add UI conditionally based on species, apply in finalSkills computation
+---
